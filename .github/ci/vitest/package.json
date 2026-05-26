@@ -1,0 +1,12 @@
+{
+  "private"        : true,
+  "type"           : "module",
+  "scripts"        : {
+    "check"    : "vitest run",
+    "coverage" : "vitest run --coverage"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^3.0.0",
+    "vitest"             : "^3.0.0"
+  }
+}

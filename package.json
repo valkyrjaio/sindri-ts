@@ -1,0 +1,63 @@
+{
+    "name": "@valkyrja/sindri",
+    "version": "26.3.0",
+    "description": "The Valkyrja Sindri build tool.",
+    "homepage": "https://www.valkyrja.io/sindri",
+    "keywords": [
+        "build tool",
+        "sindri",
+        "valkyrja"
+    ],
+    "license": "MIT",
+    "author": {
+        "name": "Melech Mizrachi",
+        "email": "melechmizrachi@gmail.com"
+    },
+    "type": "module",
+    "exports": {
+        ".": {
+            "import": "./dist/index.js",
+            "types": "./dist/index.d.ts"
+        }
+    },
+    "bin": {
+        "sindri": "dist/bin/sindri.js"
+    },
+    "files": [
+        "dist",
+        "src"
+    ],
+    "engines": {
+        "node": ">=22"
+    },
+    "dependencies": {
+        "@valkyrja/valkyrja": "^26.3.0",
+        "ts-morph": "^24.0.0"
+    },
+    "scripts": {
+        "typescript": "cd .github/ci/typescript && npm run check",
+        "typescript-outdated-check": "cd .github/ci/typescript && npm install && npm outdated",
+        "typescript-outdated-check-major-release": "cd .github/ci/typescript && npm install && npm outdated",
+        "typescript-npm-update": "cd .github/ci/typescript && npm update",
+        "eslint": "cd .github/ci/eslint && npm run fix",
+        "eslint-check": "cd .github/ci/eslint && npm run check",
+        "eslint-outdated-check": "cd .github/ci/eslint && npm install && npm outdated",
+        "eslint-outdated-check-major-release": "cd .github/ci/eslint && npm install && npm outdated",
+        "eslint-npm-update": "cd .github/ci/eslint && npm update",
+        "prettier": "cd .github/ci/prettier && npm run fix",
+        "prettier-check": "cd .github/ci/prettier && npm run check",
+        "prettier-outdated-check": "cd .github/ci/prettier && npm install && npm outdated",
+        "prettier-outdated-check-major-release": "cd .github/ci/prettier && npm install && npm outdated",
+        "prettier-npm-update": "cd .github/ci/prettier && npm update",
+        "vitest": "cd .github/ci/vitest && npm run check",
+        "vitest-coverage": "cd .github/ci/vitest && npm run coverage",
+        "vitest-outdated-check": "cd .github/ci/vitest && npm install && npm outdated",
+        "vitest-outdated-check-major-release": "cd .github/ci/vitest && npm install && npm outdated",
+        "vitest-npm-update": "cd .github/ci/vitest && npm update",
+        "root-outdated-check": "npm install && npm outdated",
+        "root-outdated-check-major-release": "npm install && npm outdated",
+        "root-and-suggested-outdated-check": "cd .github/ci/root-and-suggested && npm install && npm outdated",
+        "root-and-suggested-outdated-check-major-release": "cd .github/ci/root-and-suggested && npm install && npm outdated",
+        "root-and-suggested-npm-update": "cd .github/ci/root-and-suggested && npm update"
+    }
+}

@@ -1,0 +1,10 @@
+{
+  "private"        : true,
+  "dependencies"   : {
+    "@valkyrja/valkyrja": "^26.3.0"
+  },
+  "devDependencies": {
+    "ts-morph" : "^24.0.0",
+    "typescript": "^5.8.0"
+  }
+}

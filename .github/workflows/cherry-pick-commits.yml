@@ -1,0 +1,25 @@
+name: Cherry-pick pull-requests to Branches
+
+on:
+  workflow_dispatch:
+    inputs:
+      destination:
+        description: 'Destination branch to cherry-pick to'
+        required: true
+        type: string
+      hash:
+        description: 'Hash to cherry-pick'
+        required: true
+
+run-name: Cherry Pick ${{ inputs.hash }} To ${{ inputs.destination }}
+
+jobs:
+  cherry-pick:
+    name: Cherry-pick
+    uses: valkyrjaio/.github/.github/workflows/_cherry-pick-commits.yml@9b108a21f1a7161aef43c83046266f2c8de60165
+    permissions:
+      contents: write
+    with:
+      destination: ${{ inputs.destination }}
+      hash: ${{ inputs.hash }}
+      valid-branch-pattern: '^2([6-9]).x$'
