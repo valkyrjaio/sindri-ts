@@ -4,7 +4,7 @@
     "check" : "cd ../../.. && tsc --noEmit -p tsconfig.json"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
-    "typescript": "^5.8.0"
+    "@types/node": "^25.0.0",
+    "typescript": "^6.0.0"
   }
 }
