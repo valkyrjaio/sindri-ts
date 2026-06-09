@@ -10,7 +10,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-import ts from 'typescript';
 import {
     ClassDeclaration,
     Decorator,
@@ -20,6 +19,7 @@ import {
     Project,
     SourceFile,
     SyntaxKind,
+    ts,
 } from 'ts-morph';
 
 import { AstFileReadException } from '../Throwable/Exception/AstFileReadException.js';
@@ -39,7 +39,7 @@ export abstract class AstReader {
             throw new AstFileReadException(`Cannot read file '${filePath}'.`);
         }
 
-        const project = new Project({ addFilesFromTsConfig: false, skipFileDependencyResolution: true });
+        const project = new Project({ skipAddingFilesFromTsConfig: true, skipFileDependencyResolution: true });
 
         return project.addSourceFileAtPath(filePath);
     }
@@ -91,11 +91,7 @@ export abstract class AstReader {
     /**
      * Resolve the file path for an imported class name using the use map and current file directory.
      */
-    protected resolveImportToFilePath(
-        name: string,
-        useMap: Record<string, string>,
-        currentFilePath: string,
-    ): string {
+    protected resolveImportToFilePath(name: string, useMap: Record<string, string>, currentFilePath: string): string {
         const moduleSpecifier = useMap[name];
 
         if (moduleSpecifier === undefined) {
@@ -193,7 +189,11 @@ export abstract class AstReader {
         }
 
         for (const stmt of body.statements) {
-            if (ts.isReturnStatement(stmt) && stmt.expression !== undefined && ts.isArrayLiteralExpression(stmt.expression)) {
+            if (
+                ts.isReturnStatement(stmt) &&
+                stmt.expression !== undefined &&
+                ts.isArrayLiteralExpression(stmt.expression)
+            ) {
                 return stmt.expression;
             }
         }
@@ -212,7 +212,11 @@ export abstract class AstReader {
         }
 
         for (const stmt of body.statements) {
-            if (ts.isReturnStatement(stmt) && stmt.expression !== undefined && ts.isObjectLiteralExpression(stmt.expression)) {
+            if (
+                ts.isReturnStatement(stmt) &&
+                stmt.expression !== undefined &&
+                ts.isObjectLiteralExpression(stmt.expression)
+            ) {
                 return stmt.expression;
             }
         }
@@ -322,7 +326,7 @@ export abstract class AstReader {
         }
 
         try {
-            const project = new Project({ addFilesFromTsConfig: false, skipFileDependencyResolution: true });
+            const project = new Project({ skipAddingFilesFromTsConfig: true, skipFileDependencyResolution: true });
             const importedSource = project.addSourceFileAtPath(importedFilePath);
             const importedClass = importedSource.getClass(className);
 
@@ -353,11 +357,7 @@ export abstract class AstReader {
     /**
      * Resolve a short class name — returns the name as-is (class names in TS are local).
      */
-    protected resolveClassName(
-        name: string,
-        useMap: Record<string, string>,
-        _currentFilePath: string,
-    ): string {
+    protected resolveClassName(name: string, useMap: Record<string, string>, _currentFilePath: string): string {
         if (name in useMap) {
             return name;
         }
@@ -368,11 +368,7 @@ export abstract class AstReader {
     /**
      * Resolve a class short name to an absolute file path using the use map.
      */
-    protected resolveClassToFilePath(
-        name: string,
-        useMap: Record<string, string>,
-        currentFilePath: string,
-    ): string {
+    protected resolveClassToFilePath(name: string, useMap: Record<string, string>, currentFilePath: string): string {
         return this.resolveImportToFilePath(name, useMap, currentFilePath);
     }
 
@@ -385,7 +381,7 @@ export abstract class AstReader {
         useMap: Record<string, string>,
         currentFilePath: string,
     ): Decorator[] {
-        return node.getDecorators().filter((d) => {
+        return node.getDecorators().filter((d: Decorator) => {
             const name = d.getName();
             return name === decoratorName || this.resolveClassName(name, useMap, currentFilePath) === decoratorName;
         });
@@ -408,7 +404,7 @@ export abstract class AstReader {
             return undefined;
         }
 
-        const tsNode = Node.isNode(node) ? (node as Node).compilerNode : (node as ts.Node);
+        const tsNode = Node.isNode(node) ? node.compilerNode : node;
 
         if (ts.isStringLiteral(tsNode)) {
             return tsNode.text;
@@ -692,7 +688,7 @@ export abstract class AstReader {
         }
 
         try {
-            const project = new Project({ addFilesFromTsConfig: false, skipFileDependencyResolution: true });
+            const project = new Project({ skipAddingFilesFromTsConfig: true, skipFileDependencyResolution: true });
             const sourceFile = project.addSourceFileAtPath(filePath);
             const classDecl = sourceFile.getClass(className);
 

@@ -7,7 +7,7 @@
  * file that was distributed with this source code.
  */
 
-import type ts from 'typescript';
+import type { ts } from 'ts-morph';
 
 export class ListenerProviderResult {
     constructor(

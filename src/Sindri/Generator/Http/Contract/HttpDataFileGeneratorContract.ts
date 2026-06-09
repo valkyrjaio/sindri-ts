@@ -7,7 +7,7 @@
  * file that was distributed with this source code.
  */
 
-import type ts from 'typescript';
+import type { ts } from 'ts-morph';
 
 import type { HttpRouteData } from '../../../Ast/Data/HttpRouteData.js';
 import type { GenerateStatus } from '../../Enum/GenerateStatus.js';
@@ -21,8 +21,5 @@ export interface HttpDataFileGeneratorContract {
         routeData: Record<string, HttpRouteData>,
     ): GenerateStatus;
 
-    generateClassContents(
-        routes: Record<string, ts.Expression>,
-        routeData: Record<string, HttpRouteData>,
-    ): string;
+    generateClassContents(routes: Record<string, ts.Expression>, routeData: Record<string, HttpRouteData>): string;
 }

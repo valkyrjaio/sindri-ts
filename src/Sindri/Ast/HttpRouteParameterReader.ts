@@ -7,12 +7,12 @@
  * file that was distributed with this source code.
  */
 
-import ts from 'typescript';
+import { ts } from 'ts-morph';
 
 import { AstReader } from './Abstract/AstReader.js';
 import { HttpParameterData } from './Data/HttpParameterData.js';
 
-import type { Decorator, MethodDeclaration, ParameterDeclaration } from 'ts-morph';
+import type { Decorator, MethodDeclaration } from 'ts-morph';
 
 import type { HttpRouteParameterReaderContract } from './Contract/HttpRouteParameterReaderContract.js';
 
@@ -57,11 +57,11 @@ export class HttpRouteParameterReader extends AstReader implements HttpRoutePara
         const parameters: HttpParameterData[] = [];
 
         for (const element of inlineArg.elements) {
-            if (!ts.isNewExpression(element)) {
+            if (!ts.isNewExpression(element) || element.arguments === undefined) {
                 continue;
             }
 
-            const param = this.buildParameterDataFromTsArgs(element.arguments ?? [], useMap, currentFilePath, currentClass);
+            const param = this.buildParameterDataFromTsArgs(element.arguments, useMap, currentFilePath, currentClass);
 
             if (param !== null) {
                 parameters.push(param);
@@ -99,7 +99,7 @@ export class HttpRouteParameterReader extends AstReader implements HttpRoutePara
         const parameters: HttpParameterData[] = [];
 
         for (const methodParam of method.getParameters()) {
-            for (const decorator of this.findDecoratorsOnNode(methodParam as ParameterDeclaration, 'Parameter', useMap, currentFilePath)) {
+            for (const decorator of this.findDecoratorsOnNode(methodParam, 'Parameter', useMap, currentFilePath)) {
                 const param = this.buildParameterDataFromDecorator(decorator, useMap, currentFilePath, currentClass);
 
                 if (param !== null) {
@@ -154,15 +154,22 @@ export class HttpRouteParameterReader extends AstReader implements HttpRoutePara
         }
 
         const castNode = args[2];
-        const castRaw = castNode !== undefined ? this.extractExprValue(castNode, useMap, currentFilePath, currentClass) : null;
+        const castRaw =
+            castNode !== undefined ? this.extractExprValue(castNode, useMap, currentFilePath, currentClass) : null;
         const cast = typeof castRaw === 'string' && castRaw !== '' ? castRaw : null;
 
         const isOptionalNode = args[3];
-        const isOptionalRaw = isOptionalNode !== undefined ? this.extractExprValue(isOptionalNode, useMap, currentFilePath, currentClass) : false;
+        const isOptionalRaw =
+            isOptionalNode !== undefined
+                ? this.extractExprValue(isOptionalNode, useMap, currentFilePath, currentClass)
+                : false;
         const isOptional = typeof isOptionalRaw === 'boolean' ? isOptionalRaw : false;
 
         const shouldCaptureNode = args[4];
-        const shouldCaptureRaw = shouldCaptureNode !== undefined ? this.extractExprValue(shouldCaptureNode, useMap, currentFilePath, currentClass) : true;
+        const shouldCaptureRaw =
+            shouldCaptureNode !== undefined
+                ? this.extractExprValue(shouldCaptureNode, useMap, currentFilePath, currentClass)
+                : true;
         const shouldCapture = typeof shouldCaptureRaw === 'boolean' ? shouldCaptureRaw : true;
 
         return new HttpParameterData(name, regex, cast, isOptional, shouldCapture);

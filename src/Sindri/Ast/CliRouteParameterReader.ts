@@ -7,7 +7,7 @@
  * file that was distributed with this source code.
  */
 
-import ts from 'typescript';
+import { ts } from 'ts-morph';
 
 import { AstReader } from './Abstract/AstReader.js';
 import { CliArgumentParameterData } from './Data/CliArgumentParameterData.js';
@@ -94,8 +94,22 @@ export class CliRouteParameterReader extends AstReader implements CliRouteParame
             name,
             description,
             this.extractStringArg(decorator, 2, useMap, currentFilePath, currentClass) || null,
-            this.extractStringArg(decorator, 3, useMap, currentFilePath, currentClass, 'Valkyrja\\Cli\\Routing\\Enum\\ArgumentMode::OPTIONAL'),
-            this.extractStringArg(decorator, 4, useMap, currentFilePath, currentClass, 'Valkyrja\\Cli\\Routing\\Enum\\ArgumentValueMode::DEFAULT'),
+            this.extractStringArg(
+                decorator,
+                3,
+                useMap,
+                currentFilePath,
+                currentClass,
+                'Valkyrja\\Cli\\Routing\\Enum\\ArgumentMode::OPTIONAL',
+            ),
+            this.extractStringArg(
+                decorator,
+                4,
+                useMap,
+                currentFilePath,
+                currentClass,
+                'Valkyrja\\Cli\\Routing\\Enum\\ArgumentValueMode::DEFAULT',
+            ),
         );
     }
 
@@ -120,8 +134,22 @@ export class CliRouteParameterReader extends AstReader implements CliRouteParame
             this.extractStringArg(decorator, 4, useMap, currentFilePath, currentClass),
             this.extractStringListArgFromDecorator(decorator, 5, useMap, currentFilePath, currentClass),
             this.extractStringListArgFromDecorator(decorator, 6, useMap, currentFilePath, currentClass),
-            this.extractStringArg(decorator, 7, useMap, currentFilePath, currentClass, 'Valkyrja\\Cli\\Routing\\Enum\\OptionMode::OPTIONAL'),
-            this.extractStringArg(decorator, 8, useMap, currentFilePath, currentClass, 'Valkyrja\\Cli\\Routing\\Enum\\OptionValueMode::DEFAULT'),
+            this.extractStringArg(
+                decorator,
+                7,
+                useMap,
+                currentFilePath,
+                currentClass,
+                'Valkyrja\\Cli\\Routing\\Enum\\OptionMode::OPTIONAL',
+            ),
+            this.extractStringArg(
+                decorator,
+                8,
+                useMap,
+                currentFilePath,
+                currentClass,
+                'Valkyrja\\Cli\\Routing\\Enum\\OptionValueMode::DEFAULT',
+            ),
         );
     }
 

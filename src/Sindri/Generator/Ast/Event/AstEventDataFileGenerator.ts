@@ -7,7 +7,7 @@
  * file that was distributed with this source code.
  */
 
-import ts from 'typescript';
+import { ts } from 'ts-morph';
 
 import { AstFileGenerator } from '../../Abstract/AstFileGenerator.js';
 import type { EventDataFileGeneratorContract } from '../../Event/Contract/EventDataFileGeneratorContract.js';
@@ -18,7 +18,13 @@ export class AstEventDataFileGenerator extends AstFileGenerator implements Event
 
     private readonly printer = ts.createPrinter({ newLine: ts.NewLineKind.LineFeed });
 
-    private readonly dummySourceFile = ts.createSourceFile('_dummy.ts', '', ts.ScriptTarget.ESNext, false, ts.ScriptKind.TS);
+    private readonly dummySourceFile = ts.createSourceFile(
+        '_dummy.ts',
+        '',
+        ts.ScriptTarget.ESNext,
+        false,
+        ts.ScriptKind.TS,
+    );
 
     public generateFile(
         directory: string,
@@ -66,13 +72,8 @@ export class AstEventDataFileGenerator extends AstFileGenerator implements Event
             lines.push(`            ['${key}']: (): ListenerContract => ${printed},`);
         }
 
-        return [
-            'super(',
-            '            {},',
-            '            {',
-            ...lines,
-            '            },',
-            '        );',
-        ].join('\n        ');
+        return ['super(', '            {},', '            {', ...lines, '            },', '        );'].join(
+            '\n        ',
+        );
     }
 }

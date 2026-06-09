@@ -7,7 +7,7 @@
  * file that was distributed with this source code.
  */
 
-import ts from 'typescript';
+import { ts } from 'ts-morph';
 
 import { AstFileGenerator } from '../../Abstract/AstFileGenerator.js';
 import type { CliDataFileGeneratorContract } from '../../Cli/Contract/CliDataFileGeneratorContract.js';
@@ -18,7 +18,13 @@ export class AstCliDataFileGenerator extends AstFileGenerator implements CliData
 
     private readonly printer = ts.createPrinter({ newLine: ts.NewLineKind.LineFeed });
 
-    private readonly dummySourceFile = ts.createSourceFile('_dummy.ts', '', ts.ScriptTarget.ESNext, false, ts.ScriptKind.TS);
+    private readonly dummySourceFile = ts.createSourceFile(
+        '_dummy.ts',
+        '',
+        ts.ScriptTarget.ESNext,
+        false,
+        ts.ScriptKind.TS,
+    );
 
     public generateFile(
         directory: string,
@@ -77,12 +83,6 @@ export class AstCliDataFileGenerator extends AstFileGenerator implements CliData
             lines.push(`            ${formattedKey}: (): RouteContract => ${printedValue},`);
         }
 
-        return [
-            'super({',
-            '            routes: {',
-            ...lines,
-            '            },',
-            '        });',
-        ].join('\n        ');
+        return ['super({', '            routes: {', ...lines, '            },', '        });'].join('\n        ');
     }
 }

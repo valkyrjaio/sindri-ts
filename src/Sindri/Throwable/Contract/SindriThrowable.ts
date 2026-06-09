@@ -9,4 +9,4 @@
 
 import type { ValkyrjaThrowable } from '@valkyrja/valkyrja/Throwable/Contract/ValkyrjaThrowable.js';
 
-export interface SindriThrowable extends ValkyrjaThrowable {}
+export type SindriThrowable = ValkyrjaThrowable;

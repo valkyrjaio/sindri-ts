@@ -7,7 +7,7 @@
  * file that was distributed with this source code.
  */
 
-import ts from 'typescript';
+import { ts } from 'ts-morph';
 
 import { AstFileGenerator } from '../../Abstract/AstFileGenerator.js';
 import type { ContainerDataFileGeneratorContract } from '../../Container/Contract/ContainerDataFileGeneratorContract.js';
@@ -18,7 +18,13 @@ export class AstContainerDataFileGenerator extends AstFileGenerator implements C
 
     private readonly printer = ts.createPrinter({ newLine: ts.NewLineKind.LineFeed });
 
-    private readonly dummySourceFile = ts.createSourceFile('_dummy.ts', '', ts.ScriptTarget.ESNext, false, ts.ScriptKind.TS);
+    private readonly dummySourceFile = ts.createSourceFile(
+        '_dummy.ts',
+        '',
+        ts.ScriptTarget.ESNext,
+        false,
+        ts.ScriptKind.TS,
+    );
 
     public generateFile(
         directory: string,
@@ -68,15 +74,13 @@ export class AstContainerDataFileGenerator extends AstFileGenerator implements C
 
             const formattedKey = serviceId.includes('::') ? `[${printedKey}]` : `['${printedKey}']`;
 
-            lines.push(`            ${formattedKey}: (container: ContainerContract) => ${shortProviderClass}.${methodName}(container),`);
+            lines.push(
+                `            ${formattedKey}: (container: ContainerContract) => ${shortProviderClass}.${methodName}(container),`,
+            );
         }
 
-        return [
-            'super({',
-            '            deferredCallback: {',
-            ...lines,
-            '            },',
-            '        });',
-        ].join('\n        ');
+        return ['super({', '            deferredCallback: {', ...lines, '            },', '        });'].join(
+            '\n        ',
+        );
     }
 }

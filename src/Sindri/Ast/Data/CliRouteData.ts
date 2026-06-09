@@ -13,6 +13,8 @@ import type { CliRouteDataContract } from './Contract/CliRouteDataContract.js';
 import type { HandlerData } from './HandlerData.js';
 
 export class CliRouteData implements CliRouteDataContract {
+    readonly arguments: readonly CliArgumentParameterData[];
+
     constructor(
         readonly name: string,
         readonly description: string,
@@ -22,7 +24,9 @@ export class CliRouteData implements CliRouteDataContract {
         readonly routeDispatchedMiddleware: readonly string[] = [],
         readonly throwableCaughtMiddleware: readonly string[] = [],
         readonly exitedMiddleware: readonly string[] = [],
-        readonly arguments: readonly CliArgumentParameterData[] = [],
+        args: readonly CliArgumentParameterData[] = [],
         readonly options: readonly CliOptionParameterData[] = [],
-    ) {}
+    ) {
+        this.arguments = args;
+    }
 }
