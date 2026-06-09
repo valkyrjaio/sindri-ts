@@ -47,7 +47,9 @@ export class SindriAstServiceProvider implements ServiceProviderContract {
         container.setSingleton<CliRouteAttributeReaderContract>(
             SindriServiceId.CliRouteAttributeReaderContract,
             new CliRouteAttributeReader(
-                container.getSingleton<CliRouteParameterReaderContract>(SindriServiceId.CliRouteParameterReaderContract),
+                container.getSingleton<CliRouteParameterReaderContract>(
+                    SindriServiceId.CliRouteParameterReaderContract,
+                ),
             ),
         );
     }
@@ -88,8 +90,12 @@ export class SindriAstServiceProvider implements ServiceProviderContract {
         container.setSingleton<HttpRouteAttributeReaderContract>(
             SindriServiceId.HttpRouteAttributeReaderContract,
             new HttpRouteAttributeReader(
-                container.getSingleton<HttpRouteParameterReaderContract>(SindriServiceId.HttpRouteParameterReaderContract),
-                container.getSingleton<HttpRouteMiddlewareReaderContract>(SindriServiceId.HttpRouteMiddlewareReaderContract),
+                container.getSingleton<HttpRouteParameterReaderContract>(
+                    SindriServiceId.HttpRouteParameterReaderContract,
+                ),
+                container.getSingleton<HttpRouteMiddlewareReaderContract>(
+                    SindriServiceId.HttpRouteMiddlewareReaderContract,
+                ),
             ),
         );
     }
@@ -156,15 +162,19 @@ export class SindriAstServiceProvider implements ServiceProviderContract {
             [SindriServiceId.ComponentProviderReaderContract]: SindriAstServiceProvider.publishComponentProviderReader,
             [SindriServiceId.ConfigReaderContract]: SindriAstServiceProvider.publishConfigReader,
             [SindriServiceId.CliRouteParameterReaderContract]: SindriAstServiceProvider.publishCliRouteParameterReader,
-            [SindriServiceId.HttpRouteMiddlewareReaderContract]: SindriAstServiceProvider.publishHttpRouteMiddlewareReader,
-            [SindriServiceId.HttpRouteParameterReaderContract]: SindriAstServiceProvider.publishHttpRouteParameterReader,
-            [SindriServiceId.HttpRouteAttributeReaderContract]: SindriAstServiceProvider.publishHttpRouteAttributeReader,
+            [SindriServiceId.HttpRouteMiddlewareReaderContract]:
+                SindriAstServiceProvider.publishHttpRouteMiddlewareReader,
+            [SindriServiceId.HttpRouteParameterReaderContract]:
+                SindriAstServiceProvider.publishHttpRouteParameterReader,
+            [SindriServiceId.HttpRouteAttributeReaderContract]:
+                SindriAstServiceProvider.publishHttpRouteAttributeReader,
             [SindriServiceId.ListenerAttributeReaderContract]: SindriAstServiceProvider.publishListenerAttributeReader,
             [SindriServiceId.ListenerProviderReaderContract]: SindriAstServiceProvider.publishListenerProviderReader,
             [SindriServiceId.RouteProviderReaderContract]: SindriAstServiceProvider.publishRouteProviderReader,
             [SindriServiceId.ServiceProviderReaderContract]: SindriAstServiceProvider.publishServiceProviderReader,
             [SindriServiceId.CliDataFileGeneratorContract]: SindriAstServiceProvider.publishCliDataFileGenerator,
-            [SindriServiceId.ContainerDataFileGeneratorContract]: SindriAstServiceProvider.publishContainerDataFileGenerator,
+            [SindriServiceId.ContainerDataFileGeneratorContract]:
+                SindriAstServiceProvider.publishContainerDataFileGenerator,
             [SindriServiceId.EventDataFileGeneratorContract]: SindriAstServiceProvider.publishEventDataFileGenerator,
             [SindriServiceId.HttpDataFileGeneratorContract]: SindriAstServiceProvider.publishHttpDataFileGenerator,
         };

@@ -37,14 +37,24 @@ export class SindriCommandServiceProvider implements ServiceProviderContract {
                 container.getSingleton<RouteContract>(CliRoutingServiceId.RouteContract),
                 container.getSingleton<OutputFactoryContract>(CliInteractionServiceId.OutputFactoryContract),
                 container.getSingleton<ConfigReaderContract>(SindriServiceId.ConfigReaderContract),
-                container.getSingleton<ComponentProviderReaderContract>(SindriServiceId.ComponentProviderReaderContract),
+                container.getSingleton<ComponentProviderReaderContract>(
+                    SindriServiceId.ComponentProviderReaderContract,
+                ),
                 container.getSingleton<RouteProviderReaderContract>(SindriServiceId.RouteProviderReaderContract),
                 container.getSingleton<ListenerProviderReaderContract>(SindriServiceId.ListenerProviderReaderContract),
                 container.getSingleton<ServiceProviderReaderContract>(SindriServiceId.ServiceProviderReaderContract),
-                container.getSingleton<CliRouteAttributeReaderContract>(SindriServiceId.CliRouteAttributeReaderContract),
-                container.getSingleton<HttpRouteAttributeReaderContract>(SindriServiceId.HttpRouteAttributeReaderContract),
-                container.getSingleton<ListenerAttributeReaderContract>(SindriServiceId.ListenerAttributeReaderContract),
-                container.getSingleton<ContainerDataFileGeneratorContract>(SindriServiceId.ContainerDataFileGeneratorContract),
+                container.getSingleton<CliRouteAttributeReaderContract>(
+                    SindriServiceId.CliRouteAttributeReaderContract,
+                ),
+                container.getSingleton<HttpRouteAttributeReaderContract>(
+                    SindriServiceId.HttpRouteAttributeReaderContract,
+                ),
+                container.getSingleton<ListenerAttributeReaderContract>(
+                    SindriServiceId.ListenerAttributeReaderContract,
+                ),
+                container.getSingleton<ContainerDataFileGeneratorContract>(
+                    SindriServiceId.ContainerDataFileGeneratorContract,
+                ),
                 container.getSingleton<EventDataFileGeneratorContract>(SindriServiceId.EventDataFileGeneratorContract),
                 container.getSingleton<CliDataFileGeneratorContract>(SindriServiceId.CliDataFileGeneratorContract),
                 container.getSingleton<HttpDataFileGeneratorContract>(SindriServiceId.HttpDataFileGeneratorContract),
@@ -54,7 +64,8 @@ export class SindriCommandServiceProvider implements ServiceProviderContract {
 
     publishers(): Record<string, (container: ContainerContract) => void> {
         return {
-            [SindriServiceId.GenerateDataFromConfigCommand]: SindriCommandServiceProvider.publishGenerateDataFromConfigCommand,
+            [SindriServiceId.GenerateDataFromConfigCommand]:
+                SindriCommandServiceProvider.publishGenerateDataFromConfigCommand,
         };
     }
 }

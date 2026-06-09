@@ -7,7 +7,7 @@
  * file that was distributed with this source code.
  */
 
-import type ts from 'typescript';
+import type { ts } from 'ts-morph';
 
 import { AstReader } from './Abstract/AstReader.js';
 import { RouteProviderResult } from './Data/Result/RouteProviderResult.js';
@@ -30,17 +30,13 @@ export class RouteProviderReader extends AstReader implements RouteProviderReade
         const methods = this.indexMethods(classDecl);
 
         return new RouteProviderResult(
-            this.extractClassListFromValues(
-                methods[RouteProviderReader.METHOD_CONTROLLER_CLASSES],
-                useMap,
-                filePath,
-            ),
+            this.extractClassListFromValues(methods[RouteProviderReader.METHOD_CONTROLLER_CLASSES], useMap, filePath),
             this.extractRoutes(methods[RouteProviderReader.METHOD_ROUTES], useMap, filePath),
         );
     }
 
     protected extractRoutes(
-        method: ReturnType<typeof this.indexMethods>[string],
+        _method: ReturnType<typeof this.indexMethods>[string] | undefined,
         _useMap: Record<string, string>,
         _filePath: string,
     ): ts.Expression[] {

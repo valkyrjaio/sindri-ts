@@ -17,7 +17,9 @@ import type { ContainerContract } from '@valkyrja/valkyrja/Container/Manager/Con
 
 export class SindriCliRouteProvider implements CliRouteProviderContract {
     static cliGenerateDataHandler(this: void, container: ContainerContract, _route: RouteContract): OutputContract {
-        return container.getSingleton<GenerateDataFromConfigCommand>(SindriServiceId.GenerateDataFromConfigCommand).run();
+        return container
+            .getSingleton<GenerateDataFromConfigCommand>(SindriServiceId.GenerateDataFromConfigCommand)
+            .run();
     }
 
     getControllerClasses(): (new (...args: unknown[]) => unknown)[] {

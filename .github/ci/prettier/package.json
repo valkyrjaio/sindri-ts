@@ -2,8 +2,8 @@
   "private"        : true,
   "type"           : "module",
   "scripts"        : {
-    "check" : "cd ../../.. && prettier --config .github/ci/prettier/prettier.config.js --check \"src/**/*.ts\" \"tests/**/*.ts\" \"*.{json,md}\"",
-    "fix"   : "cd ../../.. && prettier --config .github/ci/prettier/prettier.config.js --write \"src/**/*.ts\" \"tests/**/*.ts\" \"*.{json,md}\""
+    "check" : "cd ../../.. && prettier --config .github/ci/prettier/prettier.config.js --check \"src/**/*.ts\" \"*.{json,md}\"",
+    "fix"   : "cd ../../.. && prettier --config .github/ci/prettier/prettier.config.js --write \"src/**/*.ts\" \"*.{json,md}\""
   },
   "devDependencies": {
     "prettier": "^3.0.0"

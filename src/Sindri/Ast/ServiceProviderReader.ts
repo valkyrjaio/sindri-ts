@@ -7,7 +7,7 @@
  * file that was distributed with this source code.
  */
 
-import ts from 'typescript';
+import { ts } from 'ts-morph';
 
 import { AstReader } from './Abstract/AstReader.js';
 import { ServiceProviderResult } from './Data/Result/ServiceProviderResult.js';

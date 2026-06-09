@@ -7,7 +7,7 @@
  * file that was distributed with this source code.
  */
 
-import ts from 'typescript';
+import { ts } from 'ts-morph';
 
 import { AstReader } from './Abstract/AstReader.js';
 import { HandlerData } from './Data/HandlerData.js';
@@ -74,10 +74,16 @@ export class ListenerAttributeReader extends AstReader implements ListenerAttrib
             return null;
         }
 
-        const handlerRaw = this.extractExprValue(this.getDecoratorArg(decorator, 2), useMap, currentFilePath, currentClass);
-        const handler = handlerRaw instanceof HandlerData
-            ? handlerRaw
-            : this.resolveListenerHandler(useMap, currentFilePath, currentClass, classDecl, method);
+        const handlerRaw = this.extractExprValue(
+            this.getDecoratorArg(decorator, 2),
+            useMap,
+            currentFilePath,
+            currentClass,
+        );
+        const handler =
+            handlerRaw instanceof HandlerData
+                ? handlerRaw
+                : this.resolveListenerHandler(useMap, currentFilePath, currentClass, classDecl, method);
 
         return new ListenerData(eventId, name, handler);
     }
@@ -92,7 +98,12 @@ export class ListenerAttributeReader extends AstReader implements ListenerAttrib
         const node = method ?? classDecl;
 
         for (const decorator of this.findDecoratorsOnNode(node, 'ListenerHandler', useMap, currentFilePath)) {
-            const handlerRaw = this.extractExprValue(this.getDecoratorArg(decorator, 0), useMap, currentFilePath, currentClass);
+            const handlerRaw = this.extractExprValue(
+                this.getDecoratorArg(decorator, 0),
+                useMap,
+                currentFilePath,
+                currentClass,
+            );
 
             if (handlerRaw instanceof HandlerData) {
                 return handlerRaw;
@@ -107,10 +118,7 @@ export class ListenerAttributeReader extends AstReader implements ListenerAttrib
     }
 
     protected buildListenerExpr(data: ListenerData): ts.Expression {
-        const args: ts.Expression[] = [
-            this.buildClassConstExpr(data.eventId),
-            this.buildStringExpr(data.name),
-        ];
+        const args: ts.Expression[] = [this.buildClassConstExpr(data.eventId), this.buildStringExpr(data.name)];
 
         if (data.handler !== null) {
             args.push(this.buildHandlerExpr(data.handler));

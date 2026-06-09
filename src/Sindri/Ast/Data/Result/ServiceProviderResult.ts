@@ -14,9 +14,9 @@ export class ServiceProviderResult {
     ) {}
 
     merge(other: ServiceProviderResult): ServiceProviderResult {
-        return new ServiceProviderResult(
-            [...new Set([...this.serviceClasses, ...other.serviceClasses])],
-            { ...this.publishers, ...other.publishers },
-        );
+        return new ServiceProviderResult([...new Set([...this.serviceClasses, ...other.serviceClasses])], {
+            ...this.publishers,
+            ...other.publishers,
+        });
     }
 }

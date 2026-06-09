@@ -7,7 +7,7 @@
  * file that was distributed with this source code.
  */
 
-import ts from 'typescript';
+import { ts } from 'ts-morph';
 
 import { RouteAttributeReader } from './Abstract/RouteAttributeReader.js';
 import { CliRouteData } from './Data/CliRouteData.js';
@@ -27,9 +27,7 @@ import type { CliRouteParameterReaderContract } from './Contract/CliRouteParamet
  * entirely on AST without executing any TypeScript code.
  */
 export class CliRouteAttributeReader extends RouteAttributeReader implements CliRouteAttributeReaderContract {
-    constructor(
-        protected readonly parameterReader: CliRouteParameterReaderContract = new CliRouteParameterReader(),
-    ) {
+    constructor(protected readonly parameterReader: CliRouteParameterReaderContract = new CliRouteParameterReader()) {
         super();
     }
 
@@ -109,7 +107,12 @@ export class CliRouteAttributeReader extends RouteAttributeReader implements Cli
         currentClass: string,
     ): string {
         for (const decorator of this.findDecoratorsOnNode(method, 'Name', useMap, currentFilePath)) {
-            const override = this.extractExprValue(this.getDecoratorArg(decorator, 0), useMap, currentFilePath, currentClass);
+            const override = this.extractExprValue(
+                this.getDecoratorArg(decorator, 0),
+                useMap,
+                currentFilePath,
+                currentClass,
+            );
 
             if (typeof override === 'string' && override !== '') {
                 name = override;
@@ -130,14 +133,27 @@ export class CliRouteAttributeReader extends RouteAttributeReader implements Cli
         exitedMiddleware: string[],
     ): [string[], string[], string[], string[]] {
         for (const decorator of this.findDecoratorsOnNode(method, 'Middleware', useMap, currentFilePath)) {
-            const mwName = this.extractExprValue(this.getDecoratorArg(decorator, 0), useMap, currentFilePath, currentClass);
+            const mwName = this.extractExprValue(
+                this.getDecoratorArg(decorator, 0),
+                useMap,
+                currentFilePath,
+                currentClass,
+            );
 
             if (typeof mwName !== 'string' || mwName === '') {
                 continue;
             }
 
             [routeMatchedMiddleware, routeDispatchedMiddleware, throwableCaughtMiddleware, exitedMiddleware] =
-                this.classifyMiddleware(mwName, useMap, currentFilePath, routeMatchedMiddleware, routeDispatchedMiddleware, throwableCaughtMiddleware, exitedMiddleware);
+                this.classifyMiddleware(
+                    mwName,
+                    useMap,
+                    currentFilePath,
+                    routeMatchedMiddleware,
+                    routeDispatchedMiddleware,
+                    throwableCaughtMiddleware,
+                    exitedMiddleware,
+                );
         }
 
         return [routeMatchedMiddleware, routeDispatchedMiddleware, throwableCaughtMiddleware, exitedMiddleware];
@@ -172,10 +188,7 @@ export class CliRouteAttributeReader extends RouteAttributeReader implements Cli
     }
 
     protected buildRouteExpr(data: CliRouteData): ts.Expression {
-        const args: ts.Expression[] = [
-            this.buildEnumCaseExpr(data.name),
-            this.buildStringExpr(data.description),
-        ];
+        const args: ts.Expression[] = [this.buildEnumCaseExpr(data.name), this.buildStringExpr(data.description)];
 
         if (data.handler !== null) {
             args.push(this.buildHandlerExpr(data.handler));

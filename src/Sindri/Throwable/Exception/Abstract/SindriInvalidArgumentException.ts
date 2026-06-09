@@ -11,4 +11,6 @@ import { ValkyrjaInvalidArgumentException } from '@valkyrja/valkyrja/Throwable/E
 
 import type { SindriThrowable } from '../../Contract/SindriThrowable.js';
 
-export abstract class SindriInvalidArgumentException extends ValkyrjaInvalidArgumentException implements SindriThrowable {}
+export abstract class SindriInvalidArgumentException
+    extends ValkyrjaInvalidArgumentException
+    implements SindriThrowable {}

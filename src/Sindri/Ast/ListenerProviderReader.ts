@@ -7,7 +7,7 @@
  * file that was distributed with this source code.
  */
 
-import type ts from 'typescript';
+import type { ts } from 'ts-morph';
 
 import { AstReader } from './Abstract/AstReader.js';
 import { ListenerProviderResult } from './Data/Result/ListenerProviderResult.js';
@@ -30,17 +30,13 @@ export class ListenerProviderReader extends AstReader implements ListenerProvide
         const methods = this.indexMethods(classDecl);
 
         return new ListenerProviderResult(
-            this.extractClassListFromValues(
-                methods[ListenerProviderReader.METHOD_LISTENER_CLASSES],
-                useMap,
-                filePath,
-            ),
+            this.extractClassListFromValues(methods[ListenerProviderReader.METHOD_LISTENER_CLASSES], useMap, filePath),
             this.extractListeners(methods[ListenerProviderReader.METHOD_LISTENERS], useMap, filePath),
         );
     }
 
     protected extractListeners(
-        _method: ReturnType<typeof this.indexMethods>[string],
+        _method: ReturnType<typeof this.indexMethods>[string] | undefined,
         _useMap: Record<string, string>,
         _filePath: string,
     ): ts.Expression[] {

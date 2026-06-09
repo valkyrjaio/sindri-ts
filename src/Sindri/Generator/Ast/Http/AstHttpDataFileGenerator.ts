@@ -7,7 +7,7 @@
  * file that was distributed with this source code.
  */
 
-import ts from 'typescript';
+import { ts } from 'ts-morph';
 
 import { DynamicRoute } from '@valkyrja/valkyrja/Http/Routing/Data/DynamicRoute.js';
 import { Parameter } from '@valkyrja/valkyrja/Http/Routing/Data/Parameter.js';
@@ -29,7 +29,13 @@ export class AstHttpDataFileGenerator extends AstFileGenerator implements HttpDa
 
     private readonly printer = ts.createPrinter({ newLine: ts.NewLineKind.LineFeed });
 
-    private readonly dummySourceFile = ts.createSourceFile('_dummy.ts', '', ts.ScriptTarget.ESNext, false, ts.ScriptKind.TS);
+    private readonly dummySourceFile = ts.createSourceFile(
+        '_dummy.ts',
+        '',
+        ts.ScriptTarget.ESNext,
+        false,
+        ts.ScriptKind.TS,
+    );
 
     public constructor(processor: ProcessorContract = new Processor()) {
         super();
@@ -81,7 +87,10 @@ export class AstHttpDataFileGenerator extends AstFileGenerator implements HttpDa
         return this.writeFile(directory, className, data);
     }
 
-    public generateClassContents(routes: Record<string, ts.Expression>, routeData: Record<string, HttpRouteData>): string {
+    public generateClassContents(
+        routes: Record<string, ts.Expression>,
+        routeData: Record<string, HttpRouteData>,
+    ): string {
         const routesContent = this.getRoutesAsContent(routes, routeData);
         const paths = this.printNestedObject(this.buildPaths(routeData));
         const dynamicPaths = this.printNestedObject(this.buildDynamicPaths(routeData));
@@ -261,7 +270,10 @@ export class AstHttpDataFileGenerator extends AstFileGenerator implements HttpDa
         return methods;
     }
 
-    protected getRoutesAsContent(routes: Record<string, ts.Expression>, routeData: Record<string, HttpRouteData>): string {
+    protected getRoutesAsContent(
+        routes: Record<string, ts.Expression>,
+        routeData: Record<string, HttpRouteData>,
+    ): string {
         const entries = Object.entries(routes);
 
         if (entries.length === 0) {
@@ -289,10 +301,6 @@ export class AstHttpDataFileGenerator extends AstFileGenerator implements HttpDa
             lines.push(`            ${formattedKey}: (): RouteContract => ${printedRoute},`);
         }
 
-        return [
-            '{',
-            ...lines,
-            '        }',
-        ].join('\n        ');
+        return ['{', ...lines, '        }'].join('\n        ');
     }
 }

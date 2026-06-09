@@ -9,7 +9,7 @@
 
 import * as fs from 'fs';
 
-import ts from 'typescript';
+import { ts } from 'ts-morph';
 
 import { GenerateStatus } from '../Enum/GenerateStatus.js';
 

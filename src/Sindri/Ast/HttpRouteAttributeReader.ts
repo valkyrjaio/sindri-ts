@@ -7,7 +7,7 @@
  * file that was distributed with this source code.
  */
 
-import ts from 'typescript';
+import { ts } from 'ts-morph';
 
 import { RouteAttributeReader } from './Abstract/RouteAttributeReader.js';
 import { HttpRouteData } from './Data/HttpRouteData.js';
@@ -15,7 +15,7 @@ import { HttpRouteAttributeResult } from './Data/Result/HttpRouteAttributeResult
 import { HttpRouteMiddlewareReader } from './HttpRouteMiddlewareReader.js';
 import { HttpRouteParameterReader } from './HttpRouteParameterReader.js';
 
-import type { ClassDeclaration, Decorator, MethodDeclaration } from 'ts-morph';
+import type { ClassDeclaration, Decorator, MethodDeclaration, Node } from 'ts-morph';
 
 import type { HttpRouteAttributeReaderContract } from './Contract/HttpRouteAttributeReaderContract.js';
 import type { HttpRouteMiddlewareReaderContract } from './Contract/HttpRouteMiddlewareReaderContract.js';
@@ -62,7 +62,12 @@ export class HttpRouteAttributeReader extends RouteAttributeReader implements Ht
         currentClass: string,
     ): string {
         for (const decorator of this.findDecoratorsOnNode(classDecl, 'Path', useMap, currentFilePath)) {
-            const value = this.extractExprValue(this.getDecoratorArg(decorator, 0), useMap, currentFilePath, currentClass);
+            const value = this.extractExprValue(
+                this.getDecoratorArg(decorator, 0),
+                useMap,
+                currentFilePath,
+                currentClass,
+            );
 
             if (typeof value === 'string' && value !== '') {
                 return value;
@@ -79,7 +84,12 @@ export class HttpRouteAttributeReader extends RouteAttributeReader implements Ht
         currentClass: string,
     ): string {
         for (const decorator of this.findDecoratorsOnNode(classDecl, 'Name', useMap, currentFilePath)) {
-            const value = this.extractExprValue(this.getDecoratorArg(decorator, 0), useMap, currentFilePath, currentClass);
+            const value = this.extractExprValue(
+                this.getDecoratorArg(decorator, 0),
+                useMap,
+                currentFilePath,
+                currentClass,
+            );
 
             if (typeof value === 'string' && value !== '') {
                 return value;
@@ -102,7 +112,16 @@ export class HttpRouteAttributeReader extends RouteAttributeReader implements Ht
 
         for (const method of classDecl.getMethods()) {
             for (const decorator of this.findDecoratorsOnNode(method, 'Route', useMap, currentFilePath)) {
-                const data = this.buildRouteData(decorator, method, useMap, currentFilePath, currentClass, classPathPrefix, classNamePrefix, false);
+                const data = this.buildRouteData(
+                    decorator,
+                    method,
+                    useMap,
+                    currentFilePath,
+                    currentClass,
+                    classPathPrefix,
+                    classNamePrefix,
+                    false,
+                );
 
                 if (data !== null) {
                     routes[data.name] = this.buildRouteExpr(data);
@@ -111,7 +130,16 @@ export class HttpRouteAttributeReader extends RouteAttributeReader implements Ht
             }
 
             for (const decorator of this.findDecoratorsOnNode(method, 'DynamicRoute', useMap, currentFilePath)) {
-                const data = this.buildRouteData(decorator, method, useMap, currentFilePath, currentClass, classPathPrefix, classNamePrefix, true);
+                const data = this.buildRouteData(
+                    decorator,
+                    method,
+                    useMap,
+                    currentFilePath,
+                    currentClass,
+                    classPathPrefix,
+                    classNamePrefix,
+                    true,
+                );
 
                 if (data !== null) {
                     routes[data.name] = this.buildRouteExpr(data);
@@ -145,7 +173,7 @@ export class HttpRouteAttributeReader extends RouteAttributeReader implements Ht
 
         const resolvedIsDynamic = isDynamic || updatedPath.includes('{');
 
-        const decoratorArgs = decorator.getArguments().map((a) => a.compilerNode);
+        const decoratorArgs = decorator.getArguments().map((a: Node) => a.compilerNode as ts.Expression);
 
         const requestMethods = this.middlewareReader.updateRequestMethods(
             this.middlewareReader.extractInlineRequestMethods(decoratorArgs, useMap, currentFilePath, currentClass),
@@ -155,18 +183,23 @@ export class HttpRouteAttributeReader extends RouteAttributeReader implements Ht
             currentClass,
         );
 
-        const [routeMatchedMiddleware, routeDispatchedMiddleware, throwableCaughtMiddleware, sendingResponseMiddleware, terminatedMiddleware] =
-            this.middlewareReader.updateMiddleware(
-                method,
-                useMap,
-                currentFilePath,
-                currentClass,
-                this.extractClassListArgFromDecorator(decorator, 5, useMap, currentFilePath, currentClass),
-                this.extractClassListArgFromDecorator(decorator, 6, useMap, currentFilePath, currentClass),
-                this.extractClassListArgFromDecorator(decorator, 7, useMap, currentFilePath, currentClass),
-                this.extractClassListArgFromDecorator(decorator, 8, useMap, currentFilePath, currentClass),
-                this.extractClassListArgFromDecorator(decorator, 9, useMap, currentFilePath, currentClass),
-            );
+        const [
+            routeMatchedMiddleware,
+            routeDispatchedMiddleware,
+            throwableCaughtMiddleware,
+            sendingResponseMiddleware,
+            terminatedMiddleware,
+        ] = this.middlewareReader.updateMiddleware(
+            method,
+            useMap,
+            currentFilePath,
+            currentClass,
+            this.extractClassListArgFromDecorator(decorator, 5, useMap, currentFilePath, currentClass),
+            this.extractClassListArgFromDecorator(decorator, 6, useMap, currentFilePath, currentClass),
+            this.extractClassListArgFromDecorator(decorator, 7, useMap, currentFilePath, currentClass),
+            this.extractClassListArgFromDecorator(decorator, 8, useMap, currentFilePath, currentClass),
+            this.extractClassListArgFromDecorator(decorator, 9, useMap, currentFilePath, currentClass),
+        );
 
         return new HttpRouteData(
             updatedPath,
@@ -181,7 +214,9 @@ export class HttpRouteAttributeReader extends RouteAttributeReader implements Ht
             this.middlewareReader.updateRequestStruct(method, useMap, currentFilePath, currentClass),
             this.middlewareReader.updateResponseStruct(method, useMap, currentFilePath, currentClass),
             resolvedIsDynamic,
-            resolvedIsDynamic ? this.updateParameters(decoratorArgs, method, useMap, currentFilePath, currentClass) : [],
+            resolvedIsDynamic
+                ? this.updateParameters(decoratorArgs, method, useMap, currentFilePath, currentClass)
+                : [],
         );
     }
 
@@ -198,7 +233,12 @@ export class HttpRouteAttributeReader extends RouteAttributeReader implements Ht
         }
 
         for (const decorator of this.findDecoratorsOnNode(method, 'Path', useMap, currentFilePath)) {
-            const suffix = this.extractExprValue(this.getDecoratorArg(decorator, 0), useMap, currentFilePath, currentClass);
+            const suffix = this.extractExprValue(
+                this.getDecoratorArg(decorator, 0),
+                useMap,
+                currentFilePath,
+                currentClass,
+            );
 
             if (typeof suffix === 'string' && suffix !== '') {
                 path = path.replace(/\/$/, '') + '/' + suffix.replace(/^\//, '');
@@ -221,7 +261,12 @@ export class HttpRouteAttributeReader extends RouteAttributeReader implements Ht
         }
 
         for (const decorator of this.findDecoratorsOnNode(method, 'Name', useMap, currentFilePath)) {
-            const suffix = this.extractExprValue(this.getDecoratorArg(decorator, 0), useMap, currentFilePath, currentClass);
+            const suffix = this.extractExprValue(
+                this.getDecoratorArg(decorator, 0),
+                useMap,
+                currentFilePath,
+                currentClass,
+            );
 
             if (typeof suffix === 'string' && suffix !== '') {
                 name = name + '.' + suffix;
@@ -232,10 +277,7 @@ export class HttpRouteAttributeReader extends RouteAttributeReader implements Ht
     }
 
     protected buildRouteExpr(data: HttpRouteData): ts.Expression {
-        const args: ts.Expression[] = [
-            this.buildEnumCaseExpr(data.path),
-            this.buildEnumCaseExpr(data.name),
-        ];
+        const args: ts.Expression[] = [this.buildEnumCaseExpr(data.path), this.buildEnumCaseExpr(data.name)];
 
         if (data.isDynamic && data.parameters.length > 0) {
             args.push(this.parameterReader.buildParameterListExpr([...data.parameters]));

@@ -7,7 +7,7 @@
  * file that was distributed with this source code.
  */
 
-import ts from 'typescript';
+import { ts } from 'ts-morph';
 
 import { AstReader } from './Abstract/AstReader.js';
 
@@ -84,11 +84,31 @@ export class HttpRouteMiddlewareReader extends AstReader implements HttpRouteMid
                 continue;
             }
 
-            [routeMatchedMiddleware, routeDispatchedMiddleware, throwableCaughtMiddleware, sendingResponseMiddleware, terminatedMiddleware] =
-                this.classifyMiddleware(mwName, useMap, namespace, routeMatchedMiddleware, routeDispatchedMiddleware, throwableCaughtMiddleware, sendingResponseMiddleware, terminatedMiddleware);
+            [
+                routeMatchedMiddleware,
+                routeDispatchedMiddleware,
+                throwableCaughtMiddleware,
+                sendingResponseMiddleware,
+                terminatedMiddleware,
+            ] = this.classifyMiddleware(
+                mwName,
+                useMap,
+                namespace,
+                routeMatchedMiddleware,
+                routeDispatchedMiddleware,
+                throwableCaughtMiddleware,
+                sendingResponseMiddleware,
+                terminatedMiddleware,
+            );
         }
 
-        return [routeMatchedMiddleware, routeDispatchedMiddleware, throwableCaughtMiddleware, sendingResponseMiddleware, terminatedMiddleware];
+        return [
+            routeMatchedMiddleware,
+            routeDispatchedMiddleware,
+            throwableCaughtMiddleware,
+            sendingResponseMiddleware,
+            terminatedMiddleware,
+        ];
     }
 
     updateRequestStruct(
@@ -183,6 +203,12 @@ export class HttpRouteMiddlewareReader extends AstReader implements HttpRouteMid
             terminatedMiddleware = [...terminatedMiddleware, mwName];
         }
 
-        return [routeMatchedMiddleware, routeDispatchedMiddleware, throwableCaughtMiddleware, sendingResponseMiddleware, terminatedMiddleware];
+        return [
+            routeMatchedMiddleware,
+            routeDispatchedMiddleware,
+            throwableCaughtMiddleware,
+            sendingResponseMiddleware,
+            terminatedMiddleware,
+        ];
     }
 }

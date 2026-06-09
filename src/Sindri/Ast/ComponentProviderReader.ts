@@ -31,31 +31,11 @@ export class ComponentProviderReader extends AstReader implements ComponentProvi
         const methods = this.indexMethods(classDecl);
 
         return new ComponentProviderResult(
-            this.extractClassListFromValues(
-                methods[ComponentProviderReader.METHOD_COMPONENT],
-                useMap,
-                filePath,
-            ),
-            this.extractClassListFromValues(
-                methods[ComponentProviderReader.METHOD_CONTAINER],
-                useMap,
-                filePath,
-            ),
-            this.extractClassListFromValues(
-                methods[ComponentProviderReader.METHOD_EVENT],
-                useMap,
-                filePath,
-            ),
-            this.extractClassListFromValues(
-                methods[ComponentProviderReader.METHOD_CLI],
-                useMap,
-                filePath,
-            ),
-            this.extractClassListFromValues(
-                methods[ComponentProviderReader.METHOD_HTTP],
-                useMap,
-                filePath,
-            ),
+            this.extractClassListFromValues(methods[ComponentProviderReader.METHOD_COMPONENT], useMap, filePath),
+            this.extractClassListFromValues(methods[ComponentProviderReader.METHOD_CONTAINER], useMap, filePath),
+            this.extractClassListFromValues(methods[ComponentProviderReader.METHOD_EVENT], useMap, filePath),
+            this.extractClassListFromValues(methods[ComponentProviderReader.METHOD_CLI], useMap, filePath),
+            this.extractClassListFromValues(methods[ComponentProviderReader.METHOD_HTTP], useMap, filePath),
         );
     }
 }

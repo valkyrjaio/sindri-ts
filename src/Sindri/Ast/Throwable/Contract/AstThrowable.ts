@@ -9,4 +9,4 @@
 
 import type { SindriThrowable } from '../../../Throwable/Contract/SindriThrowable.js';
 
-export interface AstThrowable extends SindriThrowable {}
+export type AstThrowable = SindriThrowable;

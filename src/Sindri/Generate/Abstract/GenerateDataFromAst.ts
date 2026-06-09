@@ -49,7 +49,7 @@ import { ComponentProviderResult } from '../../Ast/Data/Result/ComponentProvider
 import type { ConfigResult } from '../../Ast/Data/Result/ConfigResult.js';
 import type { OutputContract } from '@valkyrja/valkyrja/Cli/Interaction/Output/Contract/OutputContract.js';
 import type { OutputFactoryContract } from '@valkyrja/valkyrja/Cli/Interaction/Output/Factory/Contract/OutputFactoryContract.js';
-import type { Expression } from 'typescript';
+import type { ts } from 'ts-morph';
 import type { HttpRouteData } from '../../Ast/Data/HttpRouteData.js';
 import type { RouteContract } from '@valkyrja/valkyrja/Cli/Routing/Data/Contract/RouteContract.js';
 
@@ -125,7 +125,11 @@ export abstract class GenerateDataFromAst {
      * the current provider's own lists are appended. The caller controls load
      * order entirely through the config — this method imposes no additional rules.
      */
-    protected walkProvider(providerClass: string, config: ConfigResult, visited: Record<string, true>): ComponentProviderResult {
+    protected walkProvider(
+        providerClass: string,
+        config: ConfigResult,
+        visited: Record<string, true>,
+    ): ComponentProviderResult {
         if (visited[providerClass] === true) {
             return new ComponentProviderResult();
         }
@@ -231,9 +235,7 @@ export abstract class GenerateDataFromAst {
             publishers,
         );
 
-        return this.addMessagesForGenerateStatus(output, status)
-            .withAddedMessages(new NewLine())
-            .writeMessages();
+        return this.addMessagesForGenerateStatus(output, status).withAddedMessages(new NewLine()).writeMessages();
     }
 
     protected generateEventData(
@@ -245,7 +247,7 @@ export abstract class GenerateDataFromAst {
             .withAddedMessages(new Message('Generating Event Data..........................'))
             .writeMessages();
 
-        const allListeners: Record<string, Expression> = {};
+        const allListeners: Record<string, ts.Expression> = {};
 
         for (const providerClass of listenerProviders) {
             const filePath = this.fqnToFilePath(providerClass, config.namespace, config.dir);
@@ -276,9 +278,7 @@ export abstract class GenerateDataFromAst {
             allListeners,
         );
 
-        return this.addMessagesForGenerateStatus(output, status)
-            .withAddedMessages(new NewLine())
-            .writeMessages();
+        return this.addMessagesForGenerateStatus(output, status).withAddedMessages(new NewLine()).writeMessages();
     }
 
     protected generateCliData(
@@ -290,7 +290,7 @@ export abstract class GenerateDataFromAst {
             .withAddedMessages(new Message('Generating Cli Routes Data.....................'))
             .writeMessages();
 
-        const allRoutes: Record<string, Expression> = {};
+        const allRoutes: Record<string, ts.Expression> = {};
 
         for (const providerClass of cliRouteProviders) {
             const filePath = this.fqnToFilePath(providerClass, config.namespace, config.dir);
@@ -321,9 +321,7 @@ export abstract class GenerateDataFromAst {
             allRoutes,
         );
 
-        return this.addMessagesForGenerateStatus(output, status)
-            .withAddedMessages(new NewLine())
-            .writeMessages();
+        return this.addMessagesForGenerateStatus(output, status).withAddedMessages(new NewLine()).writeMessages();
     }
 
     protected generateHttpData(
@@ -335,7 +333,7 @@ export abstract class GenerateDataFromAst {
             .withAddedMessages(new Message('Generating Http Routes Data....................'))
             .writeMessages();
 
-        const allRoutes: Record<string, Expression> = {};
+        const allRoutes: Record<string, ts.Expression> = {};
         const allRouteData: Record<string, HttpRouteData> = {};
 
         for (const providerClass of httpRouteProviders) {
@@ -369,9 +367,7 @@ export abstract class GenerateDataFromAst {
             allRouteData,
         );
 
-        return this.addMessagesForGenerateStatus(output, status)
-            .withAddedMessages(new NewLine())
-            .writeMessages();
+        return this.addMessagesForGenerateStatus(output, status).withAddedMessages(new NewLine()).writeMessages();
     }
 
     protected addMessagesForGenerateStatus(output: OutputContract, status: GenerateStatus): OutputContract {

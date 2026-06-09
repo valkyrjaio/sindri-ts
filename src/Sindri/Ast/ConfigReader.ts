@@ -9,7 +9,7 @@
 
 import * as path from 'path';
 
-import ts from 'typescript';
+import { ts } from 'ts-morph';
 
 import { AstReader } from './Abstract/AstReader.js';
 import { ConfigResult } from './Data/Result/ConfigResult.js';
@@ -48,9 +48,7 @@ export class ConfigReader extends AstReader implements ConfigReaderContract {
     /**
      * Locate the constructor and extract its super() call arguments.
      */
-    protected findSuperConstructorArgs(
-        classDecl: ClassDeclaration,
-    ): ts.NodeArray<ts.Expression> | undefined {
+    protected findSuperConstructorArgs(classDecl: ClassDeclaration): ts.NodeArray<ts.Expression> | undefined {
         const constructor = classDecl.getConstructors()[0];
 
         if (constructor === undefined) {
@@ -140,12 +138,7 @@ export class ConfigReader extends AstReader implements ConfigReaderContract {
             const obj = arg.expression.expression;
             const prop = arg.expression.name;
 
-            if (
-                ts.isIdentifier(obj) &&
-                obj.text === 'process' &&
-                ts.isIdentifier(prop) &&
-                prop.text === 'cwd'
-            ) {
+            if (ts.isIdentifier(obj) && obj.text === 'process' && ts.isIdentifier(prop) && prop.text === 'cwd') {
                 return fileDir;
             }
         }
@@ -210,7 +203,7 @@ export class ConfigReader extends AstReader implements ConfigReaderContract {
         for (let i = 10; i < args.length; i++) {
             const arg = args[i];
 
-            if (ts.isArrayLiteralExpression(arg)) {
+            if (arg !== undefined && ts.isArrayLiteralExpression(arg)) {
                 return this.extractClassListFromArrayExpr(arg, useMap, filePath);
             }
         }

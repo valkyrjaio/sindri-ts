@@ -13,12 +13,12 @@
 
 ## CI Pipeline
 
-| Check                | Tool       |
-|----------------------|------------|
-| Type checking        | TypeScript |
-| Linting              | ESLint     |
-| Formatting           | Prettier   |
-| Testing              | Vitest     |
+| Check         | Tool       |
+| ------------- | ---------- |
+| Type checking | TypeScript |
+| Linting       | ESLint     |
+| Formatting    | Prettier   |
+| Testing       | Vitest     |
 
 ## Versioning and Release Process
 
