@@ -1,5 +1,5 @@
 {
-    "name": "@valkyrja/sindri",
+    "name": "@valkyrjaio/sindri",
     "version": "26.3.0",
     "description": "The Valkyrja Sindri build tool.",
     "homepage": "https://www.valkyrja.io/sindri",
@@ -31,7 +31,7 @@
         "node": ">=22"
     },
     "dependencies": {
-        "@valkyrja/valkyrja": "^26.0.0",
+        "@valkyrjaio/valkyrja": "^26.0.0",
         "ts-morph": "^28.0.0"
     },
     "scripts": {

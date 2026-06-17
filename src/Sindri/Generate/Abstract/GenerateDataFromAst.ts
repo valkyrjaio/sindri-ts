@@ -10,13 +10,13 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-import { ErrorFormatter } from '@valkyrja/valkyrja/Cli/Interaction/Formatter/ErrorFormatter.js';
-import { HighlightedTextFormatter } from '@valkyrja/valkyrja/Cli/Interaction/Formatter/HighlightedTextFormatter.js';
-import { SuccessFormatter } from '@valkyrja/valkyrja/Cli/Interaction/Formatter/SuccessFormatter.js';
-import { WarningFormatter } from '@valkyrja/valkyrja/Cli/Interaction/Formatter/WarningFormatter.js';
-import { Header } from '@valkyrja/valkyrja/Cli/Interaction/Message/Header.js';
-import { Message } from '@valkyrja/valkyrja/Cli/Interaction/Message/Message.js';
-import { NewLine } from '@valkyrja/valkyrja/Cli/Interaction/Message/NewLine.js';
+import { ErrorFormatter } from '@valkyrjaio/valkyrja/Cli/Interaction/Formatter/ErrorFormatter.js';
+import { HighlightedTextFormatter } from '@valkyrjaio/valkyrja/Cli/Interaction/Formatter/HighlightedTextFormatter.js';
+import { SuccessFormatter } from '@valkyrjaio/valkyrja/Cli/Interaction/Formatter/SuccessFormatter.js';
+import { WarningFormatter } from '@valkyrjaio/valkyrja/Cli/Interaction/Formatter/WarningFormatter.js';
+import { Header } from '@valkyrjaio/valkyrja/Cli/Interaction/Message/Header.js';
+import { Message } from '@valkyrjaio/valkyrja/Cli/Interaction/Message/Message.js';
+import { NewLine } from '@valkyrjaio/valkyrja/Cli/Interaction/Message/NewLine.js';
 
 import { CliRouteAttributeReader } from '../../Ast/CliRouteAttributeReader.js';
 import { ComponentProviderReader } from '../../Ast/ComponentProviderReader.js';
@@ -47,11 +47,11 @@ import type { RouteProviderReaderContract } from '../../Ast/Contract/RouteProvid
 import type { ServiceProviderReaderContract } from '../../Ast/Contract/ServiceProviderReaderContract.js';
 import { ComponentProviderResult } from '../../Ast/Data/Result/ComponentProviderResult.js';
 import type { ConfigResult } from '../../Ast/Data/Result/ConfigResult.js';
-import type { OutputContract } from '@valkyrja/valkyrja/Cli/Interaction/Output/Contract/OutputContract.js';
-import type { OutputFactoryContract } from '@valkyrja/valkyrja/Cli/Interaction/Output/Factory/Contract/OutputFactoryContract.js';
+import type { OutputContract } from '@valkyrjaio/valkyrja/Cli/Interaction/Output/Contract/OutputContract.js';
+import type { OutputFactoryContract } from '@valkyrjaio/valkyrja/Cli/Interaction/Output/Factory/Contract/OutputFactoryContract.js';
 import type { ts } from 'ts-morph';
 import type { HttpRouteData } from '../../Ast/Data/HttpRouteData.js';
-import type { RouteContract } from '@valkyrja/valkyrja/Cli/Routing/Data/Contract/RouteContract.js';
+import type { RouteContract } from '@valkyrjaio/valkyrja/Cli/Routing/Data/Contract/RouteContract.js';
 
 export abstract class GenerateDataFromAst {
     public constructor(
