@@ -17,6 +17,7 @@ run-name: "Release ${{ inputs.bump }} bump on ${{ github.ref_name }}"
 
 permissions:
   contents: write
+  id-token: write
 
 jobs:
   release:
@@ -34,3 +35,8 @@ jobs:
         ]
       info-file-path: src/Sindri/Constant/SindriInfo.ts
       info-file-name: SindriInfo
+
+  publish:
+    needs: release
+    uses: valkyrjaio/.github/.github/workflows/_ts-release-npm-publish.yml@master
+    secrets: inherit
