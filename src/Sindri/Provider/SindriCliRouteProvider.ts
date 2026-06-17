@@ -10,10 +10,10 @@
 import { GenerateDataFromConfigCommand } from '../Cli/Command/GenerateDataFromConfigCommand.js';
 import { SindriServiceId } from '../Constant/SindriServiceId.js';
 
-import type { OutputContract } from '@valkyrja/valkyrja/Cli/Interaction/Output/Contract/OutputContract.js';
-import type { RouteContract } from '@valkyrja/valkyrja/Cli/Routing/Data/Contract/RouteContract.js';
-import type { CliRouteProviderContract } from '@valkyrja/valkyrja/Cli/Routing/Provider/Contract/CliRouteProviderContract.js';
-import type { ContainerContract } from '@valkyrja/valkyrja/Container/Manager/Contract/ContainerContract.js';
+import type { OutputContract } from '@valkyrjaio/valkyrja/Cli/Interaction/Output/Contract/OutputContract.js';
+import type { RouteContract } from '@valkyrjaio/valkyrja/Cli/Routing/Data/Contract/RouteContract.js';
+import type { CliRouteProviderContract } from '@valkyrjaio/valkyrja/Cli/Routing/Provider/Contract/CliRouteProviderContract.js';
+import type { ContainerContract } from '@valkyrjaio/valkyrja/Container/Manager/Contract/ContainerContract.js';
 
 export class SindriCliRouteProvider implements CliRouteProviderContract {
     static cliGenerateDataHandler(this: void, container: ContainerContract, _route: RouteContract): OutputContract {

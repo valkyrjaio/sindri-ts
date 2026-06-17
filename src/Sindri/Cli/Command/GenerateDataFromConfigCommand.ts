@@ -33,9 +33,9 @@ import type { ListenerAttributeReaderContract } from '../../Ast/Contract/Listene
 import type { ListenerProviderReaderContract } from '../../Ast/Contract/ListenerProviderReaderContract.js';
 import type { RouteProviderReaderContract } from '../../Ast/Contract/RouteProviderReaderContract.js';
 import type { ServiceProviderReaderContract } from '../../Ast/Contract/ServiceProviderReaderContract.js';
-import type { OutputContract } from '@valkyrja/valkyrja/Cli/Interaction/Output/Contract/OutputContract.js';
-import type { OutputFactoryContract } from '@valkyrja/valkyrja/Cli/Interaction/Output/Factory/Contract/OutputFactoryContract.js';
-import type { RouteContract } from '@valkyrja/valkyrja/Cli/Routing/Data/Contract/RouteContract.js';
+import type { OutputContract } from '@valkyrjaio/valkyrja/Cli/Interaction/Output/Contract/OutputContract.js';
+import type { OutputFactoryContract } from '@valkyrjaio/valkyrja/Cli/Interaction/Output/Factory/Contract/OutputFactoryContract.js';
+import type { RouteContract } from '@valkyrjaio/valkyrja/Cli/Routing/Data/Contract/RouteContract.js';
 
 export class GenerateDataFromConfigCommand extends GenerateDataFromAst {
     public constructor(

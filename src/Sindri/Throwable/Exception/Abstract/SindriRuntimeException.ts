@@ -7,7 +7,7 @@
  * file that was distributed with this source code.
  */
 
-import { ValkyrjaRuntimeException } from '@valkyrja/valkyrja/Throwable/Exception/Abstract/ValkyrjaRuntimeException.js';
+import { ValkyrjaRuntimeException } from '@valkyrjaio/valkyrja/Throwable/Exception/Abstract/ValkyrjaRuntimeException.js';
 
 import type { SindriThrowable } from '../../Contract/SindriThrowable.js';
 
