@@ -7,8 +7,8 @@
  * file that was distributed with this source code.
  */
 
-import { SindriInvalidArgumentException } from '../../../../Throwable/Exception/Abstract/SindriInvalidArgumentException.js';
+import { SindriInvalidArgumentException } from '../../../../Throwable/Exception/Abstract/SindriInvalidArgumentException.ts';
 
-import type { AstThrowable } from '../../Contract/AstThrowable.js';
+import type { AstThrowable } from '../../Contract/AstThrowable.ts';
 
 export abstract class AstInvalidArgumentException extends SindriInvalidArgumentException implements AstThrowable {}

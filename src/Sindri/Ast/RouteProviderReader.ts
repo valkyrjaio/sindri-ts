@@ -9,10 +9,10 @@
 
 import type { ts } from 'ts-morph';
 
-import { AstReader } from './Abstract/AstReader.js';
-import { RouteProviderResult } from './Data/Result/RouteProviderResult.js';
+import { AstReader } from './Abstract/AstReader.ts';
+import { RouteProviderResult } from './Data/Result/RouteProviderResult.ts';
 
-import type { RouteProviderReaderContract } from './Contract/RouteProviderReaderContract.js';
+import type { RouteProviderReaderContract } from './Contract/RouteProviderReaderContract.ts';
 
 export class RouteProviderReader extends AstReader implements RouteProviderReaderContract {
     protected static readonly METHOD_CONTROLLER_CLASSES = 'getControllerClasses';

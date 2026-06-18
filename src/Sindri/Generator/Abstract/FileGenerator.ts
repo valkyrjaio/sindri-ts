@@ -9,9 +9,9 @@
 
 import * as fs from 'fs';
 
-import { GenerateStatus } from '../Enum/GenerateStatus.js';
+import { GenerateStatus } from '../Enum/GenerateStatus.ts';
 
-import type { FileGeneratorContract } from '../Contract/FileGeneratorContract.js';
+import type { FileGeneratorContract } from '../Contract/FileGeneratorContract.ts';
 
 export abstract class FileGenerator implements FileGeneratorContract {
     protected filePath: string;

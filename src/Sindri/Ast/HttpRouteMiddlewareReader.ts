@@ -9,12 +9,12 @@
 
 import { ts } from 'ts-morph';
 
-import { AstReader } from './Abstract/AstReader.js';
+import { AstReader } from './Abstract/AstReader.ts';
 
 import type { MethodDeclaration } from 'ts-morph';
 
-import type { HttpRouteData } from './Data/HttpRouteData.js';
-import type { HttpRouteMiddlewareReaderContract } from './Contract/HttpRouteMiddlewareReaderContract.js';
+import type { HttpRouteData } from './Data/HttpRouteData.ts';
+import type { HttpRouteMiddlewareReaderContract } from './Contract/HttpRouteMiddlewareReaderContract.ts';
 
 /**
  * Reads middleware, request methods, and struct decorators for HTTP routes, and builds

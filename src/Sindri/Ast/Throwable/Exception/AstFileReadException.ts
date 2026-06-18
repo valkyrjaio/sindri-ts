@@ -7,6 +7,6 @@
  * file that was distributed with this source code.
  */
 
-import { AstRuntimeException } from './Abstract/AstRuntimeException.js';
+import { AstRuntimeException } from './Abstract/AstRuntimeException.ts';
 
 export class AstFileReadException extends AstRuntimeException {}

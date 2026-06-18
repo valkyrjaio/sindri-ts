@@ -9,12 +9,12 @@
 
 import { ts } from 'ts-morph';
 
-import { AstReader } from './Abstract/AstReader.js';
-import { ServiceProviderResult } from './Data/Result/ServiceProviderResult.js';
+import { AstReader } from './Abstract/AstReader.ts';
+import { ServiceProviderResult } from './Data/Result/ServiceProviderResult.ts';
 
 import type { MethodDeclaration } from 'ts-morph';
 
-import type { ServiceProviderReaderContract } from './Contract/ServiceProviderReaderContract.js';
+import type { ServiceProviderReaderContract } from './Contract/ServiceProviderReaderContract.ts';
 
 export class ServiceProviderReader extends AstReader implements ServiceProviderReaderContract {
     protected static readonly METHOD_PUBLISHERS = 'publishers';

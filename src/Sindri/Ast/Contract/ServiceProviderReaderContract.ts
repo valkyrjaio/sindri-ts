@@ -7,7 +7,7 @@
  * file that was distributed with this source code.
  */
 
-import type { ServiceProviderResult } from '../Data/Result/ServiceProviderResult.js';
+import type { ServiceProviderResult } from '../Data/Result/ServiceProviderResult.ts';
 
 export interface ServiceProviderReaderContract {
     readFile(filePath: string): ServiceProviderResult;

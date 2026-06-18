@@ -11,12 +11,12 @@ import * as path from 'path';
 
 import { ts } from 'ts-morph';
 
-import { AstReader } from './Abstract/AstReader.js';
-import { ConfigResult } from './Data/Result/ConfigResult.js';
+import { AstReader } from './Abstract/AstReader.ts';
+import { ConfigResult } from './Data/Result/ConfigResult.ts';
 
 import type { ClassDeclaration } from 'ts-morph';
 
-import type { ConfigReaderContract } from './Contract/ConfigReaderContract.js';
+import type { ConfigReaderContract } from './Contract/ConfigReaderContract.ts';
 
 /**
  * Reads an application config class file via AST and extracts the values

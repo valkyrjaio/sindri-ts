@@ -7,6 +7,6 @@
  * file that was distributed with this source code.
  */
 
-import { GeneratorRuntimeException } from './Abstract/GeneratorRuntimeException.js';
+import { GeneratorRuntimeException } from './Abstract/GeneratorRuntimeException.ts';
 
 export class GeneratorUnreachableException extends GeneratorRuntimeException {}

@@ -7,7 +7,7 @@
  * file that was distributed with this source code.
  */
 
-import type { HttpRouteAttributeResult } from '../Data/Result/HttpRouteAttributeResult.js';
+import type { HttpRouteAttributeResult } from '../Data/Result/HttpRouteAttributeResult.ts';
 
 export interface HttpRouteAttributeReaderContract {
     readFile(filePath: string): HttpRouteAttributeResult;

@@ -11,7 +11,7 @@ import type { ts } from 'ts-morph';
 
 import type { MethodDeclaration } from 'ts-morph';
 
-import type { HttpRouteData } from '../Data/HttpRouteData.js';
+import type { HttpRouteData } from '../Data/HttpRouteData.ts';
 
 export interface HttpRouteMiddlewareReaderContract {
     extractInlineRequestMethods(

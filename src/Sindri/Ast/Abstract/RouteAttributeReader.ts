@@ -9,8 +9,8 @@
 
 import type { MethodDeclaration } from 'ts-morph';
 
-import { AstReader } from './AstReader.js';
-import { HandlerData } from '../Data/HandlerData.js';
+import { AstReader } from './AstReader.ts';
+import { HandlerData } from '../Data/HandlerData.ts';
 
 /**
  * Base for route attribute readers — provides shared handler resolution logic.

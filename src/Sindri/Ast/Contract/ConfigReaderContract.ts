@@ -7,7 +7,7 @@
  * file that was distributed with this source code.
  */
 
-import type { ConfigResult } from '../Data/Result/ConfigResult.js';
+import type { ConfigResult } from '../Data/Result/ConfigResult.ts';
 
 export interface ConfigReaderContract {
     readFile(filePath: string): ConfigResult;

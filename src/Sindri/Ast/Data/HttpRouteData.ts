@@ -7,9 +7,9 @@
  * file that was distributed with this source code.
  */
 
-import type { HttpRouteDataContract } from './Contract/HttpRouteDataContract.js';
-import type { HandlerData } from './HandlerData.js';
-import type { HttpParameterData } from './HttpParameterData.js';
+import type { HttpRouteDataContract } from './Contract/HttpRouteDataContract.ts';
+import type { HandlerData } from './HandlerData.ts';
+import type { HttpParameterData } from './HttpParameterData.ts';
 
 export class HttpRouteData implements HttpRouteDataContract {
     constructor(

@@ -7,7 +7,7 @@
  * file that was distributed with this source code.
  */
 
-import type { HandlerDataContract } from './Contract/HandlerDataContract.js';
+import type { HandlerDataContract } from './Contract/HandlerDataContract.ts';
 
 export class HandlerData implements HandlerDataContract {
     readonly class: string;

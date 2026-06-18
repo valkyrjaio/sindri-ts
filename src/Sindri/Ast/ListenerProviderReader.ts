@@ -9,10 +9,10 @@
 
 import type { ts } from 'ts-morph';
 
-import { AstReader } from './Abstract/AstReader.js';
-import { ListenerProviderResult } from './Data/Result/ListenerProviderResult.js';
+import { AstReader } from './Abstract/AstReader.ts';
+import { ListenerProviderResult } from './Data/Result/ListenerProviderResult.ts';
 
-import type { ListenerProviderReaderContract } from './Contract/ListenerProviderReaderContract.js';
+import type { ListenerProviderReaderContract } from './Contract/ListenerProviderReaderContract.ts';
 
 export class ListenerProviderReader extends AstReader implements ListenerProviderReaderContract {
     protected static readonly METHOD_LISTENER_CLASSES = 'getListenerClasses';

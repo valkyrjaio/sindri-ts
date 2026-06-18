@@ -9,14 +9,14 @@
 
 import { ts } from 'ts-morph';
 
-import { AstReader } from './Abstract/AstReader.js';
-import { CliArgumentParameterData } from './Data/CliArgumentParameterData.js';
-import { CliOptionParameterData } from './Data/CliOptionParameterData.js';
+import { AstReader } from './Abstract/AstReader.ts';
+import { CliArgumentParameterData } from './Data/CliArgumentParameterData.ts';
+import { CliOptionParameterData } from './Data/CliOptionParameterData.ts';
 
 import type { MethodDeclaration } from 'ts-morph';
 
-import type { CliRouteData } from './Data/CliRouteData.js';
-import type { CliRouteParameterReaderContract } from './Contract/CliRouteParameterReaderContract.js';
+import type { CliRouteData } from './Data/CliRouteData.ts';
+import type { CliRouteParameterReaderContract } from './Contract/CliRouteParameterReaderContract.ts';
 
 /**
  * Builds AST expressions for CLI route argument and option parameters.

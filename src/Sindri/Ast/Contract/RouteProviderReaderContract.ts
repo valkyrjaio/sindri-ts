@@ -7,7 +7,7 @@
  * file that was distributed with this source code.
  */
 
-import type { RouteProviderResult } from '../Data/Result/RouteProviderResult.js';
+import type { RouteProviderResult } from '../Data/Result/RouteProviderResult.ts';
 
 export interface RouteProviderReaderContract {
     readFile(filePath: string): RouteProviderResult;

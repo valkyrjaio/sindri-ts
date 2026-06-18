@@ -7,27 +7,27 @@
  * file that was distributed with this source code.
  */
 
-import { GenerateDataFromConfigCommand } from '../Cli/Command/GenerateDataFromConfigCommand.js';
-import { SindriServiceId } from '../Constant/SindriServiceId.js';
+import { GenerateDataFromConfigCommand } from '../Cli/Command/GenerateDataFromConfigCommand.ts';
+import { SindriServiceId } from '../Constant/SindriServiceId.ts';
 
-import type { CliRouteAttributeReaderContract } from '../Ast/Contract/CliRouteAttributeReaderContract.js';
-import type { ComponentProviderReaderContract } from '../Ast/Contract/ComponentProviderReaderContract.js';
-import type { ConfigReaderContract } from '../Ast/Contract/ConfigReaderContract.js';
-import type { HttpRouteAttributeReaderContract } from '../Ast/Contract/HttpRouteAttributeReaderContract.js';
-import type { ListenerAttributeReaderContract } from '../Ast/Contract/ListenerAttributeReaderContract.js';
-import type { ListenerProviderReaderContract } from '../Ast/Contract/ListenerProviderReaderContract.js';
-import type { RouteProviderReaderContract } from '../Ast/Contract/RouteProviderReaderContract.js';
-import type { ServiceProviderReaderContract } from '../Ast/Contract/ServiceProviderReaderContract.js';
-import type { CliDataFileGeneratorContract } from '../Generator/Cli/Contract/CliDataFileGeneratorContract.js';
-import type { ContainerDataFileGeneratorContract } from '../Generator/Container/Contract/ContainerDataFileGeneratorContract.js';
-import type { EventDataFileGeneratorContract } from '../Generator/Event/Contract/EventDataFileGeneratorContract.js';
-import type { HttpDataFileGeneratorContract } from '../Generator/Http/Contract/HttpDataFileGeneratorContract.js';
-import { CliInteractionServiceId } from '@valkyrjaio/valkyrja/Cli/Interaction/Constant/CliInteractionServiceId.js';
-import { CliRoutingServiceId } from '@valkyrjaio/valkyrja/Cli/Routing/Constant/CliRoutingServiceId.js';
-import type { ContainerContract } from '@valkyrjaio/valkyrja/Container/Manager/Contract/ContainerContract.js';
-import type { ServiceProviderContract } from '@valkyrjaio/valkyrja/Container/Provider/Contract/ServiceProviderContract.js';
-import type { OutputFactoryContract } from '@valkyrjaio/valkyrja/Cli/Interaction/Output/Factory/Contract/OutputFactoryContract.js';
-import type { RouteContract } from '@valkyrjaio/valkyrja/Cli/Routing/Data/Contract/RouteContract.js';
+import type { CliRouteAttributeReaderContract } from '../Ast/Contract/CliRouteAttributeReaderContract.ts';
+import type { ComponentProviderReaderContract } from '../Ast/Contract/ComponentProviderReaderContract.ts';
+import type { ConfigReaderContract } from '../Ast/Contract/ConfigReaderContract.ts';
+import type { HttpRouteAttributeReaderContract } from '../Ast/Contract/HttpRouteAttributeReaderContract.ts';
+import type { ListenerAttributeReaderContract } from '../Ast/Contract/ListenerAttributeReaderContract.ts';
+import type { ListenerProviderReaderContract } from '../Ast/Contract/ListenerProviderReaderContract.ts';
+import type { RouteProviderReaderContract } from '../Ast/Contract/RouteProviderReaderContract.ts';
+import type { ServiceProviderReaderContract } from '../Ast/Contract/ServiceProviderReaderContract.ts';
+import type { CliDataFileGeneratorContract } from '../Generator/Cli/Contract/CliDataFileGeneratorContract.ts';
+import type { ContainerDataFileGeneratorContract } from '../Generator/Container/Contract/ContainerDataFileGeneratorContract.ts';
+import type { EventDataFileGeneratorContract } from '../Generator/Event/Contract/EventDataFileGeneratorContract.ts';
+import type { HttpDataFileGeneratorContract } from '../Generator/Http/Contract/HttpDataFileGeneratorContract.ts';
+import { CliInteractionServiceId } from '@valkyrjaio/valkyrja/Cli/Interaction/Constant/CliInteractionServiceId.ts';
+import { CliRoutingServiceId } from '@valkyrjaio/valkyrja/Cli/Routing/Constant/CliRoutingServiceId.ts';
+import type { ContainerContract } from '@valkyrjaio/valkyrja/Container/Manager/Contract/ContainerContract.ts';
+import type { ServiceProviderContract } from '@valkyrjaio/valkyrja/Container/Provider/Contract/ServiceProviderContract.ts';
+import type { OutputFactoryContract } from '@valkyrjaio/valkyrja/Cli/Interaction/Output/Factory/Contract/OutputFactoryContract.ts';
+import type { RouteContract } from '@valkyrjaio/valkyrja/Cli/Routing/Data/Contract/RouteContract.ts';
 
 export class SindriCommandServiceProvider implements ServiceProviderContract {
     static publishGenerateDataFromConfigCommand(this: void, container: ContainerContract): void {

@@ -7,9 +7,9 @@
  * file that was distributed with this source code.
  */
 
-import { ValkyrjaInvalidArgumentException } from '@valkyrjaio/valkyrja/Throwable/Exception/Abstract/ValkyrjaInvalidArgumentException.js';
+import { ValkyrjaInvalidArgumentException } from '@valkyrjaio/valkyrja/Throwable/Exception/Abstract/ValkyrjaInvalidArgumentException.ts';
 
-import type { SindriThrowable } from '../../Contract/SindriThrowable.js';
+import type { SindriThrowable } from '../../Contract/SindriThrowable.ts';
 
 export abstract class SindriInvalidArgumentException
     extends ValkyrjaInvalidArgumentException

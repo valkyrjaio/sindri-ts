@@ -9,15 +9,15 @@
 
 import { ts } from 'ts-morph';
 
-import { RouteAttributeReader } from './Abstract/RouteAttributeReader.js';
-import { CliRouteData } from './Data/CliRouteData.js';
-import { CliRouteAttributeResult } from './Data/Result/CliRouteAttributeResult.js';
-import { CliRouteParameterReader } from './CliRouteParameterReader.js';
+import { RouteAttributeReader } from './Abstract/RouteAttributeReader.ts';
+import { CliRouteData } from './Data/CliRouteData.ts';
+import { CliRouteAttributeResult } from './Data/Result/CliRouteAttributeResult.ts';
+import { CliRouteParameterReader } from './CliRouteParameterReader.ts';
 
 import type { Decorator, MethodDeclaration } from 'ts-morph';
 
-import type { CliRouteAttributeReaderContract } from './Contract/CliRouteAttributeReaderContract.js';
-import type { CliRouteParameterReaderContract } from './Contract/CliRouteParameterReaderContract.js';
+import type { CliRouteAttributeReaderContract } from './Contract/CliRouteAttributeReaderContract.ts';
+import type { CliRouteParameterReaderContract } from './Contract/CliRouteParameterReaderContract.ts';
 
 /**
  * Scans a CLI controller class file for @Route and related sub-decorators and

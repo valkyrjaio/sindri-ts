@@ -7,9 +7,9 @@
  * file that was distributed with this source code.
  */
 
-import type { CliArgumentParameterDataContract } from './CliArgumentParameterDataContract.js';
-import type { CliOptionParameterDataContract } from './CliOptionParameterDataContract.js';
-import type { HandlerDataContract } from './HandlerDataContract.js';
+import type { CliArgumentParameterDataContract } from './CliArgumentParameterDataContract.ts';
+import type { CliOptionParameterDataContract } from './CliOptionParameterDataContract.ts';
+import type { HandlerDataContract } from './HandlerDataContract.ts';
 
 export interface CliRouteDataContract {
     readonly name: string;

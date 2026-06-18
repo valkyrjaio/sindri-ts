@@ -7,7 +7,7 @@
  * file that was distributed with this source code.
  */
 
-import type { ComponentProviderResult } from '../Data/Result/ComponentProviderResult.js';
+import type { ComponentProviderResult } from '../Data/Result/ComponentProviderResult.ts';
 
 export interface ComponentProviderReaderContract {
     readFile(filePath: string): ComponentProviderResult;

@@ -7,7 +7,7 @@
  * file that was distributed with this source code.
  */
 
-import type { CliArgumentParameterDataContract } from './Contract/CliArgumentParameterDataContract.js';
+import type { CliArgumentParameterDataContract } from './Contract/CliArgumentParameterDataContract.ts';
 
 export class CliArgumentParameterData implements CliArgumentParameterDataContract {
     constructor(

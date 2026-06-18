@@ -7,8 +7,8 @@
  * file that was distributed with this source code.
  */
 
-import type { HandlerDataContract } from './HandlerDataContract.js';
-import type { HttpParameterDataContract } from './HttpParameterDataContract.js';
+import type { HandlerDataContract } from './HandlerDataContract.ts';
+import type { HttpParameterDataContract } from './HttpParameterDataContract.ts';
 
 export interface HttpRouteDataContract {
     readonly path: string;

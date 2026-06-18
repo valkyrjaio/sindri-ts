@@ -7,10 +7,10 @@
  * file that was distributed with this source code.
  */
 
-import type { CliArgumentParameterData } from './CliArgumentParameterData.js';
-import type { CliOptionParameterData } from './CliOptionParameterData.js';
-import type { CliRouteDataContract } from './Contract/CliRouteDataContract.js';
-import type { HandlerData } from './HandlerData.js';
+import type { CliArgumentParameterData } from './CliArgumentParameterData.ts';
+import type { CliOptionParameterData } from './CliOptionParameterData.ts';
+import type { CliRouteDataContract } from './Contract/CliRouteDataContract.ts';
+import type { HandlerData } from './HandlerData.ts';
 
 export class CliRouteData implements CliRouteDataContract {
     readonly arguments: readonly CliArgumentParameterData[];

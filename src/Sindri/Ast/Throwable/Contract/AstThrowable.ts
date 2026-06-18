@@ -7,6 +7,6 @@
  * file that was distributed with this source code.
  */
 
-import type { SindriThrowable } from '../../../Throwable/Contract/SindriThrowable.js';
+import type { SindriThrowable } from '../../../Throwable/Contract/SindriThrowable.ts';
 
 export type AstThrowable = SindriThrowable;
