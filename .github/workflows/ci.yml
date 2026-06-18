@@ -40,6 +40,8 @@ jobs:
           - '.github/workflows/ci.yml'
           - 'src/**/*.ts'
           - 'tsconfig.json'
+          - 'package.json'
+          - 'package-lock.json'
     secrets: inherit
 
   eslint:
@@ -60,6 +62,8 @@ jobs:
           - 'src/**/*.ts'
           - 'tests/**/*.ts'
           - 'tsconfig.json'
+          - 'package.json'
+          - 'package-lock.json'
     secrets: inherit
 
   prettier:
@@ -94,4 +98,6 @@ jobs:
           - '.github/workflows/ci.yml'
           - 'src/**/*.ts'
           - 'tests/**/*.ts'
+          - 'package.json'
+          - 'package-lock.json'
     secrets: inherit
