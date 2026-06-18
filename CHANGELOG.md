@@ -1,6 +1,12 @@
 # Release Notes for 26.x
 
-## [Unreleased](https://github.com/valkyrjaio/sindri-ts/compare/v26.0.1...26.x)
+## [Unreleased](https://github.com/valkyrjaio/sindri-ts/compare/v26.1.0...26.x)
+
+## [v26.1.0](https://github.com/valkyrjaio/sindri-ts/compare/v26.0.1...v26.1.0) - 2026-06-17
+
+* [CI] Exclude the generated CHANGELOG from Prettier checks by [@MelechMizrachi](https://github.com/MelechMizrachi) in https://github.com/valkyrjaio/sindri-ts/pull/19
+* [GitHub] Update .github workflow refs to v26.9.1 by [@valkyrja-volundr](https://github.com/valkyrja-volundr)[bot] in https://github.com/valkyrjaio/sindri-ts/pull/20
+* [Documentation] Point the license badge at GitHub by [@MelechMizrachi](https://github.com/MelechMizrachi) in https://github.com/valkyrjaio/sindri-ts/pull/21
 
 ## [v26.0.1](https://github.com/valkyrjaio/sindri-ts/compare/v26.0.0...v26.0.1) - 2026-06-17
 
