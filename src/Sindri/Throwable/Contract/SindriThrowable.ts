@@ -7,6 +7,6 @@
  * file that was distributed with this source code.
  */
 
-import type { ValkyrjaThrowable } from '@valkyrjaio/valkyrja/Throwable/Contract/ValkyrjaThrowable.js';
+import type { ValkyrjaThrowable } from '@valkyrjaio/valkyrja/Throwable/Contract/ValkyrjaThrowable.ts';
 
 export type SindriThrowable = ValkyrjaThrowable;

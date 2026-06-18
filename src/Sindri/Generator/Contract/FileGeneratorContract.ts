@@ -7,7 +7,7 @@
  * file that was distributed with this source code.
  */
 
-import type { GenerateStatus } from '../Enum/GenerateStatus.js';
+import type { GenerateStatus } from '../Enum/GenerateStatus.ts';
 
 export interface FileGeneratorContract {
     generateFile(): GenerateStatus;

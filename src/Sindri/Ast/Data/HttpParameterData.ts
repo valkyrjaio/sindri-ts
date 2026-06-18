@@ -7,7 +7,7 @@
  * file that was distributed with this source code.
  */
 
-import type { HttpParameterDataContract } from './Contract/HttpParameterDataContract.js';
+import type { HttpParameterDataContract } from './Contract/HttpParameterDataContract.ts';
 
 export class HttpParameterData implements HttpParameterDataContract {
     constructor(

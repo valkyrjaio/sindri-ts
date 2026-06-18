@@ -7,7 +7,7 @@
  * file that was distributed with this source code.
  */
 
-import type { ConfigDataContract } from './Contract/ConfigDataContract.js';
+import type { ConfigDataContract } from './Contract/ConfigDataContract.ts';
 
 export class ConfigData implements ConfigDataContract {
     constructor(

@@ -7,7 +7,7 @@
  * file that was distributed with this source code.
  */
 
-import type { ListenerAttributeResult } from '../Data/Result/ListenerAttributeResult.js';
+import type { ListenerAttributeResult } from '../Data/Result/ListenerAttributeResult.ts';
 
 export interface ListenerAttributeReaderContract {
     readFile(filePath: string): ListenerAttributeResult;

@@ -11,7 +11,7 @@ import * as fs from 'fs';
 
 import { ts } from 'ts-morph';
 
-import { GenerateStatus } from '../Enum/GenerateStatus.js';
+import { GenerateStatus } from '../Enum/GenerateStatus.ts';
 
 export abstract class AstFileGenerator {
     /**

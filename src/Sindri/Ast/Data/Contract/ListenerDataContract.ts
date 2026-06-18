@@ -7,7 +7,7 @@
  * file that was distributed with this source code.
  */
 
-import type { HandlerDataContract } from './HandlerDataContract.js';
+import type { HandlerDataContract } from './HandlerDataContract.ts';
 
 export interface ListenerDataContract {
     readonly eventId: string;

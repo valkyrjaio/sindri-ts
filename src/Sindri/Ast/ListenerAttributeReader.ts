@@ -9,14 +9,14 @@
 
 import { ts } from 'ts-morph';
 
-import { AstReader } from './Abstract/AstReader.js';
-import { HandlerData } from './Data/HandlerData.js';
-import { ListenerData } from './Data/ListenerData.js';
-import { ListenerAttributeResult } from './Data/Result/ListenerAttributeResult.js';
+import { AstReader } from './Abstract/AstReader.ts';
+import { HandlerData } from './Data/HandlerData.ts';
+import { ListenerData } from './Data/ListenerData.ts';
+import { ListenerAttributeResult } from './Data/Result/ListenerAttributeResult.ts';
 
 import type { ClassDeclaration, Decorator, MethodDeclaration } from 'ts-morph';
 
-import type { ListenerAttributeReaderContract } from './Contract/ListenerAttributeReaderContract.js';
+import type { ListenerAttributeReaderContract } from './Contract/ListenerAttributeReaderContract.ts';
 
 /**
  * Scans a listener class file for @Listener and @ListenerHandler decorators

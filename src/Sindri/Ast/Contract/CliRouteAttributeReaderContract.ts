@@ -7,7 +7,7 @@
  * file that was distributed with this source code.
  */
 
-import type { CliRouteAttributeResult } from '../Data/Result/CliRouteAttributeResult.js';
+import type { CliRouteAttributeResult } from '../Data/Result/CliRouteAttributeResult.ts';
 
 export interface CliRouteAttributeReaderContract {
     readFile(filePath: string): CliRouteAttributeResult;

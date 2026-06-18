@@ -7,10 +7,10 @@
  * file that was distributed with this source code.
  */
 
-import { AstReader } from './Abstract/AstReader.js';
-import { ComponentProviderResult } from './Data/Result/ComponentProviderResult.js';
+import { AstReader } from './Abstract/AstReader.ts';
+import { ComponentProviderResult } from './Data/Result/ComponentProviderResult.ts';
 
-import type { ComponentProviderReaderContract } from './Contract/ComponentProviderReaderContract.js';
+import type { ComponentProviderReaderContract } from './Contract/ComponentProviderReaderContract.ts';
 
 export class ComponentProviderReader extends AstReader implements ComponentProviderReaderContract {
     protected static readonly METHOD_COMPONENT = 'getComponentProviders';

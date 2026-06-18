@@ -7,8 +7,8 @@
  * file that was distributed with this source code.
  */
 
-import { SindriRuntimeException } from '../../../../Throwable/Exception/Abstract/SindriRuntimeException.js';
+import { SindriRuntimeException } from '../../../../Throwable/Exception/Abstract/SindriRuntimeException.ts';
 
-import type { AstThrowable } from '../../Contract/AstThrowable.js';
+import type { AstThrowable } from '../../Contract/AstThrowable.ts';
 
 export abstract class AstRuntimeException extends SindriRuntimeException implements AstThrowable {}

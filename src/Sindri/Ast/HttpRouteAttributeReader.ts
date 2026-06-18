@@ -9,17 +9,17 @@
 
 import { ts } from 'ts-morph';
 
-import { RouteAttributeReader } from './Abstract/RouteAttributeReader.js';
-import { HttpRouteData } from './Data/HttpRouteData.js';
-import { HttpRouteAttributeResult } from './Data/Result/HttpRouteAttributeResult.js';
-import { HttpRouteMiddlewareReader } from './HttpRouteMiddlewareReader.js';
-import { HttpRouteParameterReader } from './HttpRouteParameterReader.js';
+import { RouteAttributeReader } from './Abstract/RouteAttributeReader.ts';
+import { HttpRouteData } from './Data/HttpRouteData.ts';
+import { HttpRouteAttributeResult } from './Data/Result/HttpRouteAttributeResult.ts';
+import { HttpRouteMiddlewareReader } from './HttpRouteMiddlewareReader.ts';
+import { HttpRouteParameterReader } from './HttpRouteParameterReader.ts';
 
 import type { ClassDeclaration, Decorator, MethodDeclaration, Node } from 'ts-morph';
 
-import type { HttpRouteAttributeReaderContract } from './Contract/HttpRouteAttributeReaderContract.js';
-import type { HttpRouteMiddlewareReaderContract } from './Contract/HttpRouteMiddlewareReaderContract.js';
-import type { HttpRouteParameterReaderContract } from './Contract/HttpRouteParameterReaderContract.js';
+import type { HttpRouteAttributeReaderContract } from './Contract/HttpRouteAttributeReaderContract.ts';
+import type { HttpRouteMiddlewareReaderContract } from './Contract/HttpRouteMiddlewareReaderContract.ts';
+import type { HttpRouteParameterReaderContract } from './Contract/HttpRouteParameterReaderContract.ts';
 
 /**
  * Scans an HTTP controller class file for @Route / @DynamicRoute and related
@@ -309,7 +309,7 @@ export class HttpRouteAttributeReader extends RouteAttributeReader implements Ht
         useMap: Record<string, string>,
         currentFilePath: string,
         currentClass: string,
-    ): import('./Data/HttpParameterData.js').HttpParameterData[] {
+    ): import('./Data/HttpParameterData.ts').HttpParameterData[] {
         return this.parameterReader.updateParameters(decoratorArgs, method, useMap, currentFilePath, currentClass);
     }
 }

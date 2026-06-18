@@ -9,8 +9,8 @@
 
 import type { ts } from 'ts-morph';
 
-import type { HttpRouteData } from '../../../Ast/Data/HttpRouteData.js';
-import type { GenerateStatus } from '../../Enum/GenerateStatus.js';
+import type { HttpRouteData } from '../../../Ast/Data/HttpRouteData.ts';
+import type { GenerateStatus } from '../../Enum/GenerateStatus.ts';
 
 export interface HttpDataFileGeneratorContract {
     generateFile(

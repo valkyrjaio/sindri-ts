@@ -22,8 +22,8 @@ import {
     ts,
 } from 'ts-morph';
 
-import { AstFileReadException } from '../Throwable/Exception/AstFileReadException.js';
-import { HandlerData } from '../Data/HandlerData.js';
+import { AstFileReadException } from '../Throwable/Exception/AstFileReadException.ts';
+import { HandlerData } from '../Data/HandlerData.ts';
 
 /**
  * Shared AST parsing utilities for all provider reader implementations.

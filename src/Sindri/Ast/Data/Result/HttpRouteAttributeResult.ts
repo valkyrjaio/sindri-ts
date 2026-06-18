@@ -9,7 +9,7 @@
 
 import type { ts } from 'ts-morph';
 
-import type { HttpRouteData } from '../HttpRouteData.js';
+import type { HttpRouteData } from '../HttpRouteData.ts';
 
 export class HttpRouteAttributeResult {
     constructor(

@@ -7,8 +7,8 @@
  * file that was distributed with this source code.
  */
 
-import { ValkyrjaRuntimeException } from '@valkyrjaio/valkyrja/Throwable/Exception/Abstract/ValkyrjaRuntimeException.js';
+import { ValkyrjaRuntimeException } from '@valkyrjaio/valkyrja/Throwable/Exception/Abstract/ValkyrjaRuntimeException.ts';
 
-import type { SindriThrowable } from '../../Contract/SindriThrowable.js';
+import type { SindriThrowable } from '../../Contract/SindriThrowable.ts';
 
 export abstract class SindriRuntimeException extends ValkyrjaRuntimeException implements SindriThrowable {}

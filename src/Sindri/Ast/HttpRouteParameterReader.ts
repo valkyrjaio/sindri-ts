@@ -9,12 +9,12 @@
 
 import { ts } from 'ts-morph';
 
-import { AstReader } from './Abstract/AstReader.js';
-import { HttpParameterData } from './Data/HttpParameterData.js';
+import { AstReader } from './Abstract/AstReader.ts';
+import { HttpParameterData } from './Data/HttpParameterData.ts';
 
 import type { Decorator, MethodDeclaration } from 'ts-morph';
 
-import type { HttpRouteParameterReaderContract } from './Contract/HttpRouteParameterReaderContract.js';
+import type { HttpRouteParameterReaderContract } from './Contract/HttpRouteParameterReaderContract.ts';
 
 /**
  * Reads and builds AST expressions for HTTP dynamic route parameters.

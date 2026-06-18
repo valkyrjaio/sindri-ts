@@ -11,7 +11,7 @@ import type { ts } from 'ts-morph';
 
 import type { MethodDeclaration } from 'ts-morph';
 
-import type { HttpParameterData } from '../Data/HttpParameterData.js';
+import type { HttpParameterData } from '../Data/HttpParameterData.ts';
 
 export interface HttpRouteParameterReaderContract {
     updateParameters(

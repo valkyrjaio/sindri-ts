@@ -7,9 +7,9 @@
  * file that was distributed with this source code.
  */
 
-import { SindriInvalidArgumentException } from '../../../../Throwable/Exception/Abstract/SindriInvalidArgumentException.js';
+import { SindriInvalidArgumentException } from '../../../../Throwable/Exception/Abstract/SindriInvalidArgumentException.ts';
 
-import type { GeneratorThrowable } from '../../Contract/GeneratorThrowable.js';
+import type { GeneratorThrowable } from '../../Contract/GeneratorThrowable.ts';
 
 export abstract class GeneratorInvalidArgumentException
     extends SindriInvalidArgumentException

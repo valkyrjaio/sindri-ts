@@ -9,6 +9,7 @@
         "noImplicitReturns": true,
         "noFallthroughCasesInSwitch": true,
         "noImplicitOverride": true,
+        "allowImportingTsExtensions": true,
         "skipLibCheck": true,
         "typeRoots": [".github/ci/typescript/node_modules/@types"],
         "types": ["node"],

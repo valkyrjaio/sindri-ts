@@ -7,35 +7,35 @@
  * file that was distributed with this source code.
  */
 
-import { CliRouteAttributeReader } from '../../Ast/CliRouteAttributeReader.js';
-import { ComponentProviderReader } from '../../Ast/ComponentProviderReader.js';
-import { ConfigReader } from '../../Ast/ConfigReader.js';
-import { HttpRouteAttributeReader } from '../../Ast/HttpRouteAttributeReader.js';
-import { ListenerAttributeReader } from '../../Ast/ListenerAttributeReader.js';
-import { ListenerProviderReader } from '../../Ast/ListenerProviderReader.js';
-import { RouteProviderReader } from '../../Ast/RouteProviderReader.js';
-import { ServiceProviderReader } from '../../Ast/ServiceProviderReader.js';
-import { AstCliDataFileGenerator } from '../../Generator/Ast/Cli/AstCliDataFileGenerator.js';
-import { AstContainerDataFileGenerator } from '../../Generator/Ast/Container/AstContainerDataFileGenerator.js';
-import { AstEventDataFileGenerator } from '../../Generator/Ast/Event/AstEventDataFileGenerator.js';
-import { AstHttpDataFileGenerator } from '../../Generator/Ast/Http/AstHttpDataFileGenerator.js';
-import { GenerateDataFromAst } from '../../Generate/Abstract/GenerateDataFromAst.js';
+import { CliRouteAttributeReader } from '../../Ast/CliRouteAttributeReader.ts';
+import { ComponentProviderReader } from '../../Ast/ComponentProviderReader.ts';
+import { ConfigReader } from '../../Ast/ConfigReader.ts';
+import { HttpRouteAttributeReader } from '../../Ast/HttpRouteAttributeReader.ts';
+import { ListenerAttributeReader } from '../../Ast/ListenerAttributeReader.ts';
+import { ListenerProviderReader } from '../../Ast/ListenerProviderReader.ts';
+import { RouteProviderReader } from '../../Ast/RouteProviderReader.ts';
+import { ServiceProviderReader } from '../../Ast/ServiceProviderReader.ts';
+import { AstCliDataFileGenerator } from '../../Generator/Ast/Cli/AstCliDataFileGenerator.ts';
+import { AstContainerDataFileGenerator } from '../../Generator/Ast/Container/AstContainerDataFileGenerator.ts';
+import { AstEventDataFileGenerator } from '../../Generator/Ast/Event/AstEventDataFileGenerator.ts';
+import { AstHttpDataFileGenerator } from '../../Generator/Ast/Http/AstHttpDataFileGenerator.ts';
+import { GenerateDataFromAst } from '../../Generate/Abstract/GenerateDataFromAst.ts';
 
-import type { CliDataFileGeneratorContract } from '../../Generator/Cli/Contract/CliDataFileGeneratorContract.js';
-import type { ContainerDataFileGeneratorContract } from '../../Generator/Container/Contract/ContainerDataFileGeneratorContract.js';
-import type { EventDataFileGeneratorContract } from '../../Generator/Event/Contract/EventDataFileGeneratorContract.js';
-import type { HttpDataFileGeneratorContract } from '../../Generator/Http/Contract/HttpDataFileGeneratorContract.js';
-import type { CliRouteAttributeReaderContract } from '../../Ast/Contract/CliRouteAttributeReaderContract.js';
-import type { ComponentProviderReaderContract } from '../../Ast/Contract/ComponentProviderReaderContract.js';
-import type { ConfigReaderContract } from '../../Ast/Contract/ConfigReaderContract.js';
-import type { HttpRouteAttributeReaderContract } from '../../Ast/Contract/HttpRouteAttributeReaderContract.js';
-import type { ListenerAttributeReaderContract } from '../../Ast/Contract/ListenerAttributeReaderContract.js';
-import type { ListenerProviderReaderContract } from '../../Ast/Contract/ListenerProviderReaderContract.js';
-import type { RouteProviderReaderContract } from '../../Ast/Contract/RouteProviderReaderContract.js';
-import type { ServiceProviderReaderContract } from '../../Ast/Contract/ServiceProviderReaderContract.js';
-import type { OutputContract } from '@valkyrjaio/valkyrja/Cli/Interaction/Output/Contract/OutputContract.js';
-import type { OutputFactoryContract } from '@valkyrjaio/valkyrja/Cli/Interaction/Output/Factory/Contract/OutputFactoryContract.js';
-import type { RouteContract } from '@valkyrjaio/valkyrja/Cli/Routing/Data/Contract/RouteContract.js';
+import type { CliDataFileGeneratorContract } from '../../Generator/Cli/Contract/CliDataFileGeneratorContract.ts';
+import type { ContainerDataFileGeneratorContract } from '../../Generator/Container/Contract/ContainerDataFileGeneratorContract.ts';
+import type { EventDataFileGeneratorContract } from '../../Generator/Event/Contract/EventDataFileGeneratorContract.ts';
+import type { HttpDataFileGeneratorContract } from '../../Generator/Http/Contract/HttpDataFileGeneratorContract.ts';
+import type { CliRouteAttributeReaderContract } from '../../Ast/Contract/CliRouteAttributeReaderContract.ts';
+import type { ComponentProviderReaderContract } from '../../Ast/Contract/ComponentProviderReaderContract.ts';
+import type { ConfigReaderContract } from '../../Ast/Contract/ConfigReaderContract.ts';
+import type { HttpRouteAttributeReaderContract } from '../../Ast/Contract/HttpRouteAttributeReaderContract.ts';
+import type { ListenerAttributeReaderContract } from '../../Ast/Contract/ListenerAttributeReaderContract.ts';
+import type { ListenerProviderReaderContract } from '../../Ast/Contract/ListenerProviderReaderContract.ts';
+import type { RouteProviderReaderContract } from '../../Ast/Contract/RouteProviderReaderContract.ts';
+import type { ServiceProviderReaderContract } from '../../Ast/Contract/ServiceProviderReaderContract.ts';
+import type { OutputContract } from '@valkyrjaio/valkyrja/Cli/Interaction/Output/Contract/OutputContract.ts';
+import type { OutputFactoryContract } from '@valkyrjaio/valkyrja/Cli/Interaction/Output/Factory/Contract/OutputFactoryContract.ts';
+import type { RouteContract } from '@valkyrjaio/valkyrja/Cli/Routing/Data/Contract/RouteContract.ts';
 
 export class GenerateDataFromConfigCommand extends GenerateDataFromAst {
     public constructor(

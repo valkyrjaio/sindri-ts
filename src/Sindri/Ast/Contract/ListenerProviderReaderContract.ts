@@ -7,7 +7,7 @@
  * file that was distributed with this source code.
  */
 
-import type { ListenerProviderResult } from '../Data/Result/ListenerProviderResult.js';
+import type { ListenerProviderResult } from '../Data/Result/ListenerProviderResult.ts';
 
 export interface ListenerProviderReaderContract {
     readFile(filePath: string): ListenerProviderResult;

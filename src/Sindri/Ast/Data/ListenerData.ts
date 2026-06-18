@@ -7,8 +7,8 @@
  * file that was distributed with this source code.
  */
 
-import type { ListenerDataContract } from './Contract/ListenerDataContract.js';
-import type { HandlerData } from './HandlerData.js';
+import type { ListenerDataContract } from './Contract/ListenerDataContract.ts';
+import type { HandlerData } from './HandlerData.ts';
 
 export class ListenerData implements ListenerDataContract {
     constructor(
