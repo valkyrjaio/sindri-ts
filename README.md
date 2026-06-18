@@ -17,7 +17,7 @@ faster and better.
 <p>
     <a href="https://www.npmjs.com/package/@valkyrjaio/sindri"><img src="https://img.shields.io/npm/v/@valkyrjaio/sindri.svg" alt="Latest Version on npm"></a>
     <a href="https://www.npmjs.com/package/@valkyrjaio/sindri"><img src="https://img.shields.io/node/v/@valkyrjaio/sindri.svg" alt="Supported Node.js Version"></a>
-    <a href="https://www.npmjs.com/package/@valkyrjaio/sindri"><img src="https://img.shields.io/npm/l/@valkyrjaio/sindri.svg" alt="License"></a>
+    <a href="https://github.com/valkyrjaio/sindri-ts/blob/26.x/LICENSE.md"><img src="https://img.shields.io/github/license/valkyrjaio/sindri-ts.svg" alt="License"></a>
     <a href="https://github.com/valkyrjaio/sindri-ts/actions/workflows/ci.yml?query=branch%3A26.x"><img src="https://github.com/valkyrjaio/sindri-ts/actions/workflows/ci.yml/badge.svg?branch=26.x" alt="CI Status"></a>
 </p>
 
