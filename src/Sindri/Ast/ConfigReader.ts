@@ -65,7 +65,7 @@ export class ConfigReader extends AstReader implements ConfigReaderContract {
             if (ts.isExpressionStatement(stmt) && ts.isCallExpression(stmt.expression)) {
                 const call = stmt.expression;
 
-                if (ts.isIdentifier(call.expression) && call.expression.text === 'super') {
+                if (call.expression.kind === ts.SyntaxKind.SuperKeyword) {
                     return call.arguments;
                 }
             }
@@ -150,9 +150,8 @@ export class ConfigReader extends AstReader implements ConfigReaderContract {
 
         if (
             ts.isPropertyAccessExpression(arg) &&
-            ts.isPropertyAccessExpression(arg.expression) &&
-            ts.isMetaProperty(arg.expression.expression) &&
-            arg.expression.expression.name.text === 'meta'
+            ts.isMetaProperty(arg.expression) &&
+            arg.expression.name.text === 'meta'
         ) {
             return fileDir;
         }

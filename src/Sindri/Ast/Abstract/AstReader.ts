@@ -627,7 +627,7 @@ export abstract class AstReader {
 
         const fqn = fqnColonCase.substring(0, pos);
         const caseName = fqnColonCase.substring(pos + 2);
-        const className = fqn.split('\\').pop() ?? fqn;
+        const className = fqn.slice(fqn.lastIndexOf('\\') + 1);
 
         return ts.factory.createPropertyAccessExpression(ts.factory.createIdentifier(className), caseName);
     }
@@ -636,7 +636,7 @@ export abstract class AstReader {
      * Build a `ClassName.methodName` property access from a HandlerData.
      */
     protected buildHandlerExpr(handler: HandlerData): ts.PropertyAccessExpression {
-        const className = handler.class.split('\\').pop() ?? handler.class;
+        const className = handler.class.slice(handler.class.lastIndexOf('\\') + 1);
 
         return ts.factory.createPropertyAccessExpression(ts.factory.createIdentifier(className), handler.method);
     }
@@ -647,7 +647,7 @@ export abstract class AstReader {
     }
 
     protected buildNewExpr(className: string, args: ts.Expression[]): ts.NewExpression {
-        const shortName = className.split('\\').pop() ?? className;
+        const shortName = className.slice(className.lastIndexOf('\\') + 1);
 
         return ts.factory.createNewExpression(ts.factory.createIdentifier(shortName), undefined, args);
     }
@@ -671,7 +671,7 @@ export abstract class AstReader {
     }
 
     protected buildClassIdentifierArrayExpr(classes: readonly string[]): ts.ArrayLiteralExpression {
-        const elements = classes.map((c) => ts.factory.createIdentifier(c.split('\\').pop() ?? c));
+        const elements = classes.map((c) => ts.factory.createIdentifier(c.slice(c.lastIndexOf('\\') + 1)));
         return ts.factory.createArrayLiteralExpression(elements);
     }
 
