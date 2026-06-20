@@ -5,4 +5,8 @@
 export class TestListenerClass {
     @Listener('user.deleted', 'cleanup')
     onDelete() {}
+
+    @Listener('user.updated', 'updated')
+    @ListenerHandler([CustomHandler, 'doIt'])
+    onUpdate() {}
 }

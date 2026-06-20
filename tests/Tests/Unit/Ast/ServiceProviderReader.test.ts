@@ -31,4 +31,26 @@ describe('ServiceProviderReader', () => {
             0,
         );
     });
+
+    it('returns an empty result when there is no publishers() method', () => {
+        expect(
+            new ServiceProviderReader().readFile(fixture('Provider/TestServiceProviderNoPublishers')).serviceClasses,
+        ).toHaveLength(0);
+    });
+
+    it('returns an empty result when publishers() does not return an object', () => {
+        expect(
+            new ServiceProviderReader().readFile(fixture('Provider/TestServiceProviderNonObjectPublishers'))
+                .serviceClasses,
+        ).toHaveLength(0);
+    });
+
+    it('skips spreads, unsupported keys and invalid handler values', () => {
+        const result = new ServiceProviderReader().readFile(fixture('Provider/TestServiceProviderEdgePublishers'));
+
+        // Only the self-reference and the valid property-access entries survive.
+        expect(result.serviceClasses).toStrictEqual(['svc.self', 'svc.ok']);
+        expect(result.publishers['svc.self']).toStrictEqual(['TestServiceProviderEdgePublishers', 'publishSelf']);
+        expect(result.publishers['svc.ok']).toStrictEqual(['ProviderA', 'publishA']);
+    });
 });

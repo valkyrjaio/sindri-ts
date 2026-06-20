@@ -30,4 +30,11 @@ describe('HttpRouteAttributeReader', () => {
 
         expect(Object.keys(result.routes)).toHaveLength(0);
     });
+
+    it('applies method-level @Path and @Name suffixes when there is no class prefix', () => {
+        const result = new HttpRouteAttributeReader().readFile(fixture('Http/TestHttpControllerNoPrefix'));
+
+        expect(Object.keys(result.routes)).toStrictEqual(['list.all']);
+        expect(result.routeData['list.all'].path).toBe('/items/extra');
+    });
 });

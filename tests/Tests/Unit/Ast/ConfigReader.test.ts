@@ -76,6 +76,10 @@ describe('ConfigReader', () => {
         expect(new ConfigReader().readFile(fixturePath('TestConfigNoSuper')).namespace).toBe('');
     });
 
+    it('returns an empty config when the first constructor is an overload with no body', () => {
+        expect(new ConfigReader().readFile(fixturePath('TestConfigConstructorOverload')).namespace).toBe('');
+    });
+
     it('returns an empty config when the super() call has too few arguments', () => {
         expect(new ConfigReader().readFile(fixturePath('TestConfigFewArgs')).dir).toBe('');
     });
