@@ -4,13 +4,17 @@
 @Path('/users')
 @Name('users')
 export class TestHttpControllerClass {
-    @Route('/list', 'index')
+    @Route('/{id}', 'index')
     @RequestMethod('GET')
     @Middleware(SomeMiddleware)
     @RequestStruct(SomeRequestStruct)
     @ResponseStruct(SomeResponseStruct)
     @Parameter('id', '\\d+')
-    index() {}
+    index(@Parameter('slug', '[a-z]+') slug) {}
+
+    @DynamicRoute('/{post}', 'show')
+    @Parameter('post', '\\d+')
+    show() {}
 
     @Route('', '')
     invalid() {}

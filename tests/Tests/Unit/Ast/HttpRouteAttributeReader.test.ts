@@ -21,7 +21,7 @@ describe('HttpRouteAttributeReader', () => {
     it('reads @Route decorators with the class @Name prefix, skipping invalid routes', () => {
         const result = new HttpRouteAttributeReader().readFile(fixture('Http/TestHttpControllerClass'));
 
-        expect(Object.keys(result.routes)).toStrictEqual(['users.index']);
+        expect(Object.keys(result.routes)).toStrictEqual(['users.index', 'users.show']);
         expect(result.routeData['users.index']).toBeDefined();
     });
 
