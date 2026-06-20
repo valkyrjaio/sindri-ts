@@ -14,6 +14,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { HttpParameterData } from '../../../../../../src/Sindri/Ast/Data/HttpParameterData.ts';
 import { HttpRouteData } from '../../../../../../src/Sindri/Ast/Data/HttpRouteData.ts';
 import { GenerateStatus } from '../../../../../../src/Sindri/Generator/Enum/GenerateStatus.ts';
+import { GeneratorUnreachableException } from '../../../../../../src/Sindri/Generator/Throwable/Exception/GeneratorUnreachableException.ts';
 import { AstHttpDataFileGenerator } from '../../../../../../src/Sindri/Generator/Ast/Http/AstHttpDataFileGenerator.ts';
 
 import type { ProcessorContract } from '@valkyrjaio/valkyrja/Http/Routing/Processor/Contract/ProcessorContract.ts';
@@ -92,5 +93,28 @@ describe('AstHttpDataFileGenerator', () => {
         );
 
         expect(status).toBe(GenerateStatus.SUCCESS);
+    });
+
+    it('throws GeneratorUnreachableException if the temporary route handler is ever dispatched', () => {
+        // The handler passed to the temporary DynamicRoute is a guard that must never run during
+        // code generation; invoke it via a processor that dispatches the route to prove it throws.
+        const processor = {
+            route: (route: RouteContract): RouteContract => {
+                (route as unknown as { getHandler: () => (...args: unknown[]) => unknown }).getHandler()();
+
+                return route;
+            },
+        } as unknown as ProcessorContract;
+        const generator = new AstHttpDataFileGenerator(processor);
+
+        expect(() =>
+            generator.generateFile(
+                '/out',
+                'HttpData',
+                'App.Data',
+                { 'users.show': newRouteExpr() },
+                { 'users.show': dynamicRoute() },
+            ),
+        ).toThrow(GeneratorUnreachableException);
     });
 });
