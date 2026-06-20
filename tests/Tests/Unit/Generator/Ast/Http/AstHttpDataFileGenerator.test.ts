@@ -160,8 +160,6 @@ describe('AstHttpDataFileGenerator', () => {
             // 'Orphan::KEY' is intentionally absent from routeData.
         };
 
-        expect(generator.generateFile('/out', 'HttpData', 'App.Data', routes, routeData)).toBe(
-            GenerateStatus.SUCCESS,
-        );
+        expect(generator.generateFile('/out', 'HttpData', 'App.Data', routes, routeData)).toBe(GenerateStatus.SUCCESS);
     });
 });
