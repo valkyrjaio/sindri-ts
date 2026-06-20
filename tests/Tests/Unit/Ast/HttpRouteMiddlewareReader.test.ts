@@ -70,6 +70,13 @@ describe('HttpRouteMiddlewareReader', () => {
                 'Valkyrja\\Http\\Message\\Enum\\RequestMethod::GET',
             ]);
         });
+
+        it('ignores non-string @RequestMethod arguments', () => {
+            expect(reader.updateRequestMethods([], method('@RequestMethod(123) m() {}'), useMap, anchor, 'C')).toEqual([
+                'Valkyrja\\Http\\Message\\Enum\\RequestMethod::HEAD',
+                'Valkyrja\\Http\\Message\\Enum\\RequestMethod::GET',
+            ]);
+        });
     });
 
     describe('updateMiddleware', () => {
@@ -98,6 +105,13 @@ describe('HttpRouteMiddlewareReader', () => {
 
         it('returns null when no struct decorators are present', () => {
             const m = method('m() {}');
+
+            expect(reader.updateRequestStruct(m, useMap, anchor, 'C')).toBeNull();
+            expect(reader.updateResponseStruct(m, useMap, anchor, 'C')).toBeNull();
+        });
+
+        it('returns null when the struct decorator argument is not a string', () => {
+            const m = method('@RequestStruct(123) @ResponseStruct(123) m() {}');
 
             expect(reader.updateRequestStruct(m, useMap, anchor, 'C')).toBeNull();
             expect(reader.updateResponseStruct(m, useMap, anchor, 'C')).toBeNull();

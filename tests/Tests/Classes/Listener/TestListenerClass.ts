@@ -9,4 +9,11 @@ export class TestListenerClass {
     @Listener('user.updated', 'updated')
     @ListenerHandler([CustomHandler, 'doIt'])
     onUpdate() {}
+
+    @Listener('user.handled', 'handled')
+    @ListenerHandler('not-a-handler-pair')
+    onHandled() {}
+
+    @Listener('', '')
+    invalidListener() {}
 }

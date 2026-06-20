@@ -53,4 +53,8 @@ describe('ServiceProviderReader', () => {
         expect(result.publishers['svc.self']).toStrictEqual(['TestServiceProviderEdgePublishers', 'publishSelf']);
         expect(result.publishers['svc.ok']).toStrictEqual(['ProviderA', 'publishA']);
     });
+
+    it('falls back to an empty current class for an anonymous default-exported class', () => {
+        expect(new ServiceProviderReader().readFile(fixture('Ast/AnonymousClass')).serviceClasses).toHaveLength(0);
+    });
 });

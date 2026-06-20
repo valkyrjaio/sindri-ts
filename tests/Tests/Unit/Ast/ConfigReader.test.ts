@@ -95,4 +95,17 @@ describe('ConfigReader', () => {
     it('throws when the file cannot be read', () => {
         expect(() => new ConfigReader().readFile('/does/not/exist.ts')).toThrow(AstFileReadException);
     });
+
+    it('ignores non-super() call statements in the constructor', () => {
+        expect(new ConfigReader().readFile(fixturePath('TestConfigNonSuperCall')).namespace).toBe('App.NonSuper');
+    });
+
+    it('does not resolve the dir from a property-access call that is not process.cwd()', () => {
+        // The dir argument is path.resolve() (not process.cwd()), so the dir cannot be
+        // resolved and the config comes back empty.
+        const result = new ConfigReader().readFile(fixturePath('TestConfigNonCwdCall'));
+
+        expect(result.dir).toBe('');
+        expect(result.namespace).toBe('');
+    });
 });

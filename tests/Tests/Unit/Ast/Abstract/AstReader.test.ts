@@ -476,4 +476,31 @@ describe('AstReader', () => {
             expect(reader.classImplementsInterface('Empty', 'FooContract', useMap, anchor)).toBe(false);
         });
     });
+
+    describe('branch edge cases', () => {
+        it('returns undefined when the static member is not a property declaration', () => {
+            // GETTER is a static get accessor, not a PropertyDeclaration.
+            expect(reader.resolveStaticProperty('StaticHolder', 'GETTER', useMap, anchor)).toBeUndefined();
+        });
+
+        it('resolves identifier nodes whose text is a literal keyword', () => {
+            expect(reader.extractExprValue(ts.factory.createIdentifier('null'), useMap, anchor)).toBeNull();
+            expect(reader.extractExprValue(ts.factory.createIdentifier('true'), useMap, anchor)).toBe(true);
+            expect(reader.extractExprValue(ts.factory.createIdentifier('false'), useMap, anchor)).toBe(false);
+        });
+
+        it('skips non-string elements when extracting a class list from a decorator array', () => {
+            const dec = decorator("@Foo([1, 'A'])");
+
+            expect(reader.extractClassListArgFromDecorator(dec, 0, useMap, anchor, 'C')).toEqual(['A']);
+        });
+
+        it('falls back to an empty current class for an anonymous class', () => {
+            const context = reader.parseClassFile(path.join(fixtureDir, 'AnonymousClass.ts')) as
+                | { currentClass: string }
+                | undefined;
+
+            expect(context?.currentClass).toBe('');
+        });
+    });
 });

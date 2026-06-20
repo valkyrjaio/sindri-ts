@@ -52,4 +52,12 @@ describe('HttpRouteAttributeReader', () => {
 
         expect(ts.isNewExpression(expr)).toBe(true);
     });
+
+    it('ignores non-string class and method @Path/@Name decorators', () => {
+        const result = new HttpRouteAttributeReader().readFile(fixture('Http/TestHttpControllerNonString'));
+
+        // Non-string prefixes/suffixes are skipped, leaving the bare route name and path.
+        expect(Object.keys(result.routes)).toStrictEqual(['list']);
+        expect(result.routeData['list'].path).toBe('/items');
+    });
 });

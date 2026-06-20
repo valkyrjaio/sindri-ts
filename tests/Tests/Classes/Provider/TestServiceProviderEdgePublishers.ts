@@ -7,6 +7,7 @@ export class TestServiceProviderEdgePublishers {
             ...spread,
             5: ProviderA.publishA,
             'svc.bad': 'notHandler',
+            'svc.arr': [1, 2],
             'svc.nested': a.b.c,
             'svc.self': self.publishSelf,
             'svc.ok': ProviderA.publishA,

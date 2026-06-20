@@ -117,4 +117,51 @@ describe('AstHttpDataFileGenerator', () => {
             ),
         ).toThrow(GeneratorUnreachableException);
     });
+
+    it('covers repeated methods, empty path/name, non-Regex casts, orphans and colon keys', () => {
+        const generator = new AstHttpDataFileGenerator();
+
+        const dyn = (path: string, name: string, regex: string): HttpRouteData =>
+            new HttpRouteData(path, name, null, [GET], [], [], [], [], [], null, null, true, [
+                new HttpParameterData('id', regex),
+            ]);
+
+        // A new-expression whose arguments are undefined (exercises the `?? []` fallback).
+        const undefinedArgsExpr = ts.factory.createNewExpression(
+            ts.factory.createIdentifier('Route'),
+            undefined,
+            undefined,
+        );
+
+        const routes = {
+            'a.index': newRouteExpr(),
+            'b.index': newRouteExpr(),
+            'd1.show': undefinedArgsExpr,
+            'd2.show': newRouteExpr(),
+            'empty.route': newRouteExpr(),
+            'reg.none': newRouteExpr(),
+            'no.param': newRouteExpr(),
+            'Orphan::KEY': newRouteExpr(),
+        };
+
+        const routeData = {
+            // Two static routes sharing GET exercise the "method already seen" path branch.
+            'a.index': new HttpRouteData('/a', 'a.index', null, [GET]),
+            'b.index': new HttpRouteData('/b', 'b.index', null, [GET]),
+            // Two dynamic routes sharing GET exercise the dynamic-path and regex "already seen" branches.
+            'd1.show': dyn('/d1/{id}', 'd1.show', 'Regex::NUM'),
+            'd2.show': dyn('/d2/{id}', 'd2.show', 'Regex::NUM'),
+            // Empty path and name fall back to '/' and 'temp'; a non-Regex enum cast is left as-is.
+            'empty.route': dyn('', '', 'Other::FOO'),
+            // A Regex:: cast that does not resolve to a known pattern.
+            'reg.none': dyn('/r/{id}', 'reg.none', 'Regex::NONEXISTENT'),
+            // A dynamic route with no parameters yields an empty computed regex.
+            'no.param': new HttpRouteData('/np', 'no.param', null, [GET], [], [], [], [], [], null, null, true, []),
+            // 'Orphan::KEY' is intentionally absent from routeData.
+        };
+
+        expect(generator.generateFile('/out', 'HttpData', 'App.Data', routes, routeData)).toBe(
+            GenerateStatus.SUCCESS,
+        );
+    });
 });

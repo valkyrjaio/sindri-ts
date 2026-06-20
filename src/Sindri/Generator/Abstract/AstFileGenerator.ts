@@ -26,7 +26,7 @@ export abstract class AstFileGenerator {
 
         const fqn = fqnColonCase.substring(0, pos);
         const caseName = fqnColonCase.substring(pos + 2);
-        const className = fqn.split('\\').pop() ?? fqn;
+        const className = fqn.slice(fqn.lastIndexOf('\\') + 1);
 
         return ts.factory.createPropertyAccessExpression(ts.factory.createIdentifier(className), caseName);
     }

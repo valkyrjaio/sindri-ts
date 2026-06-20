@@ -91,6 +91,12 @@ describe('HttpRouteParameterReader', () => {
 
             expect(reader.updateParameters([], m, {}, '', 'C')).toEqual([]);
         });
+
+        it('drops method-parameter decorators with an empty name or regex', () => {
+            const m = method("m(@Parameter('', '') id: string) {}");
+
+            expect(reader.updateParameters([], m, {}, '', 'C')).toEqual([]);
+        });
     });
 
     describe('buildParameterListExpr', () => {
