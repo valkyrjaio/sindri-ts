@@ -67,4 +67,15 @@ describe('GenerateDataFromConfigCommand', () => {
     it('throws when the config file cannot be read', () => {
         expect(() => command('/does/not/exist.ts').run()).toThrow();
     });
+
+    it('falls back to an empty config path when the config argument has no value', () => {
+        const route = new Route(
+            'data:generate',
+            'Generate data',
+            (): OutputContract => new OutputFactory().createOutput(),
+        ).withArguments(new ArgumentParameter('config', 'Config path'));
+        const cmd = new GenerateDataFromConfigCommand(route, new OutputFactory(new CliInteractionConfig()));
+
+        expect(() => cmd.run()).toThrow();
+    });
 });

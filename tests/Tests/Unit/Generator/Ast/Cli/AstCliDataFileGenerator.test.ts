@@ -37,4 +37,12 @@ describe('AstCliDataFileGenerator', () => {
             GenerateStatus.SUCCESS,
         );
     });
+
+    it('formats route keys that contain a "::" separator', () => {
+        const routes = { 'App\\Command::NAME': ts.factory.createNull() };
+
+        expect(new AstCliDataFileGenerator().generateFile('/out', 'CliData', 'App.Data', routes)).toBe(
+            GenerateStatus.SUCCESS,
+        );
+    });
 });

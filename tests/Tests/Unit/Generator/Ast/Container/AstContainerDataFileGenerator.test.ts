@@ -35,4 +35,13 @@ describe('AstContainerDataFileGenerator', () => {
             GenerateStatus.SUCCESS,
         );
     });
+
+    it('formats enum-case service ids that contain a "::" separator', () => {
+        const generator = new AstContainerDataFileGenerator();
+        generator.classImportMap = { ProviderA: './ProviderA.ts' };
+
+        const publishers = { 'App\\Service::ID': ['ProviderA', 'publishA'] as const };
+
+        expect(generator.generateFile('/out', 'ContainerData', 'App.Data', publishers)).toBe(GenerateStatus.SUCCESS);
+    });
 });

@@ -14,6 +14,9 @@ export class TestListenerClass {
     @ListenerHandler('not-a-handler-pair')
     onHandled() {}
 
+    @Listener('user.direct', 'direct', [DirectHandler, 'handle'])
+    onDirect() {}
+
     @Listener('', '')
     invalidListener() {}
 }

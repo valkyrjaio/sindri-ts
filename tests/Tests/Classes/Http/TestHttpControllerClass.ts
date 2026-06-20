@@ -19,5 +19,8 @@ export class TestHttpControllerClass {
     @Route('', '')
     invalid() {}
 
+    @DynamicRoute('', '')
+    invalidDynamic() {}
+
     noDecorator() {}
 }
