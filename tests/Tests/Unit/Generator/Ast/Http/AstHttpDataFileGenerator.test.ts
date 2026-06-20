@@ -38,21 +38,9 @@ function staticRoute(): HttpRouteData {
 }
 
 function dynamicRoute(): HttpRouteData {
-    return new HttpRouteData(
-        '/users/{id}',
-        'users.show',
-        null,
-        [GET],
-        [],
-        [],
-        [],
-        [],
-        [],
-        null,
-        null,
-        true,
-        [new HttpParameterData('id', 'Regex::NUM')],
-    );
+    return new HttpRouteData('/users/{id}', 'users.show', null, [GET], [], [], [], [], [], null, null, true, [
+        new HttpParameterData('id', 'Regex::NUM'),
+    ]);
 }
 
 describe('AstHttpDataFileGenerator', () => {

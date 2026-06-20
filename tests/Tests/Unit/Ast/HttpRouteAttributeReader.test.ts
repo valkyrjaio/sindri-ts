@@ -9,12 +9,21 @@
 
 import { fileURLToPath } from 'node:url';
 
+import { ts } from 'ts-morph';
+
 import { describe, expect, it } from 'vitest';
 
+import { HttpRouteData } from '../../../../src/Sindri/Ast/Data/HttpRouteData.ts';
 import { HttpRouteAttributeReader } from '../../../../src/Sindri/Ast/HttpRouteAttributeReader.ts';
 
 function fixture(name: string): string {
     return fileURLToPath(new URL(`../../Classes/${name}.ts`, import.meta.url));
+}
+
+class TestHttpRouteAttributeReader extends HttpRouteAttributeReader {
+    public build(data: HttpRouteData): ts.Expression {
+        return this.buildRouteExpr(data);
+    }
 }
 
 describe('HttpRouteAttributeReader', () => {
@@ -36,5 +45,11 @@ describe('HttpRouteAttributeReader', () => {
 
         expect(Object.keys(result.routes)).toStrictEqual(['list.all']);
         expect(result.routeData['list.all'].path).toBe('/items/extra');
+    });
+
+    it('builds a null handler argument when the route has no handler', () => {
+        const expr = new TestHttpRouteAttributeReader().build(new HttpRouteData('/p', 'name', null));
+
+        expect(ts.isNewExpression(expr)).toBe(true);
     });
 });

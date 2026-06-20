@@ -41,7 +41,11 @@ describe('HttpRouteParameterReader', () => {
         });
 
         it('builds parameters from inline new-expressions, skipping non-new elements', () => {
-            const args = [expr("'path'"), expr("'name'"), expr("[42, new Parameter('id', '\\\\d+', 'int', true, false)]")];
+            const args = [
+                expr("'path'"),
+                expr("'name'"),
+                expr("[42, new Parameter('id', '\\\\d+', 'int', true, false)]"),
+            ];
 
             const params = reader.updateParameters(args, emptyMethod, {}, '', 'C');
 

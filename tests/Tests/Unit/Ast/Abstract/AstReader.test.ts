@@ -10,14 +10,7 @@
 import * as path from 'path';
 import { fileURLToPath } from 'node:url';
 
-import {
-    ClassDeclaration,
-    Decorator,
-    MethodDeclaration,
-    Project,
-    SourceFile,
-    ts,
-} from 'ts-morph';
+import { ClassDeclaration, Decorator, MethodDeclaration, Project, SourceFile, ts } from 'ts-morph';
 
 import { describe, expect, it } from 'vitest';
 
@@ -68,12 +61,8 @@ class TestAstReader extends AstReader {
     ): string | undefined => super.resolveStaticProperty(c, p, u, f);
     public resolveClassToFilePath = (n: string, u: Record<string, string>, f: string): string =>
         super.resolveClassToFilePath(n, u, f);
-    public extractExprValue = (
-        n: ts.Node | undefined,
-        u: Record<string, string>,
-        f: string,
-        c: string = '',
-    ): unknown => super.extractExprValue(n, u, f, c);
+    public extractExprValue = (n: ts.Node | undefined, u: Record<string, string>, f: string, c: string = ''): unknown =>
+        super.extractExprValue(n, u, f, c);
     public extractHandlerFromTsArray = (
         a: ts.ArrayLiteralExpression,
         u: Record<string, string>,
@@ -120,12 +109,8 @@ class TestAstReader extends AstReader {
     public buildNullExpr = (): ts.NullLiteral => super.buildNullExpr();
     public buildClassIdentifierArrayExpr = (c: readonly string[]): ts.ArrayLiteralExpression =>
         super.buildClassIdentifierArrayExpr(c);
-    public classImplementsInterface = (
-        c: string,
-        i: string,
-        u: Record<string, string>,
-        f: string,
-    ): boolean => super.classImplementsInterface(c, i, u, f);
+    public classImplementsInterface = (c: string, i: string, u: Record<string, string>, f: string): boolean =>
+        super.classImplementsInterface(c, i, u, f);
 }
 
 const fixtureDir = fileURLToPath(new URL('../../../Classes/Ast/', import.meta.url));
@@ -147,8 +132,7 @@ function sourceFile(code: string): SourceFile {
 
 /** Compiler node of the initializer of `const __x = <code>;`. */
 function expr(code: string): ts.Node {
-    return sourceFile(`const __x = ${code};`).getVariableDeclarationOrThrow('__x').getInitializerOrThrow()
-        .compilerNode;
+    return sourceFile(`const __x = ${code};`).getVariableDeclarationOrThrow('__x').getInitializerOrThrow().compilerNode;
 }
 
 /** A method declaration from a class body. */
@@ -168,9 +152,7 @@ describe('AstReader', () => {
         });
 
         it('throws when the file does not exist', () => {
-            expect(() => reader.parseFileToSourceFile(path.join(fixtureDir, 'nope.ts'))).toThrow(
-                AstFileReadException,
-            );
+            expect(() => reader.parseFileToSourceFile(path.join(fixtureDir, 'nope.ts'))).toThrow(AstFileReadException);
         });
     });
 
@@ -411,7 +393,9 @@ describe('AstReader', () => {
         const arr = (code: string): ts.ArrayLiteralExpression => expr(code) as ts.ArrayLiteralExpression;
 
         it('builds a HandlerData from a class/method pair', () => {
-            expect(reader.extractHandlerFromTsArray(arr("[A, 'm']"), useMap, anchor)).toEqual(new HandlerData('A', 'm'));
+            expect(reader.extractHandlerFromTsArray(arr("[A, 'm']"), useMap, anchor)).toEqual(
+                new HandlerData('A', 'm'),
+            );
         });
 
         it('returns undefined when the array is not a pair', () => {

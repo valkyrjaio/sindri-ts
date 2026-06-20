@@ -46,7 +46,14 @@ describe('HttpRouteMiddlewareReader', () => {
 
         it('returns empty when the fourth argument is missing or not an array', () => {
             expect(reader.extractInlineRequestMethods([], useMap, anchor, 'C')).toEqual([]);
-            expect(reader.extractInlineRequestMethods([expr("'a'"), expr("'b'"), expr("'c'"), expr("'x'")], useMap, anchor, 'C')).toEqual([]);
+            expect(
+                reader.extractInlineRequestMethods(
+                    [expr("'a'"), expr("'b'"), expr("'c'"), expr("'x'")],
+                    useMap,
+                    anchor,
+                    'C',
+                ),
+            ).toEqual([]);
         });
     });
 
@@ -99,19 +106,7 @@ describe('HttpRouteMiddlewareReader', () => {
 
     describe('AST builders', () => {
         it('builds middleware and struct argument expressions', () => {
-            const withStructs = new HttpRouteData(
-                '/p',
-                'p',
-                null,
-                [],
-                ['A'],
-                ['B'],
-                ['C'],
-                ['D'],
-                ['E'],
-                'Req',
-                'Res',
-            );
+            const withStructs = new HttpRouteData('/p', 'p', null, [], ['A'], ['B'], ['C'], ['D'], ['E'], 'Req', 'Res');
             const withoutStructs = new HttpRouteData('/p', 'p');
 
             expect(reader.buildRouteMiddlewareArgs(withStructs)).toHaveLength(5);

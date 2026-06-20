@@ -7,6 +7,4 @@ export class AllMiddleware
         RouteDispatchedMiddlewareContract,
         ThrowableCaughtMiddlewareContract,
         SendingResponseMiddlewareContract,
-        TerminatedMiddlewareContract
-{
-}
+        TerminatedMiddlewareContract {}

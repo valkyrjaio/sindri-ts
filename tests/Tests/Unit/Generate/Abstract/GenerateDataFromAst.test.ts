@@ -52,11 +52,10 @@ interface Deps {
 class TestGenerate extends GenerateDataFromAst {
     public constructor(deps: Deps = {}) {
         const outputFactory = new OutputFactory(new CliInteractionConfig());
-        const route = outputFactory.createOutput().getMessages !== undefined ? ({} as never) : ({} as never);
 
         super(
             outputFactory,
-            route,
+            {} as never,
             'Generating Data',
             reader(new ConfigResult()) as never,
             (deps.componentProviderReader ?? reader(new ComponentProviderResult())) as never,
