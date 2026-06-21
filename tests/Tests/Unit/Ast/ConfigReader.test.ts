@@ -40,7 +40,7 @@ describe('ConfigReader', () => {
         const result = new ConfigReader().readFile(fixturePath('TestConfigProcessCwd'));
 
         expect(result.namespace).toBe('App.Cwd');
-        expect(result.dir).toContain('Classes/Config');
+        expect(result.dir).toBe(process.cwd());
         expect(result.dataPath).toBe('/abs/data');
         expect(result.providers).toStrictEqual([]);
     });

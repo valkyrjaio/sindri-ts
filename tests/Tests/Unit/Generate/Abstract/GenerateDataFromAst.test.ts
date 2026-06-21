@@ -149,6 +149,15 @@ describe('GenerateDataFromAst', () => {
             // Passing a file where a directory is expected makes readdirSync throw.
             expect(new TestGenerate().findFile('Config', configFile)).toBe('');
         });
+
+        it('skips node_modules directories when searching for a class file', () => {
+            const findFileDir = fileURLToPath(new URL('../../../Classes/FindFile', import.meta.url));
+            const generate = new TestGenerate();
+
+            // Visible.ts is found, but Hidden.ts (only inside node_modules) is skipped.
+            expect(generate.findFile('Visible', findFileDir)).toContain('Visible.ts');
+            expect(generate.findFile('Hidden', findFileDir)).toBe('');
+        });
     });
 
     describe('walkProvider', () => {
