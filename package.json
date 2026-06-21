@@ -21,7 +21,7 @@
         }
     },
     "bin": {
-        "sindri": "dist/bin/sindri.js"
+        "sindri": "dist/bin/sindri.cjs"
     },
     "files": [
         "dist",
@@ -35,6 +35,8 @@
         "ts-morph": "^28.0.0"
     },
     "scripts": {
+        "build": "esbuild bin/sindri.ts --bundle --platform=node --format=cjs --outfile=dist/bin/sindri.cjs --banner:js='#!/usr/bin/env node'",
+        "prepublishOnly": "npm run build",
         "typescript": "cd .github/ci/typescript && npm run check",
         "typescript-outdated-check": "cd .github/ci/typescript && npm install && npm outdated",
         "typescript-outdated-check-major-release": "cd .github/ci/typescript && npm install && npm outdated",
@@ -59,5 +61,8 @@
         "root-and-suggested-outdated-check": "cd .github/ci/root-and-suggested && npm install && npm outdated",
         "root-and-suggested-outdated-check-major-release": "cd .github/ci/root-and-suggested && npm install && npm outdated",
         "root-and-suggested-npm-update": "cd .github/ci/root-and-suggested && npm update"
+    },
+    "devDependencies": {
+        "esbuild": "^0.28.1"
     }
 }

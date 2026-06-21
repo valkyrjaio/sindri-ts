@@ -17,6 +17,6 @@
             "ts-morph": ["./.github/ci/typescript/node_modules/ts-morph/lib/ts-morph.d.ts"]
         }
     },
-    "include": ["src/**/*"],
+    "include": ["src/**/*", "bin/**/*"],
     "exclude": ["node_modules", "dist", ".github"]
 }
