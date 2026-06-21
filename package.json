@@ -8,6 +8,13 @@
         "sindri",
         "valkyrja"
     ],
+    "bugs": {
+        "url": "https://github.com/valkyrjaio/sindri-ts/issues"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/valkyrjaio/sindri-ts.git"
+    },
     "license": "MIT",
     "author": {
         "name": "Melech Mizrachi",
