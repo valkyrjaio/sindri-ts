@@ -1,6 +1,11 @@
 # Release Notes for 26.x
 
-## [Unreleased](https://github.com/valkyrjaio/sindri-ts/compare/v26.1.1...26.x)
+## [Unreleased](https://github.com/valkyrjaio/sindri-ts/compare/v26.1.2...26.x)
+
+## [v26.1.2](https://github.com/valkyrjaio/sindri-ts/compare/v26.1.1...v26.1.2) - 2026-06-21
+
+* [Tests] Assert the SindriInfo version format instead of an exact value by [@MelechMizrachi](https://github.com/MelechMizrachi) in https://github.com/valkyrjaio/sindri-ts/pull/34
+* [GitHub] Update .github workflow refs to v26.9.7 by [@valkyrja-volundr](https://github.com/valkyrja-volundr)[bot] in https://github.com/valkyrjaio/sindri-ts/pull/33
 
 ## [v26.1.1](https://github.com/valkyrjaio/sindri-ts/compare/v26.1.0...v26.1.1) - 2026-06-20
 
