@@ -1,6 +1,20 @@
 # Release Notes for 26.x
 
-## [Unreleased](https://github.com/valkyrjaio/sindri-ts/compare/v26.1.0...26.x)
+## [Unreleased](https://github.com/valkyrjaio/sindri-ts/compare/v26.1.1...26.x)
+
+## [v26.1.1](https://github.com/valkyrjaio/sindri-ts/compare/v26.1.0...v26.1.1) - 2026-06-20
+
+* [GitHub] Update .github workflow refs to v26.9.2 by [@valkyrja-volundr](https://github.com/valkyrja-volundr)[bot] in https://github.com/valkyrjaio/sindri-ts/pull/22
+* [npm] Update npm dependencies by [@valkyrja-volundr](https://github.com/valkyrja-volundr)[bot] in https://github.com/valkyrjaio/sindri-ts/pull/23
+* [GitHub] Update .github workflow refs to v26.9.3 by [@valkyrja-volundr](https://github.com/valkyrja-volundr)[bot] in https://github.com/valkyrjaio/sindri-ts/pull/24
+* [npm] Update npm dependencies by [@valkyrja-volundr](https://github.com/valkyrja-volundr)[bot] in https://github.com/valkyrjaio/sindri-ts/pull/25
+* [GitHub] Update .github workflow refs to v26.9.5 by [@valkyrja-volundr](https://github.com/valkyrja-volundr)[bot] in https://github.com/valkyrjaio/sindri-ts/pull/27
+* [Tests] Add tests by [@MelechMizrachi](https://github.com/MelechMizrachi) in https://github.com/valkyrjaio/sindri-ts/pull/26
+* [npm] Update npm dependencies by [@valkyrja-volundr](https://github.com/valkyrja-volundr)[bot] in https://github.com/valkyrjaio/sindri-ts/pull/28
+* [Sindri] Add a runnable CLI for data generation by [@MelechMizrachi](https://github.com/MelechMizrachi) in https://github.com/valkyrjaio/sindri-ts/pull/29
+* [Sindri] Fix config data-path resolution by [@MelechMizrachi](https://github.com/MelechMizrachi) in https://github.com/valkyrjaio/sindri-ts/pull/30
+* [npm] Update npm dependencies by [@valkyrja-volundr](https://github.com/valkyrja-volundr)[bot] in https://github.com/valkyrjaio/sindri-ts/pull/31
+* [GitHub] Update .github workflow refs to v26.9.6 by [@valkyrja-volundr](https://github.com/valkyrja-volundr)[bot] in https://github.com/valkyrjaio/sindri-ts/pull/32
 
 ## [v26.1.0](https://github.com/valkyrjaio/sindri-ts/compare/v26.0.1...v26.1.0) - 2026-06-17
 
