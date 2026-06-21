@@ -133,13 +133,14 @@ export class ConfigReader extends AstReader implements ConfigReaderContract {
             return arg.text;
         }
 
-        // process.cwd() → use the file directory as a proxy
+        // process.cwd() resolves to the current working directory, which is the application root
+        // that sindri is run from (the same directory the application itself runs from).
         if (ts.isCallExpression(arg) && ts.isPropertyAccessExpression(arg.expression)) {
             const obj = arg.expression.expression;
             const prop = arg.expression.name;
 
             if (ts.isIdentifier(obj) && obj.text === 'process' && ts.isIdentifier(prop) && prop.text === 'cwd') {
-                return fileDir;
+                return process.cwd();
             }
         }
 

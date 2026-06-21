@@ -189,6 +189,12 @@ export abstract class GenerateDataFromAst {
         }
 
         for (const entry of entries) {
+            // Never descend into dependency directories — application source never lives there,
+            // and a matching class name in node_modules must not shadow the real one.
+            if (entry.isDirectory() && entry.name === 'node_modules') {
+                continue;
+            }
+
             const fullPath = path.join(dir, entry.name);
 
             if (entry.isDirectory()) {
