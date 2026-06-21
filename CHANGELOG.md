@@ -1,6 +1,10 @@
 # Release Notes for 26.x
 
-## [Unreleased](https://github.com/valkyrjaio/sindri-ts/compare/v26.1.2...26.x)
+## [Unreleased](https://github.com/valkyrjaio/sindri-ts/compare/v26.1.3...26.x)
+
+## [v26.1.3](https://github.com/valkyrjaio/sindri-ts/compare/v26.1.2...v26.1.3) - 2026-06-21
+
+* [Package] Add repository and bugs fields to sindri for provenance publishing by [@MelechMizrachi](https://github.com/MelechMizrachi) in https://github.com/valkyrjaio/sindri-ts/pull/35
 
 ## [v26.1.2](https://github.com/valkyrjaio/sindri-ts/compare/v26.1.1...v26.1.2) - 2026-06-21
 
