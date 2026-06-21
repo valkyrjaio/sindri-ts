@@ -13,7 +13,8 @@ import { SindriInfo } from '../../../../src/Sindri/Constant/SindriInfo.ts';
 
 describe('SindriInfo', () => {
     it('exposes the version and build metadata', () => {
-        expect(SindriInfo.VERSION).toBe('26.1.0');
+        // The version is bumped by the release workflow, so assert its shape rather than an exact value.
+        expect(SindriInfo.VERSION).toMatch(/^\d+\.\d+\.\d+$/);
         expect(typeof SindriInfo.VERSION_BUILD_DATE_TIME).toBe('string');
         expect(SindriInfo.ICON).toContain('█');
     });
