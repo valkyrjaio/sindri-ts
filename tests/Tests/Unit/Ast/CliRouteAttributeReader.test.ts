@@ -18,7 +18,7 @@ import { HandlerData } from '../../../../src/Sindri/Ast/Data/HandlerData.ts';
 import { CliRouteAttributeReader } from '../../../../src/Sindri/Ast/CliRouteAttributeReader.ts';
 
 function fixture(name: string): string {
-    return fileURLToPath(new URL(`../../Classes/${name}.ts`, import.meta.url));
+    return fileURLToPath(new URL(`../../Fixtures/${name}.ts`, import.meta.url));
 }
 
 class TestCliRouteAttributeReader extends CliRouteAttributeReader {

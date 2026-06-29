@@ -17,7 +17,7 @@ import { ListenerData } from '../../../../src/Sindri/Ast/Data/ListenerData.ts';
 import { ListenerAttributeReader } from '../../../../src/Sindri/Ast/ListenerAttributeReader.ts';
 
 function fixture(name: string): string {
-    return fileURLToPath(new URL(`../../Classes/Listener/${name}.ts`, import.meta.url));
+    return fileURLToPath(new URL(`../../Fixtures/Listener/${name}.ts`, import.meta.url));
 }
 
 class TestListenerAttributeReader extends ListenerAttributeReader {

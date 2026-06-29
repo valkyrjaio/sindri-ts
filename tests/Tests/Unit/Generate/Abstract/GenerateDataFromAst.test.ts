@@ -22,7 +22,7 @@ import { GenerateDataFromAst } from '../../../../../src/Sindri/Generate/Abstract
 
 import type { OutputContract } from '@valkyrjaio/valkyrja/Cli/Interaction/Output/Contract/OutputContract.ts';
 
-const appDir = fileURLToPath(new URL('../../../Classes/App', import.meta.url));
+const appDir = fileURLToPath(new URL('../../../Fixtures/App', import.meta.url));
 const configFile = path.join(appDir, 'Config.ts');
 
 /** A generator stub returning a fixed status. */
@@ -151,7 +151,7 @@ describe('GenerateDataFromAst', () => {
         });
 
         it('skips node_modules directories when searching for a class file', () => {
-            const findFileDir = fileURLToPath(new URL('../../../Classes/FindFile', import.meta.url));
+            const findFileDir = fileURLToPath(new URL('../../../Fixtures/FindFile', import.meta.url));
             const generate = new TestGenerate();
 
             // Visible.ts is found, but Hidden.ts (only inside node_modules) is skipped.

@@ -30,7 +30,7 @@ function expr(code: string): ts.Expression {
         .compilerNode as ts.Expression;
 }
 
-const fixtureDir = fileURLToPath(new URL('../../Classes/Http/', import.meta.url));
+const fixtureDir = fileURLToPath(new URL('../../Fixtures/Http/', import.meta.url));
 const anchor = path.join(fixtureDir, 'controller.ts');
 const useMap: Record<string, string> = { AllMiddleware: './AllMiddleware.ts' };
 
