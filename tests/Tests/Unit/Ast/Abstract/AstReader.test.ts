@@ -113,7 +113,7 @@ class TestAstReader extends AstReader {
         super.classImplementsInterface(c, i, u, f);
 }
 
-const fixtureDir = fileURLToPath(new URL('../../../Classes/Ast/', import.meta.url));
+const fixtureDir = fileURLToPath(new URL('../../../Fixtures/Ast/', import.meta.url));
 const anchor = path.join(fixtureDir, 'anchor.ts');
 const useMap: Record<string, string> = {
     StaticHolder: './StaticHolder.ts',

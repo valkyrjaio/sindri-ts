@@ -15,7 +15,7 @@ import { ConfigReader } from '../../../../src/Sindri/Ast/ConfigReader.ts';
 import { AstFileReadException } from '../../../../src/Sindri/Ast/Throwable/Exception/AstFileReadException.ts';
 
 function fixturePath(name: string): string {
-    return fileURLToPath(new URL(`../../Classes/Config/${name}.ts`, import.meta.url));
+    return fileURLToPath(new URL(`../../Fixtures/Config/${name}.ts`, import.meta.url));
 }
 
 const fixture = fixturePath('TestConfigClass');
@@ -24,10 +24,10 @@ describe('ConfigReader', () => {
     it('extracts the namespace, dir, data path, and data namespace from the config class', () => {
         const result = new ConfigReader().readFile(fixture);
 
-        expect(result.namespace).toBe('Sindri.Tests.Classes');
+        expect(result.namespace).toBe('Sindri.Tests.Fixtures');
         expect(result.dir).toBe('/app/src');
         expect(result.dataPath).toBe('/app/src/Config/Data');
-        expect(result.dataNamespace).toBe('Sindri.Tests.Classes.Config.Data');
+        expect(result.dataNamespace).toBe('Sindri.Tests.Fixtures.Config.Data');
     });
 
     it('extracts the configured providers', () => {
@@ -49,7 +49,7 @@ describe('ConfigReader', () => {
         const result = new ConfigReader().readFile(fixturePath('TestConfigDirname'));
 
         expect(result.namespace).toBe('App.Dir');
-        expect(result.dir).toContain('Classes/Config');
+        expect(result.dir).toContain('Fixtures/Config');
         expect(result.dataPath).toContain('/Data');
     });
 
@@ -57,7 +57,7 @@ describe('ConfigReader', () => {
         const result = new ConfigReader().readFile(fixturePath('TestConfigImportMeta'));
 
         expect(result.namespace).toBe('App.Meta');
-        expect(result.dir).toContain('Classes/Config');
+        expect(result.dir).toContain('Fixtures/Config');
     });
 
     it('returns an empty config when a required value is not a string literal', () => {

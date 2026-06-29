@@ -14,7 +14,7 @@ import { describe, expect, it } from 'vitest';
 import { ServiceProviderReader } from '../../../../src/Sindri/Ast/ServiceProviderReader.ts';
 
 function fixture(name: string): string {
-    return fileURLToPath(new URL(`../../Classes/${name}.ts`, import.meta.url));
+    return fileURLToPath(new URL(`../../Fixtures/${name}.ts`, import.meta.url));
 }
 
 describe('ServiceProviderReader', () => {

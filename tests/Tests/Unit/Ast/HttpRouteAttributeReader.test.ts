@@ -17,7 +17,7 @@ import { HttpRouteData } from '../../../../src/Sindri/Ast/Data/HttpRouteData.ts'
 import { HttpRouteAttributeReader } from '../../../../src/Sindri/Ast/HttpRouteAttributeReader.ts';
 
 function fixture(name: string): string {
-    return fileURLToPath(new URL(`../../Classes/${name}.ts`, import.meta.url));
+    return fileURLToPath(new URL(`../../Fixtures/${name}.ts`, import.meta.url));
 }
 
 class TestHttpRouteAttributeReader extends HttpRouteAttributeReader {

@@ -31,7 +31,7 @@ vi.mock('fs', async (importOriginal) => {
 const writeFileSync = vi.mocked(fs.writeFileSync);
 const stdoutSpy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
 
-const configPath = fileURLToPath(new URL('../../../Classes/App/Config.ts', import.meta.url));
+const configPath = fileURLToPath(new URL('../../../Fixtures/App/Config.ts', import.meta.url));
 
 function command(path: string): GenerateDataFromConfigCommand {
     const route = new Route(
@@ -57,7 +57,7 @@ describe('GenerateDataFromConfigCommand', () => {
     });
 
     it('still runs the generators when the config has no providers', () => {
-        const emptyConfig = fileURLToPath(new URL('../../../Classes/Config/TestConfigNoClass.ts', import.meta.url));
+        const emptyConfig = fileURLToPath(new URL('../../../Fixtures/Config/TestConfigNoClass.ts', import.meta.url));
 
         const output = command(emptyConfig).run();
 

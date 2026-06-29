@@ -7,7 +7,7 @@ import { TestComponentProviderClass } from './Provider/TestComponentProviderClas
 export class TestConfigClass extends Config {
     constructor() {
         super(
-            'Sindri.Tests.Classes',
+            'Sindri.Tests.Fixtures',
             '/app/src',
             '1.0.0',
             'production',
@@ -15,7 +15,7 @@ export class TestConfigClass extends Config {
             'UTC',
             'secret',
             'Config/Data',
-            'Sindri.Tests.Classes.Config.Data',
+            'Sindri.Tests.Fixtures.Config.Data',
             'App.Provider.Data',
             [TestComponentProviderClass],
         );
