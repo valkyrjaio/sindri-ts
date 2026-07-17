@@ -23,7 +23,7 @@ import { GenerateDataFromAst } from '../../../../../src/Sindri/Generate/Abstract
 import type { OutputContract } from '@valkyrjaio/valkyrja/Cli/Interaction/Output/Contract/OutputContract.ts';
 
 const appDir = fileURLToPath(new URL('../../../Fixtures/App', import.meta.url));
-const configFile = path.join(appDir, 'Config.ts');
+const configFile = path.join(appDir, 'ConfigFixture.ts');
 
 /** A generator stub returning a fixed status. */
 function generator(status: GenerateStatus = GenerateStatus.SUCCESS): { generateFile: () => GenerateStatus } {
@@ -126,7 +126,7 @@ afterEach(() => {
 describe('GenerateDataFromAst', () => {
     describe('fqnToFilePath', () => {
         it('resolves relative specifiers against the source directory', () => {
-            expect(new TestGenerate().fqn('./Config.ts', 'App', appDir)).toBe(configFile);
+            expect(new TestGenerate().fqn('./ConfigFixture.ts', 'App', appDir)).toBe(configFile);
             expect(new TestGenerate().fqn('./Missing.ts', 'App', appDir)).toBe('');
         });
 
@@ -136,33 +136,33 @@ describe('GenerateDataFromAst', () => {
         });
 
         it('searches the directory for a short class name', () => {
-            expect(new TestGenerate().fqn('Config', 'App', appDir)).toBe(configFile);
+            expect(new TestGenerate().fqn('ConfigFixture', 'App', appDir)).toBe(configFile);
         });
     });
 
     describe('findFileInDir', () => {
         it('returns empty when the directory does not exist', () => {
-            expect(new TestGenerate().findFile('Config', '/no/such/dir')).toBe('');
+            expect(new TestGenerate().findFile('ConfigFixture', '/no/such/dir')).toBe('');
         });
 
         it('returns empty when the directory cannot be read', () => {
             // Passing a file where a directory is expected makes readdirSync throw.
-            expect(new TestGenerate().findFile('Config', configFile)).toBe('');
+            expect(new TestGenerate().findFile('ConfigFixture', configFile)).toBe('');
         });
 
         it('skips node_modules directories when searching for a class file', () => {
             const findFileDir = fileURLToPath(new URL('../../../Fixtures/FindFile', import.meta.url));
             const generate = new TestGenerate();
 
-            // Visible.ts is found, but Hidden.ts (only inside node_modules) is skipped.
-            expect(generate.findFile('Visible', findFileDir)).toContain('Visible.ts');
-            expect(generate.findFile('Hidden', findFileDir)).toBe('');
+            // VisibleFixture.ts is found, but HiddenFixture.ts (only inside node_modules) is skipped.
+            expect(generate.findFile('VisibleFixture', findFileDir)).toContain('VisibleFixture.ts');
+            expect(generate.findFile('HiddenFixture', findFileDir)).toBe('');
         });
     });
 
     describe('walkProvider', () => {
         it('skips an already-visited provider', () => {
-            const result = new TestGenerate().walk('AppComponentProvider', config, { AppComponentProvider: true });
+            const result = new TestGenerate().walk('AppComponentProviderFixture', config, { AppComponentProviderFixture: true });
 
             expect(result.serviceProviders).toEqual([]);
         });
@@ -175,11 +175,11 @@ describe('GenerateDataFromAst', () => {
             const componentProviderReader = {
                 readFile: vi
                     .fn()
-                    .mockReturnValueOnce(new ComponentProviderResult(['AppServiceProvider'], ['SvcA']))
+                    .mockReturnValueOnce(new ComponentProviderResult(['AppServiceProviderFixture'], ['SvcA']))
                     .mockReturnValue(new ComponentProviderResult([], ['SvcB'])),
             };
 
-            const result = new TestGenerate({ componentProviderReader }).walk('AppComponentProvider', config, {});
+            const result = new TestGenerate({ componentProviderReader }).walk('AppComponentProviderFixture', config, {});
 
             expect(result.serviceProviders).toEqual(['SvcB', 'SvcA']);
         });
@@ -199,8 +199,8 @@ describe('GenerateDataFromAst', () => {
                 listenerProviderReader: reader({ listenerClasses: ['MissingListener'] }),
             });
 
-            // 'DoesNotExist' provider is skipped; 'AppListenerProvider' resolves but its listener class does not.
-            expect(() => gen.event(['DoesNotExist', 'AppListenerProvider'], config, gen.freshOutput())).not.toThrow();
+            // 'DoesNotExist' provider is skipped; 'AppListenerProviderFixture' resolves but its listener class does not.
+            expect(() => gen.event(['DoesNotExist', 'AppListenerProviderFixture'], config, gen.freshOutput())).not.toThrow();
         });
     });
 
@@ -210,7 +210,7 @@ describe('GenerateDataFromAst', () => {
                 routeProviderReader: reader({ controllerClasses: ['MissingController'] }),
             });
 
-            expect(() => gen.cli(['DoesNotExist', 'AppCliRouteProvider'], config, gen.freshOutput())).not.toThrow();
+            expect(() => gen.cli(['DoesNotExist', 'AppCliRouteProviderFixture'], config, gen.freshOutput())).not.toThrow();
         });
     });
 
@@ -220,7 +220,7 @@ describe('GenerateDataFromAst', () => {
                 routeProviderReader: reader({ controllerClasses: ['MissingController'] }),
             });
 
-            expect(() => gen.http(['DoesNotExist', 'AppHttpRouteProvider'], config, gen.freshOutput())).not.toThrow();
+            expect(() => gen.http(['DoesNotExist', 'AppHttpRouteProviderFixture'], config, gen.freshOutput())).not.toThrow();
         });
     });
 

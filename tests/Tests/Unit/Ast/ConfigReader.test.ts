@@ -18,7 +18,7 @@ function fixturePath(name: string): string {
     return fileURLToPath(new URL(`../../Fixtures/Config/${name}.ts`, import.meta.url));
 }
 
-const fixture = fixturePath('TestConfigClass');
+const fixture = fixturePath('TestConfigFixture');
 
 describe('ConfigReader', () => {
     it('extracts the namespace, dir, data path, and data namespace from the config class', () => {
@@ -37,7 +37,7 @@ describe('ConfigReader', () => {
     });
 
     it('resolves process.cwd() as the dir, keeps an absolute data path, and ignores non-array providers', () => {
-        const result = new ConfigReader().readFile(fixturePath('TestConfigProcessCwd'));
+        const result = new ConfigReader().readFile(fixturePath('TestConfigProcessCwdFixture'));
 
         expect(result.namespace).toBe('App.Cwd');
         expect(result.dir).toBe(process.cwd());
@@ -46,7 +46,7 @@ describe('ConfigReader', () => {
     });
 
     it('resolves __dirname as the dir', () => {
-        const result = new ConfigReader().readFile(fixturePath('TestConfigDirname'));
+        const result = new ConfigReader().readFile(fixturePath('TestConfigDirnameFixture'));
 
         expect(result.namespace).toBe('App.Dir');
         expect(result.dir).toContain('Fixtures/Config');
@@ -54,42 +54,42 @@ describe('ConfigReader', () => {
     });
 
     it('resolves import.meta.dirname as the dir', () => {
-        const result = new ConfigReader().readFile(fixturePath('TestConfigImportMeta'));
+        const result = new ConfigReader().readFile(fixturePath('TestConfigImportMetaFixture'));
 
         expect(result.namespace).toBe('App.Meta');
         expect(result.dir).toContain('Fixtures/Config');
     });
 
     it('returns an empty config when a required value is not a string literal', () => {
-        expect(new ConfigReader().readFile(fixturePath('TestConfigNonLiteral')).namespace).toBe('');
+        expect(new ConfigReader().readFile(fixturePath('TestConfigNonLiteralFixture')).namespace).toBe('');
     });
 
     it('returns an empty config when there is no class', () => {
-        expect(new ConfigReader().readFile(fixturePath('TestConfigNoClass')).namespace).toBe('');
+        expect(new ConfigReader().readFile(fixturePath('TestConfigNoClassFixture')).namespace).toBe('');
     });
 
     it('returns an empty config when the class has no constructor', () => {
-        expect(new ConfigReader().readFile(fixturePath('TestConfigNoConstructor')).namespace).toBe('');
+        expect(new ConfigReader().readFile(fixturePath('TestConfigNoConstructorFixture')).namespace).toBe('');
     });
 
     it('returns an empty config when the constructor has no super() call', () => {
-        expect(new ConfigReader().readFile(fixturePath('TestConfigNoSuper')).namespace).toBe('');
+        expect(new ConfigReader().readFile(fixturePath('TestConfigNoSuperFixture')).namespace).toBe('');
     });
 
     it('returns an empty config when the first constructor is an overload with no body', () => {
-        expect(new ConfigReader().readFile(fixturePath('TestConfigConstructorOverload')).namespace).toBe('');
+        expect(new ConfigReader().readFile(fixturePath('TestConfigConstructorOverloadFixture')).namespace).toBe('');
     });
 
     it('returns an empty config when the super() call has too few arguments', () => {
-        expect(new ConfigReader().readFile(fixturePath('TestConfigFewArgs')).dir).toBe('');
+        expect(new ConfigReader().readFile(fixturePath('TestConfigFewArgsFixture')).dir).toBe('');
     });
 
     it('returns an empty config when the data path argument is not a string', () => {
-        expect(new ConfigReader().readFile(fixturePath('TestConfigNonStringDataPath')).dataPath).toBe('');
+        expect(new ConfigReader().readFile(fixturePath('TestConfigNonStringDataPathFixture')).dataPath).toBe('');
     });
 
     it('returns an empty config when the dir argument is an unrecognized expression', () => {
-        expect(new ConfigReader().readFile(fixturePath('TestConfigUnresolvedDir')).dir).toBe('');
+        expect(new ConfigReader().readFile(fixturePath('TestConfigUnresolvedDirFixture')).dir).toBe('');
     });
 
     it('throws when the file cannot be read', () => {
@@ -97,13 +97,13 @@ describe('ConfigReader', () => {
     });
 
     it('ignores non-super() call statements in the constructor', () => {
-        expect(new ConfigReader().readFile(fixturePath('TestConfigNonSuperCall')).namespace).toBe('App.NonSuper');
+        expect(new ConfigReader().readFile(fixturePath('TestConfigNonSuperCallFixture')).namespace).toBe('App.NonSuper');
     });
 
     it('does not resolve the dir from a property-access call that is not process.cwd()', () => {
         // The dir argument is path.resolve() (not process.cwd()), so the dir cannot be
         // resolved and the config comes back empty.
-        const result = new ConfigReader().readFile(fixturePath('TestConfigNonCwdCall'));
+        const result = new ConfigReader().readFile(fixturePath('TestConfigNonCwdCallFixture'));
 
         expect(result.dir).toBe('');
         expect(result.namespace).toBe('');

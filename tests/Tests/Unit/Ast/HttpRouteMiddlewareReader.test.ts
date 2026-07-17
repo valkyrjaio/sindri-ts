@@ -32,7 +32,7 @@ function expr(code: string): ts.Expression {
 
 const fixtureDir = fileURLToPath(new URL('../../Fixtures/Http/', import.meta.url));
 const anchor = path.join(fixtureDir, 'controller.ts');
-const useMap: Record<string, string> = { AllMiddleware: './AllMiddleware.ts' };
+const useMap: Record<string, string> = { AllMiddlewareFixture: './AllMiddlewareFixture.ts' };
 
 const reader = new HttpRouteMiddlewareReader();
 
@@ -81,16 +81,16 @@ describe('HttpRouteMiddlewareReader', () => {
 
     describe('updateMiddleware', () => {
         it('classifies a middleware that implements every contract and skips empty names', () => {
-            const m = method('@Middleware(AllMiddleware) @Middleware() m() {}');
+            const m = method('@Middleware(AllMiddlewareFixture) @Middleware() m() {}');
 
             const result = reader.updateMiddleware(m, useMap, anchor, 'C', [], [], [], [], []);
 
             expect(result).toEqual([
-                ['AllMiddleware'],
-                ['AllMiddleware'],
-                ['AllMiddleware'],
-                ['AllMiddleware'],
-                ['AllMiddleware'],
+                ['AllMiddlewareFixture'],
+                ['AllMiddlewareFixture'],
+                ['AllMiddlewareFixture'],
+                ['AllMiddlewareFixture'],
+                ['AllMiddlewareFixture'],
             ]);
         });
     });

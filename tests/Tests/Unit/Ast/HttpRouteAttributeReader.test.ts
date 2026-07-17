@@ -28,20 +28,20 @@ class TestHttpRouteAttributeReader extends HttpRouteAttributeReader {
 
 describe('HttpRouteAttributeReader', () => {
     it('reads @Route decorators with the class @Name prefix, skipping invalid routes', () => {
-        const result = new HttpRouteAttributeReader().readFile(fixture('Http/TestHttpControllerClass'));
+        const result = new HttpRouteAttributeReader().readFile(fixture('Http/TestHttpControllerFixture'));
 
         expect(Object.keys(result.routes)).toStrictEqual(['users.index', 'users.show']);
         expect(result.routeData['users.index']).toBeDefined();
     });
 
     it('returns an empty result when there is no class', () => {
-        const result = new HttpRouteAttributeReader().readFile(fixture('Config/TestConfigNoClass'));
+        const result = new HttpRouteAttributeReader().readFile(fixture('Config/TestConfigNoClassFixture'));
 
         expect(Object.keys(result.routes)).toHaveLength(0);
     });
 
     it('applies method-level @Path and @Name suffixes when there is no class prefix', () => {
-        const result = new HttpRouteAttributeReader().readFile(fixture('Http/TestHttpControllerNoPrefix'));
+        const result = new HttpRouteAttributeReader().readFile(fixture('Http/TestHttpControllerNoPrefixFixture'));
 
         expect(Object.keys(result.routes)).toStrictEqual(['list.all']);
         expect(result.routeData['list.all'].path).toBe('/items/extra');
@@ -54,7 +54,7 @@ describe('HttpRouteAttributeReader', () => {
     });
 
     it('ignores non-string class and method @Path/@Name decorators', () => {
-        const result = new HttpRouteAttributeReader().readFile(fixture('Http/TestHttpControllerNonString'));
+        const result = new HttpRouteAttributeReader().readFile(fixture('Http/TestHttpControllerNonStringFixture'));
 
         // Non-string prefixes/suffixes are skipped, leaving the bare route name and path.
         expect(Object.keys(result.routes)).toStrictEqual(['list']);
