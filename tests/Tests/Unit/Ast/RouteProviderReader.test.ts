@@ -19,14 +19,14 @@ function fixture(name: string): string {
 
 describe('RouteProviderReader', () => {
     it('extracts the controller classes', () => {
-        const result = new RouteProviderReader().readFile(fixture('Provider/TestRouteProviderClass'));
+        const result = new RouteProviderReader().readFile(fixture('Provider/TestRouteProviderFixture'));
 
         expect(result.controllerClasses).toHaveLength(2);
         expect(result.routes).toHaveLength(0);
     });
 
     it('returns an empty result when there is no class', () => {
-        expect(new RouteProviderReader().readFile(fixture('Config/TestConfigNoClass')).controllerClasses).toHaveLength(
+        expect(new RouteProviderReader().readFile(fixture('Config/TestConfigNoClassFixture')).controllerClasses).toHaveLength(
             0,
         );
     });

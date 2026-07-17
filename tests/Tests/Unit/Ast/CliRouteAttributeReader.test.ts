@@ -29,14 +29,14 @@ class TestCliRouteAttributeReader extends CliRouteAttributeReader {
 
 describe('CliRouteAttributeReader', () => {
     it('reads @Route decorators, applying @Name and skipping invalid routes', () => {
-        const result = new CliRouteAttributeReader().readFile(fixture('Cli/TestCliControllerClass'));
+        const result = new CliRouteAttributeReader().readFile(fixture('Cli/TestCliControllerFixture'));
 
         // @Name overrides the route key to build:app.
         expect(Object.keys(result.routes)).toStrictEqual(['build:app']);
     });
 
     it('returns an empty result when there is no class', () => {
-        const result = new CliRouteAttributeReader().readFile(fixture('Config/TestConfigNoClass'));
+        const result = new CliRouteAttributeReader().readFile(fixture('Config/TestConfigNoClassFixture'));
 
         expect(Object.keys(result.routes)).toHaveLength(0);
     });

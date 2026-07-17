@@ -19,14 +19,14 @@ function fixture(name: string): string {
 
 describe('ListenerProviderReader', () => {
     it('extracts the listener classes', () => {
-        const result = new ListenerProviderReader().readFile(fixture('Provider/TestListenerProviderClass'));
+        const result = new ListenerProviderReader().readFile(fixture('Provider/TestListenerProviderFixture'));
 
         expect(result.listenerClasses).toHaveLength(2);
         expect(result.listeners).toHaveLength(0);
     });
 
     it('returns an empty result when there is no class', () => {
-        const result = new ListenerProviderReader().readFile(fixture('Config/TestConfigNoClass'));
+        const result = new ListenerProviderReader().readFile(fixture('Config/TestConfigNoClassFixture'));
 
         expect(result.listenerClasses).toHaveLength(0);
     });

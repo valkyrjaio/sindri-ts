@@ -19,7 +19,7 @@ function fixture(name: string): string {
 
 describe('ComponentProviderReader', () => {
     it('extracts the provider class lists from each getter method', () => {
-        const result = new ComponentProviderReader().readFile(fixture('Provider/TestComponentProviderClass'));
+        const result = new ComponentProviderReader().readFile(fixture('Provider/TestComponentProviderFixture'));
 
         expect(result.componentProviders).toHaveLength(2);
         expect(result.serviceProviders).toHaveLength(1);
@@ -29,7 +29,7 @@ describe('ComponentProviderReader', () => {
     });
 
     it('returns an empty result when there is no class', () => {
-        const result = new ComponentProviderReader().readFile(fixture('Config/TestConfigNoClass'));
+        const result = new ComponentProviderReader().readFile(fixture('Config/TestConfigNoClassFixture'));
 
         expect(result.componentProviders).toHaveLength(0);
     });

@@ -28,20 +28,20 @@ class TestListenerAttributeReader extends ListenerAttributeReader {
 
 describe('ListenerAttributeReader', () => {
     it('reads class-level and method-level @Listener decorators', () => {
-        const result = new ListenerAttributeReader().readFile(fixture('TestListenerClass'));
+        const result = new ListenerAttributeReader().readFile(fixture('TestListenerFixture'));
 
         expect(Object.keys(result.listeners)).toContain('sendWelcome');
         expect(Object.keys(result.listeners)).toContain('cleanup');
     });
 
     it('skips listeners with an empty event id or name', () => {
-        const result = new ListenerAttributeReader().readFile(fixture('TestEmptyListenerClass'));
+        const result = new ListenerAttributeReader().readFile(fixture('TestEmptyListenerFixture'));
 
         expect(Object.keys(result.listeners)).toHaveLength(0);
     });
 
     it('returns an empty result when there is no class', () => {
-        const result = new ListenerAttributeReader().readFile(fixture('../Config/TestConfigNoClass'));
+        const result = new ListenerAttributeReader().readFile(fixture('../Config/TestConfigNoClassFixture'));
 
         expect(Object.keys(result.listeners)).toHaveLength(0);
     });

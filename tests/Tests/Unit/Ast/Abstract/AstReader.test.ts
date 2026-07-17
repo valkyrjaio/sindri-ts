@@ -116,9 +116,9 @@ class TestAstReader extends AstReader {
 const fixtureDir = fileURLToPath(new URL('../../../Fixtures/Ast/', import.meta.url));
 const anchor = path.join(fixtureDir, 'anchor.ts');
 const useMap: Record<string, string> = {
-    StaticHolder: './StaticHolder.ts',
-    Implementor: './Implementor.ts',
-    Empty: './EmptyModule.ts',
+    StaticHolderFixture: './StaticHolderFixture.ts',
+    ImplementorFixture: './ImplementorFixture.ts',
+    Empty: './EmptyModuleFixture.ts',
     Missing: './DoesNotExist.ts',
     Bare: 'node:fs',
 };
@@ -148,7 +148,7 @@ function decorator(decoratorSrc: string): Decorator {
 describe('AstReader', () => {
     describe('parseFileToSourceFile', () => {
         it('parses an existing file', () => {
-            expect(reader.parseFileToSourceFile(path.join(fixtureDir, 'StaticHolder.ts'))).toBeDefined();
+            expect(reader.parseFileToSourceFile(path.join(fixtureDir, 'StaticHolderFixture.ts'))).toBeDefined();
         });
 
         it('throws when the file does not exist', () => {
@@ -197,8 +197,8 @@ describe('AstReader', () => {
         });
 
         it('resolves a relative specifier to an existing file', () => {
-            expect(reader.resolveImportToFilePath('StaticHolder', useMap, anchor)).toBe(
-                path.join(fixtureDir, 'StaticHolder.ts'),
+            expect(reader.resolveImportToFilePath('StaticHolderFixture', useMap, anchor)).toBe(
+                path.join(fixtureDir, 'StaticHolderFixture.ts'),
             );
         });
 
@@ -295,7 +295,7 @@ describe('AstReader', () => {
         });
 
         it('resolves a static property access', () => {
-            expect(reader.resolveNodeToString(expr('StaticHolder.NAME') as ts.Expression, useMap, anchor)).toBe(
+            expect(reader.resolveNodeToString(expr('StaticHolderFixture.NAME') as ts.Expression, useMap, anchor)).toBe(
                 'svc.name',
             );
         });
@@ -315,7 +315,7 @@ describe('AstReader', () => {
 
     describe('resolveStaticProperty', () => {
         it('returns the static string property value', () => {
-            expect(reader.resolveStaticProperty('StaticHolder', 'NAME', useMap, anchor)).toBe('svc.name');
+            expect(reader.resolveStaticProperty('StaticHolderFixture', 'NAME', useMap, anchor)).toBe('svc.name');
         });
 
         it('returns undefined when the import cannot be resolved', () => {
@@ -323,7 +323,7 @@ describe('AstReader', () => {
         });
 
         it('returns undefined when the property name is undefined', () => {
-            expect(reader.resolveStaticProperty('StaticHolder', undefined, useMap, anchor)).toBeUndefined();
+            expect(reader.resolveStaticProperty('StaticHolderFixture', undefined, useMap, anchor)).toBeUndefined();
         });
 
         it('returns undefined when the class is not found in the file', () => {
@@ -331,18 +331,18 @@ describe('AstReader', () => {
         });
 
         it('returns undefined when the property is missing', () => {
-            expect(reader.resolveStaticProperty('StaticHolder', 'GONE', useMap, anchor)).toBeUndefined();
+            expect(reader.resolveStaticProperty('StaticHolderFixture', 'GONE', useMap, anchor)).toBeUndefined();
         });
 
         it('returns undefined when the property is not a string literal', () => {
-            expect(reader.resolveStaticProperty('StaticHolder', 'NUM', useMap, anchor)).toBeUndefined();
+            expect(reader.resolveStaticProperty('StaticHolderFixture', 'NUM', useMap, anchor)).toBeUndefined();
         });
     });
 
     describe('resolveClassToFilePath', () => {
         it('delegates to resolveImportToFilePath', () => {
-            expect(reader.resolveClassToFilePath('StaticHolder', useMap, anchor)).toBe(
-                path.join(fixtureDir, 'StaticHolder.ts'),
+            expect(reader.resolveClassToFilePath('StaticHolderFixture', useMap, anchor)).toBe(
+                path.join(fixtureDir, 'StaticHolderFixture.ts'),
             );
         });
     });
@@ -370,7 +370,7 @@ describe('AstReader', () => {
         });
 
         it('resolves property access to a static value or ClassName::prop', () => {
-            expect(reader.extractExprValue(expr('StaticHolder.NAME'), useMap, anchor)).toBe('svc.name');
+            expect(reader.extractExprValue(expr('StaticHolderFixture.NAME'), useMap, anchor)).toBe('svc.name');
             expect(reader.extractExprValue(expr('Unresolved.PROP'), useMap, anchor)).toBe('Unresolved::PROP');
         });
 
@@ -413,11 +413,11 @@ describe('AstReader', () => {
 
     describe('parseClassFile', () => {
         it('parses a class file', () => {
-            expect(reader.parseClassFile(path.join(fixtureDir, 'StaticHolder.ts'))).toBeDefined();
+            expect(reader.parseClassFile(path.join(fixtureDir, 'StaticHolderFixture.ts'))).toBeDefined();
         });
 
         it('returns undefined when there is no class', () => {
-            expect(reader.parseClassFile(path.join(fixtureDir, 'EmptyModule.ts'))).toBeUndefined();
+            expect(reader.parseClassFile(path.join(fixtureDir, 'EmptyModuleFixture.ts'))).toBeUndefined();
         });
     });
 
@@ -461,11 +461,11 @@ describe('AstReader', () => {
 
     describe('classImplementsInterface', () => {
         it('returns true when the class implements the interface', () => {
-            expect(reader.classImplementsInterface('Implementor', 'FooContract', useMap, anchor)).toBe(true);
+            expect(reader.classImplementsInterface('ImplementorFixture', 'FooContract', useMap, anchor)).toBe(true);
         });
 
         it('returns false when the interface is not implemented', () => {
-            expect(reader.classImplementsInterface('Implementor', 'Other', useMap, anchor)).toBe(false);
+            expect(reader.classImplementsInterface('ImplementorFixture', 'Other', useMap, anchor)).toBe(false);
         });
 
         it('returns false when the file cannot be resolved', () => {
@@ -480,7 +480,7 @@ describe('AstReader', () => {
     describe('branch edge cases', () => {
         it('returns undefined when the static member is not a property declaration', () => {
             // GETTER is a static get accessor, not a PropertyDeclaration.
-            expect(reader.resolveStaticProperty('StaticHolder', 'GETTER', useMap, anchor)).toBeUndefined();
+            expect(reader.resolveStaticProperty('StaticHolderFixture', 'GETTER', useMap, anchor)).toBeUndefined();
         });
 
         it('resolves identifier nodes whose text is a literal keyword', () => {
@@ -496,7 +496,7 @@ describe('AstReader', () => {
         });
 
         it('falls back to an empty current class for an anonymous class', () => {
-            const context = reader.parseClassFile(path.join(fixtureDir, 'AnonymousClass.ts')) as
+            const context = reader.parseClassFile(path.join(fixtureDir, 'AnonymousFixture.ts')) as
                 | { currentClass: string }
                 | undefined;
 
