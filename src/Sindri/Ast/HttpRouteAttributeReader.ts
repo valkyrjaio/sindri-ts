@@ -188,7 +188,7 @@ export class HttpRouteAttributeReader extends RouteAttributeReader implements Ht
             routeDispatchedMiddleware,
             throwableCaughtMiddleware,
             sendingResponseMiddleware,
-            terminatedMiddleware,
+            responseSentMiddleware,
         ] = this.middlewareReader.updateMiddleware(
             method,
             useMap,
@@ -210,7 +210,7 @@ export class HttpRouteAttributeReader extends RouteAttributeReader implements Ht
             routeDispatchedMiddleware,
             throwableCaughtMiddleware,
             sendingResponseMiddleware,
-            terminatedMiddleware,
+            responseSentMiddleware,
             this.middlewareReader.updateRequestStruct(method, useMap, currentFilePath, currentClass),
             this.middlewareReader.updateResponseStruct(method, useMap, currentFilePath, currentClass),
             resolvedIsDynamic,

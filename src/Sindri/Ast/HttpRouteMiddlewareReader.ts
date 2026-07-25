@@ -75,7 +75,7 @@ export class HttpRouteMiddlewareReader extends AstReader implements HttpRouteMid
         routeDispatchedMiddleware: string[],
         throwableCaughtMiddleware: string[],
         sendingResponseMiddleware: string[],
-        terminatedMiddleware: string[],
+        responseSentMiddleware: string[],
     ): [string[], string[], string[], string[], string[]] {
         for (const decorator of this.findDecoratorsOnNode(method, 'Middleware', useMap, namespace)) {
             const mwName = this.extractExprValue(this.getDecoratorArg(decorator, 0), useMap, namespace, currentClass);
@@ -89,7 +89,7 @@ export class HttpRouteMiddlewareReader extends AstReader implements HttpRouteMid
                 routeDispatchedMiddleware,
                 throwableCaughtMiddleware,
                 sendingResponseMiddleware,
-                terminatedMiddleware,
+                responseSentMiddleware,
             ] = this.classifyMiddleware(
                 mwName,
                 useMap,
@@ -98,7 +98,7 @@ export class HttpRouteMiddlewareReader extends AstReader implements HttpRouteMid
                 routeDispatchedMiddleware,
                 throwableCaughtMiddleware,
                 sendingResponseMiddleware,
-                terminatedMiddleware,
+                responseSentMiddleware,
             );
         }
 
@@ -107,7 +107,7 @@ export class HttpRouteMiddlewareReader extends AstReader implements HttpRouteMid
             routeDispatchedMiddleware,
             throwableCaughtMiddleware,
             sendingResponseMiddleware,
-            terminatedMiddleware,
+            responseSentMiddleware,
         ];
     }
 
@@ -151,7 +151,7 @@ export class HttpRouteMiddlewareReader extends AstReader implements HttpRouteMid
             this.buildClassIdentifierArrayExpr(data.routeDispatchedMiddleware),
             this.buildClassIdentifierArrayExpr(data.throwableCaughtMiddleware),
             this.buildClassIdentifierArrayExpr(data.sendingResponseMiddleware),
-            this.buildClassIdentifierArrayExpr(data.terminatedMiddleware),
+            this.buildClassIdentifierArrayExpr(data.responseSentMiddleware),
         ];
     }
 
@@ -181,7 +181,7 @@ export class HttpRouteMiddlewareReader extends AstReader implements HttpRouteMid
         routeDispatchedMiddleware: string[],
         throwableCaughtMiddleware: string[],
         sendingResponseMiddleware: string[],
-        terminatedMiddleware: string[],
+        responseSentMiddleware: string[],
     ): [string[], string[], string[], string[], string[]] {
         if (this.classImplementsInterface(mwName, 'RouteMatchedMiddlewareContract', useMap, currentFilePath)) {
             routeMatchedMiddleware = [...routeMatchedMiddleware, mwName];
@@ -199,8 +199,8 @@ export class HttpRouteMiddlewareReader extends AstReader implements HttpRouteMid
             sendingResponseMiddleware = [...sendingResponseMiddleware, mwName];
         }
 
-        if (this.classImplementsInterface(mwName, 'TerminatedMiddlewareContract', useMap, currentFilePath)) {
-            terminatedMiddleware = [...terminatedMiddleware, mwName];
+        if (this.classImplementsInterface(mwName, 'ResponseSentMiddlewareContract', useMap, currentFilePath)) {
+            responseSentMiddleware = [...responseSentMiddleware, mwName];
         }
 
         return [
@@ -208,7 +208,7 @@ export class HttpRouteMiddlewareReader extends AstReader implements HttpRouteMid
             routeDispatchedMiddleware,
             throwableCaughtMiddleware,
             sendingResponseMiddleware,
-            terminatedMiddleware,
+            responseSentMiddleware,
         ];
     }
 }
