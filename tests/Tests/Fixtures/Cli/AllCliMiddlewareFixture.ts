@@ -6,4 +6,4 @@ export class AllCliMiddlewareFixture
         RouteMatchedMiddlewareContract,
         RouteDispatchedMiddlewareContract,
         ThrowableCaughtMiddlewareContract,
-        ExitedMiddlewareContract {}
+        ProcessExitingMiddlewareContract {}

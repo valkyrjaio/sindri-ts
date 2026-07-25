@@ -19,7 +19,7 @@ export interface CliRouteDataContract {
     readonly routeMatchedMiddleware: readonly string[];
     readonly routeDispatchedMiddleware: readonly string[];
     readonly throwableCaughtMiddleware: readonly string[];
-    readonly exitedMiddleware: readonly string[];
+    readonly processExitingMiddleware: readonly string[];
     readonly arguments: readonly CliArgumentParameterDataContract[];
     readonly options: readonly CliOptionParameterDataContract[];
 }

@@ -73,7 +73,7 @@ export class CliRouteAttributeReader extends RouteAttributeReader implements Cli
         }
 
         const updatedName = this.updateName(name, method, useMap, currentFilePath, currentClass);
-        const [routeMatchedMiddleware, routeDispatchedMiddleware, throwableCaughtMiddleware, exitedMiddleware] =
+        const [routeMatchedMiddleware, routeDispatchedMiddleware, throwableCaughtMiddleware, processExitingMiddleware] =
             this.updateMiddleware(
                 method,
                 useMap,
@@ -93,7 +93,7 @@ export class CliRouteAttributeReader extends RouteAttributeReader implements Cli
             routeMatchedMiddleware,
             routeDispatchedMiddleware,
             throwableCaughtMiddleware,
-            exitedMiddleware,
+            processExitingMiddleware,
             this.parameterReader.updateArguments(method, useMap, currentFilePath, currentClass),
             this.parameterReader.updateOptions(method, useMap, currentFilePath, currentClass),
         );
@@ -130,7 +130,7 @@ export class CliRouteAttributeReader extends RouteAttributeReader implements Cli
         routeMatchedMiddleware: string[],
         routeDispatchedMiddleware: string[],
         throwableCaughtMiddleware: string[],
-        exitedMiddleware: string[],
+        processExitingMiddleware: string[],
     ): [string[], string[], string[], string[]] {
         for (const decorator of this.findDecoratorsOnNode(method, 'Middleware', useMap, currentFilePath)) {
             const mwName = this.extractExprValue(
@@ -144,7 +144,7 @@ export class CliRouteAttributeReader extends RouteAttributeReader implements Cli
                 continue;
             }
 
-            [routeMatchedMiddleware, routeDispatchedMiddleware, throwableCaughtMiddleware, exitedMiddleware] =
+            [routeMatchedMiddleware, routeDispatchedMiddleware, throwableCaughtMiddleware, processExitingMiddleware] =
                 this.classifyMiddleware(
                     mwName,
                     useMap,
@@ -152,11 +152,11 @@ export class CliRouteAttributeReader extends RouteAttributeReader implements Cli
                     routeMatchedMiddleware,
                     routeDispatchedMiddleware,
                     throwableCaughtMiddleware,
-                    exitedMiddleware,
+                    processExitingMiddleware,
                 );
         }
 
-        return [routeMatchedMiddleware, routeDispatchedMiddleware, throwableCaughtMiddleware, exitedMiddleware];
+        return [routeMatchedMiddleware, routeDispatchedMiddleware, throwableCaughtMiddleware, processExitingMiddleware];
     }
 
     protected classifyMiddleware(
@@ -166,7 +166,7 @@ export class CliRouteAttributeReader extends RouteAttributeReader implements Cli
         routeMatchedMiddleware: string[],
         routeDispatchedMiddleware: string[],
         throwableCaughtMiddleware: string[],
-        exitedMiddleware: string[],
+        processExitingMiddleware: string[],
     ): [string[], string[], string[], string[]] {
         if (this.classImplementsInterface(mwName, 'RouteMatchedMiddlewareContract', useMap, currentFilePath)) {
             routeMatchedMiddleware = [...routeMatchedMiddleware, mwName];
@@ -180,11 +180,11 @@ export class CliRouteAttributeReader extends RouteAttributeReader implements Cli
             throwableCaughtMiddleware = [...throwableCaughtMiddleware, mwName];
         }
 
-        if (this.classImplementsInterface(mwName, 'ExitedMiddlewareContract', useMap, currentFilePath)) {
-            exitedMiddleware = [...exitedMiddleware, mwName];
+        if (this.classImplementsInterface(mwName, 'ProcessExitingMiddlewareContract', useMap, currentFilePath)) {
+            processExitingMiddleware = [...processExitingMiddleware, mwName];
         }
 
-        return [routeMatchedMiddleware, routeDispatchedMiddleware, throwableCaughtMiddleware, exitedMiddleware];
+        return [routeMatchedMiddleware, routeDispatchedMiddleware, throwableCaughtMiddleware, processExitingMiddleware];
     }
 
     protected buildRouteExpr(data: CliRouteData): ts.Expression {
@@ -213,7 +213,7 @@ export class CliRouteAttributeReader extends RouteAttributeReader implements Cli
             this.buildClassArrayExpr(data.routeMatchedMiddleware),
             this.buildClassArrayExpr(data.routeDispatchedMiddleware),
             this.buildClassArrayExpr(data.throwableCaughtMiddleware),
-            this.buildClassArrayExpr(data.exitedMiddleware),
+            this.buildClassArrayExpr(data.processExitingMiddleware),
         ];
     }
 }
