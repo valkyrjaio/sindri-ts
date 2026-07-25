@@ -20,7 +20,7 @@ export interface HttpRouteDataContract {
     readonly routeDispatchedMiddleware: readonly string[];
     readonly throwableCaughtMiddleware: readonly string[];
     readonly sendingResponseMiddleware: readonly string[];
-    readonly terminatedMiddleware: readonly string[];
+    readonly responseSentMiddleware: readonly string[];
     readonly requestStruct: string | null;
     readonly responseStruct: string | null;
     readonly isDynamic: boolean;

@@ -38,7 +38,7 @@ export interface HttpRouteMiddlewareReaderContract {
         routeDispatchedMiddleware: string[],
         throwableCaughtMiddleware: string[],
         sendingResponseMiddleware: string[],
-        terminatedMiddleware: string[],
+        responseSentMiddleware: string[],
     ): [string[], string[], string[], string[], string[]];
 
     updateRequestStruct(

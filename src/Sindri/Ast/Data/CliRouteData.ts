@@ -23,7 +23,7 @@ export class CliRouteData implements CliRouteDataContract {
         readonly routeMatchedMiddleware: readonly string[] = [],
         readonly routeDispatchedMiddleware: readonly string[] = [],
         readonly throwableCaughtMiddleware: readonly string[] = [],
-        readonly exitedMiddleware: readonly string[] = [],
+        readonly processExitingMiddleware: readonly string[] = [],
         args: readonly CliArgumentParameterData[] = [],
         readonly options: readonly CliOptionParameterData[] = [],
     ) {
