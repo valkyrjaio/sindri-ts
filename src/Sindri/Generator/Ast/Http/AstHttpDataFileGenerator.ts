@@ -349,11 +349,10 @@ export class AstHttpDataFileGenerator extends AstFileGenerator implements HttpDa
                 expr = ts.factory.createNewExpression(expr.expression, expr.typeArguments, args);
             }
 
-            const keyExpr = this.buildEnumCaseExpr(key);
-            const printedKey = this.printer.printNode(ts.EmitHint.Unspecified, keyExpr, this.dummySourceFile);
             const printedRoute = this.printer.printNode(ts.EmitHint.Unspecified, expr, this.dummySourceFile);
-
-            const formattedKey = key.includes('::') ? `[${printedKey}]` : `['${printedKey}']`;
+            const formattedKey = key.includes('::')
+                ? `[${this.printer.printNode(ts.EmitHint.Unspecified, this.buildEnumCaseExpr(key), this.dummySourceFile)}]`
+                : `['${key}']`;
 
             lines.push(`            ${formattedKey}: (): RouteContract => ${printedRoute},`);
         }

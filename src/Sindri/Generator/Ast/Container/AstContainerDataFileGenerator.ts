@@ -67,12 +67,11 @@ export class AstContainerDataFileGenerator extends AstFileGenerator implements C
         const lines: string[] = [];
 
         for (const [serviceId, [providerClass, methodName]] of entries) {
-            const keyExpr = this.buildEnumCaseExpr(serviceId);
-            const printedKey = this.printer.printNode(ts.EmitHint.Unspecified, keyExpr, this.dummySourceFile);
-
             const shortProviderClass = providerClass.slice(providerClass.lastIndexOf('\\') + 1);
 
-            const formattedKey = serviceId.includes('::') ? `[${printedKey}]` : `['${printedKey}']`;
+            const formattedKey = serviceId.includes('::')
+                ? `[${this.printer.printNode(ts.EmitHint.Unspecified, this.buildEnumCaseExpr(serviceId), this.dummySourceFile)}]`
+                : `['${serviceId}']`;
 
             lines.push(
                 `            ${formattedKey}: (container: ContainerContract) => ${shortProviderClass}.${methodName}(container),`,
