@@ -32,11 +32,7 @@ export class AstContainerDataFileGenerator extends AstFileGenerator implements C
         namespace: string,
         publishers: Readonly<Record<string, readonly [string, string]>>,
     ): GenerateStatus {
-        const userImports = Object.entries(this.classImportMap)
-            .map(([name, specifier]) => `import { ${name} } from '${specifier}';`)
-            .join('\n');
-
-        const userImportsBlock = userImports ? `${userImports}\n` : '';
+        const userImportsBlock = this.buildUserImportsBlock(this.classImportMap);
 
         const contents = this.generateClassContents(publishers);
 

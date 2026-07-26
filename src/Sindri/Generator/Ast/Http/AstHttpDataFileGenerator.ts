@@ -60,11 +60,7 @@ export class AstHttpDataFileGenerator extends AstFileGenerator implements HttpDa
         routes: Record<string, ts.Expression>,
         routeData: Record<string, HttpRouteData>,
     ): GenerateStatus {
-        const userImports = Object.entries(this.classImportMap)
-            .map(([name, specifier]) => `import { ${name} } from '${specifier}';`)
-            .join('\n');
-
-        const userImportsBlock = userImports ? `${userImports}\n` : '';
+        const userImportsBlock = this.buildUserImportsBlock(this.classImportMap);
 
         const routesContent = this.getRoutesAsContent(routes, routeData);
         const paths = this.printNestedObject(this.buildPaths(routeData));
@@ -91,11 +87,7 @@ export class AstHttpDataFileGenerator extends AstFileGenerator implements HttpDa
         _namespace: string,
         routeExprs: readonly ts.Expression[],
     ): GenerateStatus {
-        const userImports = Object.entries(this.classImportMap)
-            .map(([name, specifier]) => `import { ${name} } from '${specifier}';`)
-            .join('\n');
-
-        const userImportsBlock = userImports ? `${userImports}\n` : '';
+        const userImportsBlock = this.buildUserImportsBlock(this.classImportMap);
 
         const metas = routeExprs
             .map((expr) => this.extractRouteMeta(expr))

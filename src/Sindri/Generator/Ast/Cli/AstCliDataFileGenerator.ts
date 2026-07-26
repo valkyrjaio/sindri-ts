@@ -32,11 +32,7 @@ export class AstCliDataFileGenerator extends AstFileGenerator implements CliData
         namespace: string,
         routes: Record<string, ts.Expression>,
     ): GenerateStatus {
-        const userImports = Object.entries(this.classImportMap)
-            .map(([name, specifier]) => `import { ${name} } from '${specifier}';`)
-            .join('\n');
-
-        const userImportsBlock = userImports ? `${userImports}\n` : '';
+        const userImportsBlock = this.buildUserImportsBlock(this.classImportMap);
 
         const contents = this.generateClassContents(routes);
 

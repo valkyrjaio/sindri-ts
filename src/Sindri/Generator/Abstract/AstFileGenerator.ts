@@ -31,6 +31,19 @@ export abstract class AstFileGenerator {
         return ts.factory.createPropertyAccessExpression(ts.factory.createIdentifier(className), caseName);
     }
 
+    /**
+     * Build the `import { X } from '...';` block for the provider/handler classes
+     * a generated data cache references, followed by a trailing newline (or an
+     * empty string when there are no such imports).
+     */
+    protected buildUserImportsBlock(classImportMap: Record<string, string>): string {
+        const userImports = Object.entries(classImportMap)
+            .map(([name, specifier]) => `import { ${name} } from '${specifier}';`)
+            .join('\n');
+
+        return userImports ? `${userImports}\n` : '';
+    }
+
     protected writeFile(directory: string, className: string, data: string): GenerateStatus {
         const filePath = directory.replace(/\/$/, '') + `/${className}.ts`;
 
