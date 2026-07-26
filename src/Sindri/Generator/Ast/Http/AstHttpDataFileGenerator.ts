@@ -425,18 +425,6 @@ export class AstHttpDataFileGenerator extends AstFileGenerator implements HttpDa
         return methods;
     }
 
-    /**
-     * Print an expression to source. Parsed nodes (from a `getRoutes()` body)
-     * are emitted via their original source text; synthesized nodes (built by
-     * the attribute reader via `ts.factory`, which carry no source positions)
-     * are emitted through the printer.
-     */
-    protected printExpr(expr: ts.Expression): string {
-        return expr.pos >= 0
-            ? expr.getText()
-            : this.printer.printNode(ts.EmitHint.Unspecified, expr, this.dummySourceFile);
-    }
-
     protected getImperativeRoutesContent(metas: readonly ImperativeRouteMeta[]): string {
         if (metas.length === 0) {
             return '{}';
@@ -445,7 +433,9 @@ export class AstHttpDataFileGenerator extends AstFileGenerator implements HttpDa
         const lines: string[] = [];
 
         for (const meta of metas) {
-            lines.push(`            ['${meta.name}']: (): RouteContract => ${this.printExpr(meta.expr)},`);
+            // Imperative route expressions come parsed from a provider's `getRoutes()`
+            // body, so they are emitted verbatim via their original source text.
+            lines.push(`            ['${meta.name}']: (): RouteContract => ${meta.expr.getText()},`);
         }
 
         return ['{', ...lines, '        }'].join('\n        ');

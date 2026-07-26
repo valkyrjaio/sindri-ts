@@ -1,6 +1,8 @@
 // Fixture parsed by ts-morph (never executed).
 /* eslint-disable */
 // @ts-nocheck
+import { AppComponentProviderFixture } from './Provider/AppComponentProviderFixture.ts';
+
 export class ConfigFixture extends BaseConfig {
     constructor() {
         super(

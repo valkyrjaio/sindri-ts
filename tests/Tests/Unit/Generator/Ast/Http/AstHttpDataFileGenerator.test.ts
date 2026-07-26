@@ -182,8 +182,17 @@ describe('AstHttpDataFileGenerator', () => {
             [
                 // Not a new-expression — ignored entirely.
                 `buildRoute()`,
+                // A new-expression whose callee is not a plain identifier — ignored.
+                `new Routing.Route('/n', 'n', handler)`,
+                // A bare `new Route` with no argument list (arguments undefined) — ignored.
+                `new Route`,
                 // A route whose name argument is not a string literal — ignored.
                 `new Route('/x', dynamicName, handler)`,
+                // A route whose path argument is not a string literal — ignored.
+                `new Route(dynamicPath, 'p', handler)`,
+                // A dynamic route whose regex argument is not a string literal falls back to '',
+                // so it contributes a dynamic path but no regex entry.
+                `new DynamicRoute('/d/{id}', 'd.show', dynamicRegex, [new Parameter('id', '[0-9]+')], handler, [RequestMethod.GET])`,
                 // A valid route whose request-methods array holds a non-enum entry, which is skipped.
                 `new Route('/y', 'y', handler, [SPREAD_METHODS])`,
             ].join(', '),
@@ -198,9 +207,13 @@ describe('AstHttpDataFileGenerator', () => {
         const file = lastWrittenFile();
 
         expect(status).toBe(GenerateStatus.SUCCESS);
-        // Only the named route is emitted; with no valid methods it contributes no path entries.
+        // Only the named routes are emitted; the method-less/invalid ones contribute no path entries.
         expect(file).toContain(`['y']: (): RouteContract => new Route('/y', 'y', handler, [SPREAD_METHODS])`);
+        expect(file).toContain(`['d.show']: (): RouteContract => new DynamicRoute(`);
+        // The empty-regex dynamic route appears in dynamicPaths but not in regexes.
+        expect(file).toContain('"/d/{id}": "d.show"');
         expect(file).not.toContain('dynamicName');
+        expect(file).not.toContain('dynamicPath');
     });
 
     it('covers repeated methods, empty path/name, non-Regex casts, orphans and colon keys', () => {

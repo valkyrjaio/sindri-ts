@@ -194,6 +194,18 @@ describe('GenerateDataFromAst', () => {
             expect(() => gen.container(['DoesNotExist'], config, gen.freshOutput())).not.toThrow();
         });
 
+        it('omits the import for a resolvable provider that publishes nothing', () => {
+            const containerGenerator = generator();
+            const gen = new TestGenerate({
+                serviceProviderReader: reader({ publishers: {} }),
+                containerGenerator,
+            });
+
+            gen.container(['AppServiceProviderFixture'], config, gen.freshOutput());
+
+            expect(containerGenerator.classImportMap).toStrictEqual({});
+        });
+
         it('populates the container import map for resolvable providers that publish', () => {
             const containerGenerator = generator();
             const gen = new TestGenerate({

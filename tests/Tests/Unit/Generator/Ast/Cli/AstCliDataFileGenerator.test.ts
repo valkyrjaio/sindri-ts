@@ -86,8 +86,9 @@ describe('AstCliDataFileGenerator', () => {
     });
 
     it('skips non-new and unnamed route expressions when generating from route objects', () => {
-        // A non-new expression and a route whose first argument is not a string literal are both ignored.
-        const routeExprs = parseRouteExprs(`someHelper(), new Route(commandName, 'desc', handler)`);
+        // Ignored: a non-new expression, a bare `new Route` with no argument list, and a
+        // route whose first argument is not a string literal.
+        const routeExprs = parseRouteExprs(`someHelper(), new Route, new Route(commandName, 'desc', handler)`);
 
         const status = new AstCliDataFileGenerator().generateFileFromRoutes('/out', 'AppCliRoutingData', 'App.Data', routeExprs);
 

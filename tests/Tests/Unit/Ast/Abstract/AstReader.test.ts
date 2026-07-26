@@ -248,6 +248,20 @@ describe('AstReader', () => {
             expect(result[0]).toContain('StaticHolderFixture.ts');
             expect(result[1]).toContain('ImplementorFixture.ts');
         });
+
+        it('skips a new-expression whose callee is not a plain identifier', () => {
+            // `new Ns.Provider()` — the callee is a property access, so no name can be resolved.
+            expect(
+                reader.extractClassPathListFromValues(method('m() { return [new Ns.Provider()]; }'), useMap, anchor),
+            ).toEqual([]);
+        });
+
+        it('skips a reference whose import cannot be resolved to a file', () => {
+            // `Unknown` is not in the import map, so it resolves to an empty path and is dropped.
+            expect(
+                reader.extractClassPathListFromValues(method('m() { return [new Unknown()]; }'), useMap, anchor),
+            ).toEqual([]);
+        });
     });
 
     describe('extractClassListFromKeys', () => {
