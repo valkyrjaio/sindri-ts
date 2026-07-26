@@ -1,6 +1,13 @@
 # Release Notes for 26.x
 
-## [Unreleased](https://github.com/valkyrjaio/sindri-ts/compare/v26.2.0...26.x)
+## [Unreleased](https://github.com/valkyrjaio/sindri-ts/compare/v26.3.0...26.x)
+
+## [v26.3.0](https://github.com/valkyrjaio/sindri-ts/compare/v26.2.0...v26.3.0) - 2026-07-25
+
+* [GitHub] Update .github workflow refs to v26.11.0 by [@valkyrja-volundr](https://github.com/valkyrja-volundr)[bot] in https://github.com/valkyrjaio/sindri-ts/pull/60
+* [npm] Update npm dependencies by [@valkyrja-volundr](https://github.com/valkyrja-volundr)[bot] in https://github.com/valkyrjaio/sindri-ts/pull/61
+* [Sindri] Generate populated route data from imperative getRoutes() providers by [@MelechMizrachi](https://github.com/MelechMizrachi) in https://github.com/valkyrjaio/sindri-ts/pull/62
+* [npm] Update npm dependencies by [@valkyrja-volundr](https://github.com/valkyrja-volundr)[bot] in https://github.com/valkyrjaio/sindri-ts/pull/63
 
 ## [v26.2.0](https://github.com/valkyrjaio/sindri-ts/compare/v26.1.3...v26.2.0) - 2026-07-25
 
