@@ -36,6 +36,15 @@ describe('ConfigReader', () => {
         expect(result.providers.length).toBeGreaterThan(0);
     });
 
+    it('extracts providers from the HttpConfig layout (array at index 9, new-expression instances)', () => {
+        const result = new ConfigReader().readFile(fixturePath('TestHttpConfigFixture'));
+
+        // The single `new TestComponentProviderFixture()` provider resolves,
+        // through the import map, to the fixture's absolute file path.
+        expect(result.providers).toHaveLength(1);
+        expect(result.providers[0]).toContain('Provider/TestComponentProviderFixture.ts');
+    });
+
     it('resolves process.cwd() as the dir, keeps an absolute data path, and ignores non-array providers', () => {
         const result = new ConfigReader().readFile(fixturePath('TestConfigProcessCwdFixture'));
 

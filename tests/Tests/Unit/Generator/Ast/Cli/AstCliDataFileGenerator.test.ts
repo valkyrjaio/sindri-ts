@@ -7,6 +7,8 @@
  * file that was distributed with this source code.
  */
 
+import * as fs from 'fs';
+
 import { ts } from 'ts-morph';
 
 import { describe, expect, it, vi } from 'vitest';
@@ -20,6 +22,21 @@ vi.mock('fs', () => ({
     writeFileSync: vi.fn(),
     mkdirSync: vi.fn(),
 }));
+
+/** Parse a `new Route(...)` source list into parsed expression nodes. */
+function parseRouteExprs(source: string): ts.Expression[] {
+    const sourceFile = ts.createSourceFile('routes.ts', `[${source}]`, ts.ScriptTarget.Latest, true);
+    const statement = sourceFile.statements[0] as ts.ExpressionStatement;
+
+    return [...(statement.expression as ts.ArrayLiteralExpression).elements];
+}
+
+/** The source text written by the most recent generateFile* call. */
+function lastWrittenFile(): string {
+    const calls = vi.mocked(fs.writeFileSync).mock.calls;
+
+    return calls[calls.length - 1]?.[1] as string;
+}
 
 describe('AstCliDataFileGenerator', () => {
     it('generates a cli routing data file with user imports', () => {
@@ -44,5 +61,37 @@ describe('AstCliDataFileGenerator', () => {
         expect(new AstCliDataFileGenerator().generateFile('/out', 'CliData', 'App.Data', routes)).toBe(
             GenerateStatus.SUCCESS,
         );
+    });
+
+    it('generates the cli routing data from imperative getRoutes() route objects', () => {
+        const generator = new AstCliDataFileGenerator();
+        generator.classImportMap = { CliRouteProvider: '../Provider/CliRouteProvider.ts' };
+
+        const routeExprs = parseRouteExprs(
+            [
+                `new Route('test', 'Test command', CliRouteProvider.testHandler)`,
+                `new Route('build', 'Build command', CliRouteProvider.buildHandler)`,
+            ].join(', '),
+        );
+
+        const status = generator.generateFileFromRoutes('/out', 'AppCliRoutingData', 'App.Data', routeExprs);
+        const file = lastWrittenFile();
+
+        expect(status).toBe(GenerateStatus.SUCCESS);
+        expect(file).toContain(`import { CliRouteProvider } from '../Provider/CliRouteProvider.ts';`);
+        // Each command is keyed by its name (the first argument), emitted verbatim, with no `routes:` wrapper.
+        expect(file).toContain(`['test']: (): RouteContract => new Route('test', 'Test command', CliRouteProvider.testHandler)`);
+        expect(file).toContain(`['build']: (): RouteContract => new Route('build', 'Build command', CliRouteProvider.buildHandler)`);
+        expect(file).not.toContain('routes: {');
+    });
+
+    it('skips non-new and unnamed route expressions when generating from route objects', () => {
+        // A non-new expression and a route whose first argument is not a string literal are both ignored.
+        const routeExprs = parseRouteExprs(`someHelper(), new Route(commandName, 'desc', handler)`);
+
+        const status = new AstCliDataFileGenerator().generateFileFromRoutes('/out', 'AppCliRoutingData', 'App.Data', routeExprs);
+
+        expect(status).toBe(GenerateStatus.SUCCESS);
+        expect(lastWrittenFile()).toContain('super({});');
     });
 });

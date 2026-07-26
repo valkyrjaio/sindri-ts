@@ -25,6 +25,13 @@ describe('RouteProviderReader', () => {
         expect(result.routes).toHaveLength(0);
     });
 
+    it('extracts the imperative routes returned by getRoutes()', () => {
+        const result = new RouteProviderReader().readFile(fixture('Provider/TestImperativeRouteProviderFixture'));
+
+        expect(result.controllerClasses).toHaveLength(0);
+        expect(result.routes).toHaveLength(2);
+    });
+
     it('returns an empty result when there is no class', () => {
         expect(new RouteProviderReader().readFile(fixture('Config/TestConfigNoClassFixture')).controllerClasses).toHaveLength(
             0,

@@ -211,6 +211,17 @@ export abstract class GenerateDataFromAst {
         return '';
     }
 
+    /**
+     * Build the `import { X } from '...'` specifier for a class file, relative
+     * to the generated data file's output directory. Used to import the
+     * provider/handler classes referenced by the generated data caches.
+     */
+    protected relativeSpecifier(fromDir: string, toFile: string): string {
+        const relative = path.relative(fromDir, toFile).split(path.sep).join('/');
+
+        return relative.startsWith('.') ? relative : `./${relative}`;
+    }
+
     protected generateContainerData(
         serviceProviders: readonly string[],
         config: ConfigResult,
@@ -221,6 +232,7 @@ export abstract class GenerateDataFromAst {
             .writeMessages();
 
         const publishers: Record<string, readonly [string, string]> = {};
+        const importMap: Record<string, string> = {};
 
         for (const providerClass of serviceProviders) {
             const filePath = this.fqnToFilePath(providerClass, config.namespace, config.dir);
@@ -231,8 +243,16 @@ export abstract class GenerateDataFromAst {
 
             const result = this.serviceProviderReader.readFile(filePath);
 
+            if (Object.keys(result.publishers).length > 0) {
+                // The publisher callbacks reference the provider's static methods,
+                // so the generated data cache must import the provider class.
+                importMap[path.basename(filePath, '.ts')] = this.relativeSpecifier(config.dataPath, filePath);
+            }
+
             Object.assign(publishers, result.publishers);
         }
+
+        this.containerGenerator.classImportMap = importMap;
 
         const status = this.containerGenerator.generateFile(
             config.dataPath,
@@ -297,6 +317,8 @@ export abstract class GenerateDataFromAst {
             .writeMessages();
 
         const allRoutes: Record<string, ts.Expression> = {};
+        const imperativeRoutes: ts.Expression[] = [];
+        const importMap: Record<string, string> = {};
 
         for (const providerClass of cliRouteProviders) {
             const filePath = this.fqnToFilePath(providerClass, config.namespace, config.dir);
@@ -306,6 +328,13 @@ export abstract class GenerateDataFromAst {
             }
 
             const providerResult = this.routeProviderReader.readFile(filePath);
+
+            if (providerResult.routes.length > 0) {
+                // Imperative routes reference the provider's static handlers,
+                // so the generated data cache must import the provider class.
+                imperativeRoutes.push(...providerResult.routes);
+                importMap[path.basename(filePath, '.ts')] = this.relativeSpecifier(config.dataPath, filePath);
+            }
 
             for (const controllerClass of providerResult.controllerClasses) {
                 const controllerPath = this.fqnToFilePath(controllerClass, config.namespace, config.dir);
@@ -320,12 +349,17 @@ export abstract class GenerateDataFromAst {
             }
         }
 
-        const status = this.cliGenerator.generateFile(
-            config.dataPath,
-            'AppCliRoutingData',
-            config.dataNamespace,
-            allRoutes,
-        );
+        this.cliGenerator.classImportMap = importMap;
+
+        const status =
+            imperativeRoutes.length > 0
+                ? this.cliGenerator.generateFileFromRoutes(
+                      config.dataPath,
+                      'AppCliRoutingData',
+                      config.dataNamespace,
+                      imperativeRoutes,
+                  )
+                : this.cliGenerator.generateFile(config.dataPath, 'AppCliRoutingData', config.dataNamespace, allRoutes);
 
         return this.addMessagesForGenerateStatus(output, status).withAddedMessages(new NewLine()).writeMessages();
     }
@@ -341,6 +375,8 @@ export abstract class GenerateDataFromAst {
 
         const allRoutes: Record<string, ts.Expression> = {};
         const allRouteData: Record<string, HttpRouteData> = {};
+        const imperativeRoutes: ts.Expression[] = [];
+        const importMap: Record<string, string> = {};
 
         for (const providerClass of httpRouteProviders) {
             const filePath = this.fqnToFilePath(providerClass, config.namespace, config.dir);
@@ -350,6 +386,13 @@ export abstract class GenerateDataFromAst {
             }
 
             const providerResult = this.routeProviderReader.readFile(filePath);
+
+            if (providerResult.routes.length > 0) {
+                // Imperative routes reference the provider's static handlers,
+                // so the generated data cache must import the provider class.
+                imperativeRoutes.push(...providerResult.routes);
+                importMap[path.basename(filePath, '.ts')] = this.relativeSpecifier(config.dataPath, filePath);
+            }
 
             for (const controllerClass of providerResult.controllerClasses) {
                 const controllerPath = this.fqnToFilePath(controllerClass, config.namespace, config.dir);
@@ -365,13 +408,23 @@ export abstract class GenerateDataFromAst {
             }
         }
 
-        const status = this.httpGenerator.generateFile(
-            config.dataPath,
-            'AppHttpRoutingData',
-            config.dataNamespace,
-            allRoutes,
-            allRouteData,
-        );
+        this.httpGenerator.classImportMap = importMap;
+
+        const status =
+            imperativeRoutes.length > 0
+                ? this.httpGenerator.generateFileFromRoutes(
+                      config.dataPath,
+                      'AppHttpRoutingData',
+                      config.dataNamespace,
+                      imperativeRoutes,
+                  )
+                : this.httpGenerator.generateFile(
+                      config.dataPath,
+                      'AppHttpRoutingData',
+                      config.dataNamespace,
+                      allRoutes,
+                      allRouteData,
+                  );
 
         return this.addMessagesForGenerateStatus(output, status).withAddedMessages(new NewLine()).writeMessages();
     }

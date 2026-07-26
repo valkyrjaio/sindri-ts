@@ -30,12 +30,16 @@ export class ComponentProviderReader extends AstReader implements ComponentProvi
         const useMap = this.buildUseMap(sourceFile);
         const methods = this.indexMethods(classDecl);
 
+        // Provider references are resolved through the file's import map to
+        // absolute paths (not bare names) so the walk locates each provider
+        // unambiguously — the same short name (e.g. `ComponentProvider`,
+        // `DataServiceProvider`) exists in both the Http and Cli trees.
         return new ComponentProviderResult(
-            this.extractClassListFromValues(methods[ComponentProviderReader.METHOD_COMPONENT], useMap, filePath),
-            this.extractClassListFromValues(methods[ComponentProviderReader.METHOD_CONTAINER], useMap, filePath),
-            this.extractClassListFromValues(methods[ComponentProviderReader.METHOD_EVENT], useMap, filePath),
-            this.extractClassListFromValues(methods[ComponentProviderReader.METHOD_CLI], useMap, filePath),
-            this.extractClassListFromValues(methods[ComponentProviderReader.METHOD_HTTP], useMap, filePath),
+            this.extractClassPathListFromValues(methods[ComponentProviderReader.METHOD_COMPONENT], useMap, filePath),
+            this.extractClassPathListFromValues(methods[ComponentProviderReader.METHOD_CONTAINER], useMap, filePath),
+            this.extractClassPathListFromValues(methods[ComponentProviderReader.METHOD_EVENT], useMap, filePath),
+            this.extractClassPathListFromValues(methods[ComponentProviderReader.METHOD_CLI], useMap, filePath),
+            this.extractClassPathListFromValues(methods[ComponentProviderReader.METHOD_HTTP], useMap, filePath),
         );
     }
 }

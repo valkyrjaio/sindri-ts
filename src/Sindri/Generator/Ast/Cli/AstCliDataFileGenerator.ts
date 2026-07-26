@@ -64,6 +64,36 @@ export class AstCliDataFileGenerator extends AstFileGenerator implements CliData
         return this.writeFile(directory, className, data);
     }
 
+    /**
+     * Generate the CLI routing data file from imperative `getRoutes()` route
+     * objects — each `new Route(name, description, handler, ...)` is keyed by
+     * its command name (the first constructor argument) and emitted verbatim.
+     */
+    public generateFileFromRoutes(
+        directory: string,
+        className: string,
+        namespace: string,
+        routeExprs: readonly ts.Expression[],
+    ): GenerateStatus {
+        const routes: Record<string, ts.Expression> = {};
+
+        for (const expr of routeExprs) {
+            if (!ts.isNewExpression(expr)) {
+                continue;
+            }
+
+            const nameArg = (expr.arguments ?? [])[0];
+
+            if (nameArg === undefined || !ts.isStringLiteral(nameArg)) {
+                continue;
+            }
+
+            routes[nameArg.text] = expr;
+        }
+
+        return this.generateFile(directory, className, namespace, routes);
+    }
+
     public generateClassContents(routes: Record<string, ts.Expression>): string {
         const entries = Object.entries(routes);
 
@@ -74,15 +104,25 @@ export class AstCliDataFileGenerator extends AstFileGenerator implements CliData
         const lines: string[] = [];
 
         for (const [key, valueExpr] of entries) {
-            const keyExpr = this.buildEnumCaseExpr(key);
-            const printedKey = this.printer.printNode(ts.EmitHint.Unspecified, keyExpr, this.dummySourceFile);
-            const printedValue = this.printer.printNode(ts.EmitHint.Unspecified, valueExpr, this.dummySourceFile);
-
-            const formattedKey = key.includes('::') ? `[${printedKey}]` : `['${printedKey}']`;
+            const printedValue = this.printExpr(valueExpr);
+            const formattedKey = key.includes('::')
+                ? `[${this.printer.printNode(ts.EmitHint.Unspecified, this.buildEnumCaseExpr(key), this.dummySourceFile)}]`
+                : `['${key}']`;
 
             lines.push(`            ${formattedKey}: (): RouteContract => ${printedValue},`);
         }
 
-        return ['super({', '            routes: {', ...lines, '            },', '        });'].join('\n        ');
+        return ['super({', ...lines, '        });'].join('\n        ');
+    }
+
+    /**
+     * Print an expression to source. Parsed nodes (from a `getRoutes()` body)
+     * are emitted via their original source text; synthesized nodes (which
+     * carry no source positions) are emitted through the printer.
+     */
+    protected printExpr(expr: ts.Expression): string {
+        return expr.pos >= 0
+            ? expr.getText()
+            : this.printer.printNode(ts.EmitHint.Unspecified, expr, this.dummySourceFile);
     }
 }

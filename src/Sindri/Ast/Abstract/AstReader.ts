@@ -142,6 +142,86 @@ export abstract class AstReader {
     }
 
     /**
+     * Resolve a `new X()` or bare `X` identifier element to the absolute file
+     * path of the class it references, using the current file's import map.
+     *
+     * Returns undefined when the element is neither form, or when the name is
+     * not imported via a relative specifier (e.g. framework classes imported
+     * from a package — those are intentionally skipped by the provider walk).
+     */
+    protected resolveElementToFilePath(
+        element: ts.Expression,
+        useMap: Record<string, string>,
+        currentFilePath: string,
+    ): string | undefined {
+        let name: string | undefined;
+
+        if (ts.isNewExpression(element)) {
+            name = ts.isIdentifier(element.expression) ? element.expression.text : undefined;
+        } else if (ts.isIdentifier(element)) {
+            name = element.text;
+        }
+
+        if (name === undefined) {
+            return undefined;
+        }
+
+        const resolved = this.resolveImportToFilePath(name, useMap, currentFilePath);
+
+        return resolved !== '' ? resolved : undefined;
+    }
+
+    /**
+     * Extract the absolute file paths of the classes referenced by a method
+     * returning [new A(), new B(), ...] (or [A, B, ...]).
+     *
+     * Unlike {@link extractClassListFromValues} (which returns bare class
+     * names), this resolves each reference through the import map so provider
+     * classes are located unambiguously — critical when the same short class
+     * name exists in more than one component tree (e.g. an Http and a Cli
+     * `ComponentProvider`).
+     */
+    protected extractClassPathListFromValues(
+        method: MethodDeclaration | undefined,
+        useMap: Record<string, string>,
+        currentFilePath: string,
+    ): string[] {
+        if (method === undefined) {
+            return [];
+        }
+
+        const array = this.findReturnedArray(method);
+
+        if (array === undefined) {
+            return [];
+        }
+
+        return this.extractClassPathListFromArrayExpr(array, useMap, currentFilePath);
+    }
+
+    /**
+     * Extract the absolute file paths of the classes referenced by the elements
+     * of an array literal, using the current file's import map.
+     */
+    protected extractClassPathListFromArrayExpr(
+        array: ts.ArrayLiteralExpression,
+        useMap: Record<string, string>,
+        currentFilePath: string,
+    ): string[] {
+        const paths: string[] = [];
+
+        for (const element of array.elements) {
+            const resolved = this.resolveElementToFilePath(element, useMap, currentFilePath);
+
+            if (resolved !== undefined) {
+                paths.push(resolved);
+            }
+        }
+
+        return paths;
+    }
+
+    /**
      * Extract service ID strings from keys of an object-returning method.
      *
      * Used for publishers() where keys are service IDs (strings or computed references).
