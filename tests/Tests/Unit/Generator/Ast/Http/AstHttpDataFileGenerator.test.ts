@@ -16,6 +16,7 @@ import { HttpRouteData } from '../../../../../../src/Sindri/Ast/Data/HttpRouteDa
 import { GenerateStatus } from '../../../../../../src/Sindri/Generator/Enum/GenerateStatus.ts';
 import { GeneratorUnreachableException } from '../../../../../../src/Sindri/Generator/Throwable/Exception/GeneratorUnreachableException.ts';
 import { AstHttpDataFileGenerator } from '../../../../../../src/Sindri/Generator/Ast/Http/AstHttpDataFileGenerator.ts';
+import { lastWrittenFile, parseRouteExprs } from '../generatorTestUtil.ts';
 
 import type { ProcessorContract } from '@valkyrjaio/valkyrja/Http/Routing/Processor/Contract/ProcessorContract.ts';
 import type { RouteContract } from '@valkyrjaio/valkyrja/Http/Routing/Data/Contract/RouteContract.ts';
@@ -116,6 +117,87 @@ describe('AstHttpDataFileGenerator', () => {
                 { 'users.show': dynamicRoute() },
             ),
         ).toThrow(GeneratorUnreachableException);
+    });
+
+    it('generates the routing data from imperative getRoutes() route objects', () => {
+        const generator = new AstHttpDataFileGenerator();
+        generator.classImportMap = { HttpRouteProvider: '../Provider/HttpRouteProvider.ts' };
+
+        const routeExprs = parseRouteExprs(
+            [
+                `new Route('/', 'home', HttpRouteProvider.home)`,
+                `new Route('/users', 'users.index', HttpRouteProvider.index, [RequestMethod.GET, RequestMethod.POST])`,
+                `new DynamicRoute('/users/{id}', 'users.show', '/users/([0-9]+)', [new Parameter('id', '[0-9]+')], HttpRouteProvider.show, [RequestMethod.GET])`,
+                `new Route('/any', 'any', HttpRouteProvider.any, [RequestMethod.ANY])`,
+            ].join(', '),
+        );
+
+        const status = generator.generateFileFromRoutes('/out', 'AppHttpRoutingData', 'App.Data', routeExprs);
+        const file = lastWrittenFile();
+
+        expect(status).toBe(GenerateStatus.SUCCESS);
+
+        // Route closures are emitted verbatim, keyed by route name, with the provider import.
+        expect(file).toContain(`import { HttpRouteProvider } from '../Provider/HttpRouteProvider.ts';`);
+        expect(file).toContain(`['home']: (): RouteContract => new Route('/', 'home', HttpRouteProvider.home)`);
+        expect(file).toContain(`['users.show']: (): RouteContract => new DynamicRoute(`);
+
+        // Static paths: the GET/POST split and the default [HEAD, GET] for the method-less route.
+        expect(file).toContain('"POST": {\n        "/users": "users.index"');
+        expect(file).toContain('"HEAD": {\n        "/": "home"');
+
+        // Dynamic routes populate dynamicPaths and regexes (keyed by the literal path and regex).
+        expect(file).toContain('"/users/{id}": "users.show"');
+        expect(file).toContain('"/users/([0-9]+)": "users.show"');
+
+        // RequestMethod.ANY expands to every request method.
+        expect(file).toContain('"DELETE": {\n        "/any": "any"');
+    });
+
+    it('emits an empty routes map when no imperative routes are provided', () => {
+        const status = new AstHttpDataFileGenerator().generateFileFromRoutes('/out', 'AppHttpRoutingData', 'App.Data', []);
+
+        expect(status).toBe(GenerateStatus.SUCCESS);
+        expect(lastWrittenFile()).toContain('super(\n            {},');
+    });
+
+    it('skips non-route and non-literal-name expressions and ignores non-enum method entries', () => {
+        const routeExprs = parseRouteExprs(
+            [
+                // Not a new-expression — ignored entirely.
+                `buildRoute()`,
+                // A new-expression whose callee is not a plain identifier — ignored.
+                `new Routing.Route('/n', 'n', handler)`,
+                // A bare `new Route` with no argument list (arguments undefined) — ignored.
+                `new Route`,
+                // A route whose name argument is not a string literal — ignored.
+                `new Route('/x', dynamicName, handler)`,
+                // A route whose path argument is not a string literal — ignored.
+                `new Route(dynamicPath, 'p', handler)`,
+                // A dynamic route whose regex argument is not a string literal falls back to '',
+                // so it contributes a dynamic path but no regex entry.
+                `new DynamicRoute('/d/{id}', 'd.show', dynamicRegex, [new Parameter('id', '[0-9]+')], handler, [RequestMethod.GET])`,
+                // A valid route whose request-methods array holds a non-enum entry, which is skipped.
+                `new Route('/y', 'y', handler, [SPREAD_METHODS])`,
+            ].join(', '),
+        );
+
+        const status = new AstHttpDataFileGenerator().generateFileFromRoutes(
+            '/out',
+            'AppHttpRoutingData',
+            'App.Data',
+            routeExprs,
+        );
+        const file = lastWrittenFile();
+
+        expect(status).toBe(GenerateStatus.SUCCESS);
+        // Only the named routes are emitted; the method-less/invalid ones contribute no path entries.
+        expect(file).toContain(`['y']: (): RouteContract => new Route('/y', 'y', handler, [SPREAD_METHODS])`);
+        expect(file).toContain(`['d.show']: (): RouteContract => new DynamicRoute(`);
+        // The empty-regex dynamic route appears in dynamicPaths but not in regexes.
+        expect(file).toContain('"/d/{id}": "d.show"');
+        expect(file).not.toContain('dynamicName');
+        expect(file).not.toContain('dynamicPath');
     });
 
     it('covers repeated methods, empty path/name, non-Regex casts, orphans and colon keys', () => {

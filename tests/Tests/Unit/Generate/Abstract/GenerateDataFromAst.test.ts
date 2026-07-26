@@ -26,8 +26,10 @@ const appDir = fileURLToPath(new URL('../../../Fixtures/App', import.meta.url));
 const configFile = path.join(appDir, 'ConfigFixture.ts');
 
 /** A generator stub returning a fixed status. */
-function generator(status: GenerateStatus = GenerateStatus.SUCCESS): { generateFile: () => GenerateStatus } {
-    return { generateFile: vi.fn(() => status) };
+function generator(
+    status: GenerateStatus = GenerateStatus.SUCCESS,
+): { classImportMap: Record<string, string>; generateFile: () => GenerateStatus; generateFileFromRoutes: () => GenerateStatus } {
+    return { classImportMap: {}, generateFile: vi.fn(() => status), generateFileFromRoutes: vi.fn(() => status) };
 }
 
 /** A reader stub whose readFile returns a fixed result. */
@@ -59,7 +61,7 @@ class TestGenerate extends GenerateDataFromAst {
             'Generating Data',
             reader(new ConfigResult()) as never,
             (deps.componentProviderReader ?? reader(new ComponentProviderResult())) as never,
-            (deps.routeProviderReader ?? reader({ controllerClasses: [] })) as never,
+            (deps.routeProviderReader ?? reader({ controllerClasses: [], routes: [] })) as never,
             (deps.listenerProviderReader ?? reader({ listenerClasses: [] })) as never,
             (deps.serviceProviderReader ?? reader({ publishers: {} })) as never,
             (deps.cliRouteAttributeReader ?? reader({ routes: {} })) as never,
@@ -191,6 +193,32 @@ describe('GenerateDataFromAst', () => {
 
             expect(() => gen.container(['DoesNotExist'], config, gen.freshOutput())).not.toThrow();
         });
+
+        it('omits the import for a resolvable provider that publishes nothing', () => {
+            const containerGenerator = generator();
+            const gen = new TestGenerate({
+                serviceProviderReader: reader({ publishers: {} }),
+                containerGenerator,
+            });
+
+            gen.container(['AppServiceProviderFixture'], config, gen.freshOutput());
+
+            expect(containerGenerator.classImportMap).toStrictEqual({});
+        });
+
+        it('populates the container import map for resolvable providers that publish', () => {
+            const containerGenerator = generator();
+            const gen = new TestGenerate({
+                serviceProviderReader: reader({ publishers: { 'Id::A': ['AppServiceProviderFixture', 'publish'] } }),
+                containerGenerator,
+            });
+
+            gen.container(['AppServiceProviderFixture'], config, gen.freshOutput());
+
+            expect(containerGenerator.classImportMap).toStrictEqual({
+                AppServiceProviderFixture: './Provider/AppServiceProviderFixture.ts',
+            });
+        });
     });
 
     describe('generateEventData', () => {
@@ -207,20 +235,50 @@ describe('GenerateDataFromAst', () => {
     describe('generateCliData', () => {
         it('skips unresolvable providers and controller classes', () => {
             const gen = new TestGenerate({
-                routeProviderReader: reader({ controllerClasses: ['MissingController'] }),
+                routeProviderReader: reader({ controllerClasses: ['MissingController'], routes: [] }),
             });
 
             expect(() => gen.cli(['DoesNotExist', 'AppCliRouteProviderFixture'], config, gen.freshOutput())).not.toThrow();
+        });
+
+        it('generates from imperative routes and populates the provider import map', () => {
+            const cliGenerator = generator();
+            const gen = new TestGenerate({
+                routeProviderReader: reader({ controllerClasses: [], routes: [{} as never] }),
+                cliGenerator,
+            });
+
+            gen.cli(['AppCliRouteProviderFixture'], config, gen.freshOutput());
+
+            expect(cliGenerator.generateFileFromRoutes).toHaveBeenCalled();
+            expect(cliGenerator.classImportMap).toStrictEqual({
+                AppCliRouteProviderFixture: './Provider/AppCliRouteProviderFixture.ts',
+            });
         });
     });
 
     describe('generateHttpData', () => {
         it('skips unresolvable providers and controller classes', () => {
             const gen = new TestGenerate({
-                routeProviderReader: reader({ controllerClasses: ['MissingController'] }),
+                routeProviderReader: reader({ controllerClasses: ['MissingController'], routes: [] }),
             });
 
             expect(() => gen.http(['DoesNotExist', 'AppHttpRouteProviderFixture'], config, gen.freshOutput())).not.toThrow();
+        });
+
+        it('generates from imperative routes and populates the provider import map', () => {
+            const httpGenerator = generator();
+            const gen = new TestGenerate({
+                routeProviderReader: reader({ controllerClasses: [], routes: [{} as never] }),
+                httpGenerator,
+            });
+
+            gen.http(['AppHttpRouteProviderFixture'], config, gen.freshOutput());
+
+            expect(httpGenerator.generateFileFromRoutes).toHaveBeenCalled();
+            expect(httpGenerator.classImportMap).toStrictEqual({
+                AppHttpRouteProviderFixture: './Provider/AppHttpRouteProviderFixture.ts',
+            });
         });
     });
 

@@ -33,6 +33,11 @@ class TestAstReader extends AstReader {
         u: Record<string, string>,
         f: string,
     ): string[] => super.extractClassListFromValues(m, u, f);
+    public extractClassPathListFromValues = (
+        m: MethodDeclaration | undefined,
+        u: Record<string, string>,
+        f: string,
+    ): string[] => super.extractClassPathListFromValues(m, u, f);
     public extractClassListFromKeys = (
         m: MethodDeclaration | undefined,
         u: Record<string, string>,
@@ -220,6 +225,42 @@ describe('AstReader', () => {
             expect(
                 reader.extractClassListFromValues(method('m() { return [new A(), B, 5]; }'), useMap, anchor),
             ).toEqual(['A', 'B']);
+        });
+    });
+
+    describe('extractClassPathListFromValues', () => {
+        it('returns empty for an undefined method', () => {
+            expect(reader.extractClassPathListFromValues(undefined, useMap, anchor)).toEqual([]);
+        });
+
+        it('returns empty when the method does not return an array', () => {
+            expect(reader.extractClassPathListFromValues(method('m() { return 1; }'), useMap, anchor)).toEqual([]);
+        });
+
+        it('resolves new-expression / identifier references to file paths, skipping scalars', () => {
+            const result = reader.extractClassPathListFromValues(
+                method('m() { return [new StaticHolderFixture(), ImplementorFixture, 5]; }'),
+                useMap,
+                anchor,
+            );
+
+            expect(result).toHaveLength(2);
+            expect(result[0]).toContain('StaticHolderFixture.ts');
+            expect(result[1]).toContain('ImplementorFixture.ts');
+        });
+
+        it('skips a new-expression whose callee is not a plain identifier', () => {
+            // `new Ns.Provider()` — the callee is a property access, so no name can be resolved.
+            expect(
+                reader.extractClassPathListFromValues(method('m() { return [new Ns.Provider()]; }'), useMap, anchor),
+            ).toEqual([]);
+        });
+
+        it('skips a reference whose import cannot be resolved to a file', () => {
+            // `Unknown` is not in the import map, so it resolves to an empty path and is dropped.
+            expect(
+                reader.extractClassPathListFromValues(method('m() { return [new Unknown()]; }'), useMap, anchor),
+            ).toEqual([]);
         });
     });
 

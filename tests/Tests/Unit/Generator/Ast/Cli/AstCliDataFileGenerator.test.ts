@@ -13,6 +13,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { GenerateStatus } from '../../../../../../src/Sindri/Generator/Enum/GenerateStatus.ts';
 import { AstCliDataFileGenerator } from '../../../../../../src/Sindri/Generator/Ast/Cli/AstCliDataFileGenerator.ts';
+import { lastWrittenFile, parseRouteExprs } from '../generatorTestUtil.ts';
 
 vi.mock('fs', () => ({
     existsSync: vi.fn(() => false),
@@ -44,5 +45,38 @@ describe('AstCliDataFileGenerator', () => {
         expect(new AstCliDataFileGenerator().generateFile('/out', 'CliData', 'App.Data', routes)).toBe(
             GenerateStatus.SUCCESS,
         );
+    });
+
+    it('generates the cli routing data from imperative getRoutes() route objects', () => {
+        const generator = new AstCliDataFileGenerator();
+        generator.classImportMap = { CliRouteProvider: '../Provider/CliRouteProvider.ts' };
+
+        const routeExprs = parseRouteExprs(
+            [
+                `new Route('test', 'Test command', CliRouteProvider.testHandler)`,
+                `new Route('build', 'Build command', CliRouteProvider.buildHandler)`,
+            ].join(', '),
+        );
+
+        const status = generator.generateFileFromRoutes('/out', 'AppCliRoutingData', 'App.Data', routeExprs);
+        const file = lastWrittenFile();
+
+        expect(status).toBe(GenerateStatus.SUCCESS);
+        expect(file).toContain(`import { CliRouteProvider } from '../Provider/CliRouteProvider.ts';`);
+        // Each command is keyed by its name (the first argument), emitted verbatim, with no `routes:` wrapper.
+        expect(file).toContain(`['test']: (): RouteContract => new Route('test', 'Test command', CliRouteProvider.testHandler)`);
+        expect(file).toContain(`['build']: (): RouteContract => new Route('build', 'Build command', CliRouteProvider.buildHandler)`);
+        expect(file).not.toContain('routes: {');
+    });
+
+    it('skips non-new and unnamed route expressions when generating from route objects', () => {
+        // Ignored: a non-new expression, a bare `new Route` with no argument list, and a
+        // route whose first argument is not a string literal.
+        const routeExprs = parseRouteExprs(`someHelper(), new Route, new Route(commandName, 'desc', handler)`);
+
+        const status = new AstCliDataFileGenerator().generateFileFromRoutes('/out', 'AppCliRoutingData', 'App.Data', routeExprs);
+
+        expect(status).toBe(GenerateStatus.SUCCESS);
+        expect(lastWrittenFile()).toContain('super({});');
     });
 });

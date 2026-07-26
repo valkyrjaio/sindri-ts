@@ -32,11 +32,7 @@ export class AstContainerDataFileGenerator extends AstFileGenerator implements C
         namespace: string,
         publishers: Readonly<Record<string, readonly [string, string]>>,
     ): GenerateStatus {
-        const userImports = Object.entries(this.classImportMap)
-            .map(([name, specifier]) => `import { ${name} } from '${specifier}';`)
-            .join('\n');
-
-        const userImportsBlock = userImports ? `${userImports}\n` : '';
+        const userImportsBlock = this.buildUserImportsBlock(this.classImportMap);
 
         const contents = this.generateClassContents(publishers);
 
@@ -67,12 +63,11 @@ export class AstContainerDataFileGenerator extends AstFileGenerator implements C
         const lines: string[] = [];
 
         for (const [serviceId, [providerClass, methodName]] of entries) {
-            const keyExpr = this.buildEnumCaseExpr(serviceId);
-            const printedKey = this.printer.printNode(ts.EmitHint.Unspecified, keyExpr, this.dummySourceFile);
-
             const shortProviderClass = providerClass.slice(providerClass.lastIndexOf('\\') + 1);
 
-            const formattedKey = serviceId.includes('::') ? `[${printedKey}]` : `['${printedKey}']`;
+            const formattedKey = serviceId.includes('::')
+                ? `[${this.printer.printNode(ts.EmitHint.Unspecified, this.buildEnumCaseExpr(serviceId), this.dummySourceFile)}]`
+                : `['${serviceId}']`;
 
             lines.push(
                 `            ${formattedKey}: (container: ContainerContract) => ${shortProviderClass}.${methodName}(container),`,

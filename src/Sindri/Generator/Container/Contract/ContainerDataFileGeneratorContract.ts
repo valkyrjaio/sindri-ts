@@ -10,6 +10,9 @@
 import type { GenerateStatus } from '../../Enum/GenerateStatus.ts';
 
 export interface ContainerDataFileGeneratorContract {
+    /** Map of class name → module specifier for the provider imports the data cache references. */
+    classImportMap: Record<string, string>;
+
     generateFile(
         directory: string,
         className: string,

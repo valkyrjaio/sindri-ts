@@ -190,21 +190,29 @@ export class ConfigReader extends AstReader implements ConfigReaderContract {
     }
 
     /**
-     * Extract provider class names from the providers argument.
-     * In CliConfig, providers is typically the 12th positional arg (index 11).
+     * Extract the absolute file paths of the configured provider classes.
+     *
+     * The providers array is the first array-literal argument after the
+     * `dataNamespace` (index 8) — every preceding argument is a scalar. Its
+     * exact position varies by config type (index 9 in `HttpConfig`, index 11
+     * in `CliConfig` after `applicationName`/`defaultCommandName`), so the
+     * array is located by scanning rather than by a fixed index.
+     *
+     * Each element (`new ComponentProvider()` or a bare `ComponentProvider`
+     * identifier) is resolved through the config file's import map to an
+     * absolute path, so the walk locates the right provider even when the same
+     * short name exists in multiple trees.
      */
     protected extractProvidersFromArgs(
         args: ts.NodeArray<ts.Expression>,
         useMap: Record<string, string>,
         filePath: string,
     ): string[] {
-        // Try to find the providers array in the argument list
-        // It's typically at index 11 in CliConfig
-        for (let i = 10; i < args.length; i++) {
+        for (let i = 9; i < args.length; i++) {
             const arg = args[i];
 
             if (arg !== undefined && ts.isArrayLiteralExpression(arg)) {
-                return this.extractClassListFromArrayExpr(arg, useMap, filePath);
+                return this.extractClassPathListFromArrayExpr(arg, useMap, filePath);
             }
         }
 

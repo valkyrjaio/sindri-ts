@@ -25,8 +25,29 @@ describe('RouteProviderReader', () => {
         expect(result.routes).toHaveLength(0);
     });
 
+    it('extracts the imperative routes returned by getRoutes()', () => {
+        const result = new RouteProviderReader().readFile(fixture('Provider/TestImperativeRouteProviderFixture'));
+
+        expect(result.controllerClasses).toHaveLength(0);
+        expect(result.routes).toHaveLength(2);
+    });
+
     it('returns an empty result when there is no class', () => {
         expect(new RouteProviderReader().readFile(fixture('Config/TestConfigNoClassFixture')).controllerClasses).toHaveLength(
+            0,
+        );
+    });
+
+    it('returns no routes when the provider has no getRoutes() method', () => {
+        // CompA is a bare class with neither getControllerClasses nor getRoutes.
+        const result = new RouteProviderReader().readFile(fixture('Provider/CompA'));
+
+        expect(result.controllerClasses).toHaveLength(0);
+        expect(result.routes).toHaveLength(0);
+    });
+
+    it('returns no routes when getRoutes() does not return an array literal', () => {
+        expect(new RouteProviderReader().readFile(fixture('Provider/TestNonArrayRouteProviderFixture')).routes).toHaveLength(
             0,
         );
     });
