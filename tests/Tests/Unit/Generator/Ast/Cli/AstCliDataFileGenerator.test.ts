@@ -7,14 +7,13 @@
  * file that was distributed with this source code.
  */
 
-import * as fs from 'fs';
-
 import { ts } from 'ts-morph';
 
 import { describe, expect, it, vi } from 'vitest';
 
 import { GenerateStatus } from '../../../../../../src/Sindri/Generator/Enum/GenerateStatus.ts';
 import { AstCliDataFileGenerator } from '../../../../../../src/Sindri/Generator/Ast/Cli/AstCliDataFileGenerator.ts';
+import { lastWrittenFile, parseRouteExprs } from '../generatorTestUtil.ts';
 
 vi.mock('fs', () => ({
     existsSync: vi.fn(() => false),
@@ -22,21 +21,6 @@ vi.mock('fs', () => ({
     writeFileSync: vi.fn(),
     mkdirSync: vi.fn(),
 }));
-
-/** Parse a `new Route(...)` source list into parsed expression nodes. */
-function parseRouteExprs(source: string): ts.Expression[] {
-    const sourceFile = ts.createSourceFile('routes.ts', `[${source}]`, ts.ScriptTarget.Latest, true);
-    const statement = sourceFile.statements[0] as ts.ExpressionStatement;
-
-    return [...(statement.expression as ts.ArrayLiteralExpression).elements];
-}
-
-/** The source text written by the most recent generateFile* call. */
-function lastWrittenFile(): string {
-    const calls = vi.mocked(fs.writeFileSync).mock.calls;
-
-    return calls[calls.length - 1]?.[1] as string;
-}
 
 describe('AstCliDataFileGenerator', () => {
     it('generates a cli routing data file with user imports', () => {

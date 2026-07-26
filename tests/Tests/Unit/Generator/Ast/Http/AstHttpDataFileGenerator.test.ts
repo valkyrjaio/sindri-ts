@@ -7,8 +7,6 @@
  * file that was distributed with this source code.
  */
 
-import * as fs from 'fs';
-
 import { ts } from 'ts-morph';
 
 import { describe, expect, it, vi } from 'vitest';
@@ -18,6 +16,7 @@ import { HttpRouteData } from '../../../../../../src/Sindri/Ast/Data/HttpRouteDa
 import { GenerateStatus } from '../../../../../../src/Sindri/Generator/Enum/GenerateStatus.ts';
 import { GeneratorUnreachableException } from '../../../../../../src/Sindri/Generator/Throwable/Exception/GeneratorUnreachableException.ts';
 import { AstHttpDataFileGenerator } from '../../../../../../src/Sindri/Generator/Ast/Http/AstHttpDataFileGenerator.ts';
+import { lastWrittenFile, parseRouteExprs } from '../generatorTestUtil.ts';
 
 import type { ProcessorContract } from '@valkyrjaio/valkyrja/Http/Routing/Processor/Contract/ProcessorContract.ts';
 import type { RouteContract } from '@valkyrjaio/valkyrja/Http/Routing/Data/Contract/RouteContract.ts';
@@ -34,21 +33,6 @@ const POST = 'RequestMethod::POST';
 
 function newRouteExpr(): ts.NewExpression {
     return ts.factory.createNewExpression(ts.factory.createIdentifier('Route'), undefined, []);
-}
-
-/** Parse a `new Route(...)` / `new DynamicRoute(...)` source list into parsed expression nodes. */
-function parseRouteExprs(source: string): ts.Expression[] {
-    const sourceFile = ts.createSourceFile('routes.ts', `[${source}]`, ts.ScriptTarget.Latest, true);
-    const statement = sourceFile.statements[0] as ts.ExpressionStatement;
-
-    return [...(statement.expression as ts.ArrayLiteralExpression).elements];
-}
-
-/** The source text written by the most recent generateFile* call. */
-function lastWrittenFile(): string {
-    const calls = vi.mocked(fs.writeFileSync).mock.calls;
-
-    return calls[calls.length - 1]?.[1] as string;
 }
 
 function staticRoute(): HttpRouteData {
