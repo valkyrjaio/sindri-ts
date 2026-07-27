@@ -16,8 +16,14 @@ import { ts } from 'ts-morph';
 
 import { describe, expect, it } from 'vitest';
 
+import { CliArgumentParameterData } from '../../../../../../src/Sindri/Ast/Data/CliArgumentParameterData.ts';
+import { CliOptionParameterData } from '../../../../../../src/Sindri/Ast/Data/CliOptionParameterData.ts';
+import { CliRouteData } from '../../../../../../src/Sindri/Ast/Data/CliRouteData.ts';
+import { HandlerData } from '../../../../../../src/Sindri/Ast/Data/HandlerData.ts';
 import { HttpParameterData } from '../../../../../../src/Sindri/Ast/Data/HttpParameterData.ts';
 import { HttpRouteData } from '../../../../../../src/Sindri/Ast/Data/HttpRouteData.ts';
+import { CliRouteAttributeReader } from '../../../../../../src/Sindri/Ast/CliRouteAttributeReader.ts';
+import { HttpRouteAttributeReader } from '../../../../../../src/Sindri/Ast/HttpRouteAttributeReader.ts';
 import { AstCliDataFileGenerator } from '../../../../../../src/Sindri/Generator/Ast/Cli/AstCliDataFileGenerator.ts';
 import { ConfigImport } from '../../../../../../src/Sindri/Ast/Data/ConfigImport.ts';
 import { ConfigSourceResult } from '../../../../../../src/Sindri/Ast/Data/Result/ConfigSourceResult.ts';
@@ -54,6 +60,25 @@ const goldenDir = fileURLToPath(new URL('./golden/', import.meta.url));
 /** A stable placeholder route/listener expression (printed verbatim into the snapshot). */
 function placeholder(text: string): ts.Expression {
     return ts.factory.createStringLiteral(text);
+}
+
+/** Exposes the HTTP reader's route-expression builder to produce real `new DynamicRoute(...)` values. */
+class ExposedHttpRouteAttributeReader extends HttpRouteAttributeReader {
+    public build(data: HttpRouteData): ts.Expression {
+        return this.buildRouteExpr(data);
+    }
+}
+
+/** Exposes the CLI reader's route-expression builder to produce real `new Route(...)` values. */
+class ExposedCliRouteAttributeReader extends CliRouteAttributeReader {
+    public build(data: CliRouteData): ts.Expression {
+        return this.buildRouteExpr(data);
+    }
+}
+
+/** Absolute path of an HTTP/CLI controller fixture. */
+function fixture(name: string): string {
+    return fileURLToPath(new URL(`../../../../Fixtures/${name}.ts`, import.meta.url));
 }
 
 /** Run a generator against a fresh temp directory and return the emitted source. */
@@ -105,6 +130,60 @@ describe('GoldenSnapshotTest', () => {
         assertGolden(actual, 'AppHttpRoutingData');
     });
 
+    it('matches the AppHttpRoutingDataDynamic golden built from a real DynamicRoute expression', () => {
+        // Build the route value through the reader so the whole pipeline is pinned:
+        // reader constructor-arg order (regex placeholder in slot 2, parameters always
+        // emitted) plus the generator injecting the computed regex into that slot.
+        const data = new HttpRouteData(
+            '/users/{id}',
+            'users.show',
+            new HandlerData('UsersController', 'show'),
+            [GET],
+            [],
+            [],
+            [],
+            [],
+            [],
+            null,
+            null,
+            true,
+            [new HttpParameterData('id', '[0-9]+')],
+        );
+
+        const routes = { 'users.show': new ExposedHttpRouteAttributeReader().build(data) };
+        const routeData = { 'users.show': data };
+
+        const actual = generate('AppHttpRoutingDataDynamic', (directory) => {
+            const generator = new AstHttpDataFileGenerator();
+            generator.classImportMap = { UsersController: '../Controller/UsersController.ts' };
+            generator.generateFile(directory, 'AppHttpRoutingDataDynamic', 'App.Data', routes, routeData);
+        });
+
+        assertGolden(actual, 'AppHttpRoutingDataDynamic');
+    });
+
+    it('matches the AppHttpRoutingDataAutoPromoted golden built end-to-end from an auto-promoted @Route', () => {
+        // Read a real controller fixture: `users.index` is a plain @Route whose `{id}` path
+        // auto-promotes it to a dynamic route, carrying a `parameters` option. This pins the
+        // full pipeline — the reader promoting a plain @Route and the generator emitting a
+        // constructor-correct `new DynamicRoute(...)` with the computed regex in slot 2.
+        const result = new HttpRouteAttributeReader().readFile(fixture('Http/TestHttpControllerFixture'));
+
+        const routes = { 'users.index': result.routes['users.index'] };
+        const routeData = { 'users.index': result.routeData['users.index'] };
+
+        const actual = generate('AppHttpRoutingDataAutoPromoted', (directory) => {
+            const generator = new AstHttpDataFileGenerator();
+            generator.classImportMap = {
+                TestHttpControllerFixture: '../Controller/TestHttpControllerFixture.ts',
+                AllMiddlewareFixture: '../Middleware/AllMiddlewareFixture.ts',
+            };
+            generator.generateFile(directory, 'AppHttpRoutingDataAutoPromoted', 'App.Data', routes, routeData);
+        });
+
+        assertGolden(actual, 'AppHttpRoutingDataAutoPromoted');
+    });
+
     it('matches the AppCliRoutingData golden', () => {
         const routes = {
             greet: placeholder('greet-expr'),
@@ -118,6 +197,35 @@ describe('GoldenSnapshotTest', () => {
         });
 
         assertGolden(actual, 'AppCliRoutingData');
+    });
+
+    it('matches the AppCliRoutingDataFull golden built from a real Route with an argument and option', () => {
+        // Build the CLI route value through the reader so the emitted constructor argument order
+        // is pinned end-to-end: Route(name, description, handler, helpText, 4 middleware buckets,
+        // [arguments], [options]) plus ArgumentParameter(...) and OptionParameter(...) — the latter
+        // proving the empty `options` slot keeps mode/valueMode in their correct positions.
+        const data = new CliRouteData(
+            'greet',
+            'Greet a user',
+            new HandlerData('GreetController', 'greet'),
+            null,
+            [],
+            [],
+            [],
+            [],
+            [new CliArgumentParameterData('name', 'The user name')],
+            [new CliOptionParameterData('shout', 'Shout the greeting', 'BOOL', null, 'no', ['s'], ['yes', 'no'])],
+        );
+
+        const routes = { greet: new ExposedCliRouteAttributeReader().build(data) };
+
+        const actual = generate('AppCliRoutingDataFull', (directory) => {
+            const generator = new AstCliDataFileGenerator();
+            generator.classImportMap = { GreetController: '../Controller/GreetController.ts' };
+            generator.generateFile(directory, 'AppCliRoutingDataFull', 'App.Data', routes);
+        });
+
+        assertGolden(actual, 'AppCliRoutingDataFull');
     });
 
     it('matches the AppCliRoutingData framework-commands golden', () => {

@@ -1,26 +1,40 @@
 // Fixture parsed by ts-morph (never executed).
 /* eslint-disable */
 // @ts-nocheck
+import { AllMiddlewareFixture } from './AllMiddlewareFixture.ts';
+
 @Path('/users')
 @Name('users')
 export class TestHttpControllerFixture {
-    @Route('/{id}', 'index')
-    @RequestMethod('GET')
-    @Middleware(SomeMiddleware)
-    @RequestStruct(SomeRequestStruct)
-    @ResponseStruct(SomeResponseStruct)
-    @Parameter('id', '\\d+')
-    index(@Parameter('slug', '[a-z]+') slug) {}
+    @Route({
+        path: '/{id}',
+        name: 'index',
+        requestMethods: [RequestMethod.GET],
+        middleware: [AllMiddlewareFixture],
+        requestStruct: SomeRequestStruct,
+        responseStruct: SomeResponseStruct,
+        parameters: [{ name: 'id', regex: '\\d+' }],
+    })
+    index() {}
 
-    @DynamicRoute('/{post}', 'show')
-    @Parameter('post', '\\d+')
+    @DynamicRoute({
+        path: '/{post}',
+        name: 'show',
+        parameters: [{ name: 'post', regex: '\\d+', cast: 'int', isOptional: true, shouldCapture: false, default: 'p' }],
+    })
     show() {}
 
-    @Route('', '')
+    @Route({ path: '/by', name: 'byHandler', handler: [OtherController, 'byHandler'] })
+    byHandler() {}
+
+    @Route({ path: '', name: '' })
     invalid() {}
 
-    @DynamicRoute('', '')
+    @DynamicRoute({ path: '', name: '' })
     invalidDynamic() {}
+
+    @Route('not-an-object')
+    nonObject() {}
 
     noDecorator() {}
 }

@@ -11,6 +11,11 @@ import { ts } from 'ts-morph';
 
 import { describe, expect, it, vi } from 'vitest';
 
+import { CliArgumentParameterData } from '../../../../../../src/Sindri/Ast/Data/CliArgumentParameterData.ts';
+import { CliOptionParameterData } from '../../../../../../src/Sindri/Ast/Data/CliOptionParameterData.ts';
+import { CliRouteData } from '../../../../../../src/Sindri/Ast/Data/CliRouteData.ts';
+import { HandlerData } from '../../../../../../src/Sindri/Ast/Data/HandlerData.ts';
+import { CliRouteAttributeReader } from '../../../../../../src/Sindri/Ast/CliRouteAttributeReader.ts';
 import { GenerateStatus } from '../../../../../../src/Sindri/Generator/Enum/GenerateStatus.ts';
 import { AstCliDataFileGenerator } from '../../../../../../src/Sindri/Generator/Ast/Cli/AstCliDataFileGenerator.ts';
 import { lastWrittenFile, parseRouteExprs } from '../generatorTestUtil.ts';
@@ -21,6 +26,13 @@ vi.mock('fs', () => ({
     writeFileSync: vi.fn(),
     mkdirSync: vi.fn(),
 }));
+
+/** Exposes the CLI reader's route-expression builder. */
+class ExposedCliRouteAttributeReader extends CliRouteAttributeReader {
+    public build(data: CliRouteData): ts.Expression {
+        return this.buildRouteExpr(data);
+    }
+}
 
 describe('AstCliDataFileGenerator', () => {
     it('generates a cli routing data file with user imports', () => {
@@ -67,6 +79,65 @@ describe('AstCliDataFileGenerator', () => {
         expect(file).toContain(`['test']: (): RouteContract => new Route('test', 'Test command', CliRouteProvider.testHandler)`);
         expect(file).toContain(`['build']: (): RouteContract => new Route('build', 'Build command', CliRouteProvider.buildHandler)`);
         expect(file).not.toContain('routes: {');
+    });
+
+    it('emits Route, ArgumentParameter and OptionParameter arguments in framework constructor order', () => {
+        // Build the route value through the reader so the emitted argument order is asserted
+        // directly — the empty `options` slot must keep OptionParameter's mode/valueMode in place,
+        // and the empty argument buckets must keep Route's [arguments]/[options] slots in place.
+        const data = new CliRouteData(
+            'greet',
+            'Greet a user',
+            new HandlerData('GreetController', 'greet'),
+            null,
+            [],
+            [],
+            [],
+            [],
+            [new CliArgumentParameterData('name', 'The user name')],
+            [new CliOptionParameterData('shout', 'Shout the greeting', 'BOOL', null, 'no', ['s'], ['yes', 'no'])],
+        );
+
+        const expr = new ExposedCliRouteAttributeReader().build(data);
+        const status = new AstCliDataFileGenerator().generateFile('/out', 'CliData', 'App.Data', { greet: expr });
+        const file = lastWrittenFile();
+
+        expect(status).toBe(GenerateStatus.SUCCESS);
+        // Route(name, description, handler, helpText, 4 middleware buckets, [arguments], [options]).
+        expect(file).toContain(
+            'new Route("greet", "Greet a user", GreetController.greet, null, [], [], [], [], [new ArgumentParameter(',
+        );
+        expect(file).toContain(
+            'new ArgumentParameter("name", "The user name", null, ArgumentMode.OPTIONAL, ArgumentValueMode.DEFAULT)',
+        );
+        // The empty `[]` before OptionMode is the runtime-populated `options` slot.
+        expect(file).toContain(
+            'new OptionParameter("shout", "Shout the greeting", "BOOL", null, "no", ["s"], ["yes", "no"], [], OptionMode.OPTIONAL, OptionValueMode.DEFAULT)',
+        );
+    });
+
+    it('emits an empty arguments array when a command has options but no arguments', () => {
+        // Options-only command: buildParameterArgs must still emit an empty arguments array first
+        // so the options land in their own positional slot.
+        const data = new CliRouteData(
+            'opts',
+            'Options only',
+            new HandlerData('OptsController', 'run'),
+            null,
+            [],
+            [],
+            [],
+            [],
+            [],
+            [new CliOptionParameterData('flag', 'A flag')],
+        );
+
+        const expr = new ExposedCliRouteAttributeReader().build(data);
+        new AstCliDataFileGenerator().generateFile('/out', 'CliData', 'App.Data', { opts: expr });
+
+        expect(lastWrittenFile()).toContain(
+            'new Route("opts", "Options only", OptsController.run, null, [], [], [], [], [], [new OptionParameter(',
+        );
     });
 
     it('skips non-new and unnamed route expressions when generating from route objects', () => {

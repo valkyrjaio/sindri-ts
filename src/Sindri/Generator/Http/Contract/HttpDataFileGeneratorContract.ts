@@ -31,5 +31,14 @@ export interface HttpDataFileGeneratorContract {
         routeExprs: readonly ts.Expression[],
     ): GenerateStatus;
 
+    generateMergedFile(
+        directory: string,
+        className: string,
+        namespace: string,
+        routes: Record<string, ts.Expression>,
+        routeData: Record<string, HttpRouteData>,
+        routeExprs: readonly ts.Expression[],
+    ): GenerateStatus;
+
     generateClassContents(routes: Record<string, ts.Expression>, routeData: Record<string, HttpRouteData>): string;
 }

@@ -118,6 +118,10 @@ class TestAstReader extends AstReader {
         super.buildClassIdentifierArrayExpr(c);
     public classImplementsInterface = (c: string, i: string, u: Record<string, string>, f: string): boolean =>
         super.classImplementsInterface(c, i, u, f);
+    public getDecoratorObjectArg = (d: Decorator): ts.ObjectLiteralExpression | undefined =>
+        super.getDecoratorObjectArg(d);
+    public getObjectProp = (o: ts.ObjectLiteralExpression, k: string): ts.Expression | undefined =>
+        super.getObjectProp(o, k);
     public collectReferencedIdentifiers = (n: ts.Node, names?: Set<string>): Set<string> =>
         super.collectReferencedIdentifiers(n, names);
 }
@@ -692,6 +696,24 @@ describe('AstReader', () => {
                 | undefined;
 
             expect(context?.currentClass).toBe('');
+        });
+    });
+
+    describe('object-literal decorator helpers', () => {
+        it('returns undefined for a decorator with no arguments', () => {
+            expect(reader.getDecoratorObjectArg(decorator('@Foo()'))).toBeUndefined();
+        });
+
+        it('returns the object-literal argument and undefined for a non-object argument', () => {
+            expect(reader.getDecoratorObjectArg(decorator("@Foo({ path: '/p' })"))).toBeDefined();
+            expect(reader.getDecoratorObjectArg(decorator("@Foo('x')"))).toBeUndefined();
+        });
+
+        it('finds a property by name and skips non-identifier/string property names', () => {
+            const obj = expr("{ 5: 1, path: '/p' }") as ts.ObjectLiteralExpression;
+
+            expect(reader.getObjectProp(obj, 'path')).toBeDefined();
+            expect(reader.getObjectProp(obj, 'missing')).toBeUndefined();
         });
     });
 });

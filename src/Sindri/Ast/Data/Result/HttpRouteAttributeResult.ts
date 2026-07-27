@@ -15,5 +15,7 @@ export class HttpRouteAttributeResult {
     constructor(
         readonly routes: Record<string, ts.Expression> = {},
         readonly routeData: Record<string, HttpRouteData> = {},
+        /** Class short name → absolute file path for handler/middleware imports. */
+        readonly importMap: Record<string, string> = {},
     ) {}
 }

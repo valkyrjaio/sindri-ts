@@ -24,19 +24,13 @@ import type { HttpRouteMiddlewareReaderContract } from './Contract/HttpRouteMidd
  * complexity threshold; injected as a constructor argument.
  */
 export class HttpRouteMiddlewareReader extends AstReader implements HttpRouteMiddlewareReaderContract {
-    extractInlineRequestMethods(
-        decoratorArgs: ts.NodeArray<ts.Expression> | ts.Expression[],
+    extractObjectRequestMethods(
+        obj: ts.ObjectLiteralExpression,
         useMap: Record<string, string>,
         namespace: string,
         currentClass: string,
     ): string[] {
-        const requestMethodsArg = decoratorArgs[3];
-
-        if (requestMethodsArg === undefined || !ts.isArrayLiteralExpression(requestMethodsArg)) {
-            return [];
-        }
-
-        return this.extractClassListFromArrayExpr(requestMethodsArg, useMap, namespace, currentClass);
+        return this.getObjectClassListProp(obj, 'requestMethods', useMap, namespace, currentClass);
     }
 
     updateRequestMethods(
@@ -71,12 +65,33 @@ export class HttpRouteMiddlewareReader extends AstReader implements HttpRouteMid
         useMap: Record<string, string>,
         namespace: string,
         currentClass: string,
-        routeMatchedMiddleware: string[],
-        routeDispatchedMiddleware: string[],
-        throwableCaughtMiddleware: string[],
-        sendingResponseMiddleware: string[],
-        responseSentMiddleware: string[],
+        middleware: string[],
     ): [string[], string[], string[], string[], string[]] {
+        let routeMatchedMiddleware: string[] = [];
+        let routeDispatchedMiddleware: string[] = [];
+        let throwableCaughtMiddleware: string[] = [];
+        let sendingResponseMiddleware: string[] = [];
+        let responseSentMiddleware: string[] = [];
+
+        for (const mwName of middleware) {
+            [
+                routeMatchedMiddleware,
+                routeDispatchedMiddleware,
+                throwableCaughtMiddleware,
+                sendingResponseMiddleware,
+                responseSentMiddleware,
+            ] = this.classifyMiddleware(
+                mwName,
+                useMap,
+                namespace,
+                routeMatchedMiddleware,
+                routeDispatchedMiddleware,
+                throwableCaughtMiddleware,
+                sendingResponseMiddleware,
+                responseSentMiddleware,
+            );
+        }
+
         for (const decorator of this.findDecoratorsOnNode(method, 'Middleware', useMap, namespace)) {
             const mwName = this.extractExprValue(this.getDecoratorArg(decorator, 0), useMap, namespace, currentClass);
 

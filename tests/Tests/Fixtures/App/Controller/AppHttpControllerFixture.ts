@@ -4,8 +4,11 @@
 @Path('/users')
 @Name('users')
 export class AppHttpControllerFixture {
-    @Route('/{id}', 'show')
-    @RequestMethod('GET')
-    @Parameter('id', '\d+')
+    @DynamicRoute({
+        path: '/{id}',
+        name: 'show',
+        requestMethods: [RequestMethod.GET],
+        parameters: [{ name: 'id', regex: '\\d+' }],
+    })
     show() {}
 }

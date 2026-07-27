@@ -612,6 +612,153 @@ export abstract class AstReader {
         return decorator.getArguments()[position];
     }
 
+    // -------------------------------------------------------------------------
+    // Object-literal decorator helpers — the shipped decorators accept a single
+    // options object (`@Route({ path, name, ... })`) rather than positional args.
+    // -------------------------------------------------------------------------
+
+    /**
+     * Return the decorator's first argument when it is an object literal, else undefined.
+     */
+    protected getDecoratorObjectArg(decorator: Decorator): ts.ObjectLiteralExpression | undefined {
+        const arg = this.getDecoratorArg(decorator, 0);
+
+        if (arg === undefined) {
+            return undefined;
+        }
+
+        const tsNode = arg.compilerNode;
+
+        return ts.isObjectLiteralExpression(tsNode) ? tsNode : undefined;
+    }
+
+    /**
+     * Return the value expression of the named property on an object literal, or
+     * undefined when the property is absent (or is not a plain property assignment).
+     */
+    protected getObjectProp(obj: ts.ObjectLiteralExpression, key: string): ts.Expression | undefined {
+        for (const prop of obj.properties) {
+            if (ts.isPropertyAssignment(prop) && this.propertyNameToString(prop.name) === key) {
+                return prop.initializer;
+            }
+        }
+
+        return undefined;
+    }
+
+    /**
+     * Resolve a property name node (identifier or string literal) to its text.
+     */
+    protected propertyNameToString(name: ts.PropertyName): string | undefined {
+        if (ts.isIdentifier(name) || ts.isStringLiteral(name)) {
+            return name.text;
+        }
+
+        return undefined;
+    }
+
+    /**
+     * Extract a string-valued object property, falling back to defaultValue.
+     */
+    protected getObjectStringProp(
+        obj: ts.ObjectLiteralExpression,
+        key: string,
+        useMap: Record<string, string>,
+        currentFilePath: string,
+        currentClass: string,
+        defaultValue: string = '',
+    ): string {
+        const value = this.extractExprValue(this.getObjectProp(obj, key), useMap, currentFilePath, currentClass);
+
+        return typeof value === 'string' ? value : defaultValue;
+    }
+
+    /**
+     * Extract a boolean-valued object property, falling back to defaultValue.
+     */
+    protected getObjectBoolProp(
+        obj: ts.ObjectLiteralExpression,
+        key: string,
+        useMap: Record<string, string>,
+        currentFilePath: string,
+        currentClass: string,
+        defaultValue: boolean = false,
+    ): boolean {
+        const value = this.extractExprValue(this.getObjectProp(obj, key), useMap, currentFilePath, currentClass);
+
+        return typeof value === 'boolean' ? value : defaultValue;
+    }
+
+    /**
+     * Extract a class-list object property (an array literal of class references),
+     * returning an empty array when the property is absent or not an array.
+     */
+    protected getObjectClassListProp(
+        obj: ts.ObjectLiteralExpression,
+        key: string,
+        useMap: Record<string, string>,
+        currentFilePath: string,
+        currentClass: string,
+    ): string[] {
+        const node = this.getObjectProp(obj, key);
+
+        if (node === undefined || !ts.isArrayLiteralExpression(node)) {
+            return [];
+        }
+
+        return this.extractClassListFromArrayExpr(node, useMap, currentFilePath, currentClass);
+    }
+
+    /**
+     * Extract a string-list object property (an array literal of string values),
+     * returning an empty array when the property is absent or not an array.
+     */
+    protected getObjectStringListProp(
+        obj: ts.ObjectLiteralExpression,
+        key: string,
+        useMap: Record<string, string>,
+        currentFilePath: string,
+        currentClass: string,
+    ): string[] {
+        const node = this.getObjectProp(obj, key);
+
+        if (node === undefined || !ts.isArrayLiteralExpression(node)) {
+            return [];
+        }
+
+        const values: string[] = [];
+
+        for (const element of node.elements) {
+            const value = this.extractExprValue(element, useMap, currentFilePath, currentClass);
+
+            if (typeof value === 'string') {
+                values.push(value);
+            }
+        }
+
+        return values;
+    }
+
+    /**
+     * Extract a handler-reference object property (`[Class, 'method']`), returning
+     * undefined when the property is absent or not a two-element handler array.
+     */
+    protected getObjectHandlerProp(
+        obj: ts.ObjectLiteralExpression,
+        key: string,
+        useMap: Record<string, string>,
+        currentFilePath: string,
+        currentClass: string,
+    ): HandlerData | undefined {
+        const node = this.getObjectProp(obj, key);
+
+        if (node === undefined || !ts.isArrayLiteralExpression(node)) {
+            return undefined;
+        }
+
+        return this.extractHandlerFromTsArray(node, useMap, currentFilePath, currentClass);
+    }
+
     /**
      * Convert a simple expression node to a scalar value or HandlerData.
      */

@@ -2,7 +2,7 @@
 /* eslint-disable */
 // @ts-nocheck
 export class AppCliControllerFixture {
-    @Route('build', 'Builds the app')
-    @ArgumentParameter('source', 'The source directory')
+    @Route({ name: 'build', description: 'Builds the app' })
+    @ArgumentParameter({ name: 'source', description: 'The source directory' })
     build() {}
 }

@@ -14,4 +14,6 @@ export interface HttpParameterDataContract {
     readonly cast: string | null;
     readonly isOptional: boolean;
     readonly shouldCapture: boolean;
+    /** The default value for the parameter, or null when none was declared. */
+    readonly defaultValue: string | number | boolean | null;
 }

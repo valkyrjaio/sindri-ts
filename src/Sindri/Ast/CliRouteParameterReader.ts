@@ -28,7 +28,10 @@ export class CliRouteParameterReader extends AstReader implements CliRouteParame
     buildParameterArgs(data: CliRouteData): ts.Expression[] {
         const args: ts.Expression[] = [];
 
-        if (data.arguments.length > 0) {
+        // The `arguments_` constructor parameter precedes `options`, so an empty
+        // arguments array must still be emitted whenever options are present, to
+        // keep `options` in its correct positional slot.
+        if (data.arguments.length > 0 || data.options.length > 0) {
             args.push(this.buildArgumentListExpr(data.arguments));
         }
 
@@ -83,8 +86,14 @@ export class CliRouteParameterReader extends AstReader implements CliRouteParame
         currentFilePath: string,
         currentClass: string,
     ): CliArgumentParameterData | null {
-        const name = this.extractStringArg(decorator, 0, useMap, currentFilePath, currentClass);
-        const description = this.extractStringArg(decorator, 1, useMap, currentFilePath, currentClass);
+        const obj = this.getDecoratorObjectArg(decorator);
+
+        if (obj === undefined) {
+            return null;
+        }
+
+        const name = this.getObjectStringProp(obj, 'name', useMap, currentFilePath, currentClass);
+        const description = this.getObjectStringProp(obj, 'description', useMap, currentFilePath, currentClass);
 
         if (name === '' || description === '') {
             return null;
@@ -93,18 +102,18 @@ export class CliRouteParameterReader extends AstReader implements CliRouteParame
         return new CliArgumentParameterData(
             name,
             description,
-            this.extractStringArg(decorator, 2, useMap, currentFilePath, currentClass) || null,
-            this.extractStringArg(
-                decorator,
-                3,
+            this.getObjectStringProp(obj, 'cast', useMap, currentFilePath, currentClass) || null,
+            this.getObjectStringProp(
+                obj,
+                'mode',
                 useMap,
                 currentFilePath,
                 currentClass,
                 'Valkyrja\\Cli\\Routing\\Enum\\ArgumentMode::OPTIONAL',
             ),
-            this.extractStringArg(
-                decorator,
-                4,
+            this.getObjectStringProp(
+                obj,
+                'valueMode',
                 useMap,
                 currentFilePath,
                 currentClass,
@@ -119,8 +128,14 @@ export class CliRouteParameterReader extends AstReader implements CliRouteParame
         currentFilePath: string,
         currentClass: string,
     ): CliOptionParameterData | null {
-        const name = this.extractStringArg(decorator, 0, useMap, currentFilePath, currentClass);
-        const description = this.extractStringArg(decorator, 1, useMap, currentFilePath, currentClass);
+        const obj = this.getDecoratorObjectArg(decorator);
+
+        if (obj === undefined) {
+            return null;
+        }
+
+        const name = this.getObjectStringProp(obj, 'name', useMap, currentFilePath, currentClass);
+        const description = this.getObjectStringProp(obj, 'description', useMap, currentFilePath, currentClass);
 
         if (name === '' || description === '') {
             return null;
@@ -129,22 +144,22 @@ export class CliRouteParameterReader extends AstReader implements CliRouteParame
         return new CliOptionParameterData(
             name,
             description,
-            this.extractStringArg(decorator, 2, useMap, currentFilePath, currentClass),
-            this.extractStringArg(decorator, 3, useMap, currentFilePath, currentClass) || null,
-            this.extractStringArg(decorator, 4, useMap, currentFilePath, currentClass),
-            this.extractStringListArgFromDecorator(decorator, 5, useMap, currentFilePath, currentClass),
-            this.extractStringListArgFromDecorator(decorator, 6, useMap, currentFilePath, currentClass),
-            this.extractStringArg(
-                decorator,
-                7,
+            this.getObjectStringProp(obj, 'valueDisplayName', useMap, currentFilePath, currentClass),
+            this.getObjectStringProp(obj, 'cast', useMap, currentFilePath, currentClass) || null,
+            this.getObjectStringProp(obj, 'defaultValue', useMap, currentFilePath, currentClass),
+            this.getObjectStringListProp(obj, 'shortNames', useMap, currentFilePath, currentClass),
+            this.getObjectStringListProp(obj, 'validValues', useMap, currentFilePath, currentClass),
+            this.getObjectStringProp(
+                obj,
+                'mode',
                 useMap,
                 currentFilePath,
                 currentClass,
                 'Valkyrja\\Cli\\Routing\\Enum\\OptionMode::OPTIONAL',
             ),
-            this.extractStringArg(
-                decorator,
-                8,
+            this.getObjectStringProp(
+                obj,
+                'valueMode',
                 useMap,
                 currentFilePath,
                 currentClass,
@@ -196,6 +211,10 @@ export class CliRouteParameterReader extends AstReader implements CliRouteParame
             args.push(ts.factory.createArrayLiteralExpression([]));
         }
 
+        // The framework `OptionParameter` constructor carries a runtime-populated
+        // `options` array between `validValues` and `mode`; emit an empty array so
+        // `mode`/`valueMode` land in their correct positional slots.
+        args.push(ts.factory.createArrayLiteralExpression([]));
         args.push(this.buildEnumCaseExpr(data.mode));
         args.push(this.buildEnumCaseExpr(data.valueMode));
 

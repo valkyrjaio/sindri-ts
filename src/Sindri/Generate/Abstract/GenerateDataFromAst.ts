@@ -344,20 +344,20 @@ export abstract class GenerateDataFromAst extends GenerateFromAst {
                 const attrResult = this.cliRouteAttributeReader.readFile(controllerPath);
 
                 Object.assign(allRoutes, attrResult.routes);
+                this.mergeReaderImports(importMap, attrResult.importMap, config);
             }
         }
 
         this.cliGenerator.classImportMap = importMap;
 
-        const status =
-            imperativeRoutes.length > 0
-                ? this.cliGenerator.generateFileFromRoutes(
-                      config.dataPath,
-                      'AppCliRoutingData',
-                      config.dataNamespace,
-                      imperativeRoutes,
-                  )
-                : this.cliGenerator.generateFile(config.dataPath, 'AppCliRoutingData', config.dataNamespace, allRoutes);
+        // Merge attribute-scanned command routes with imperative getRoutes() routes.
+        const status = this.cliGenerator.generateMergedFile(
+            config.dataPath,
+            'AppCliRoutingData',
+            config.dataNamespace,
+            allRoutes,
+            imperativeRoutes,
+        );
 
         return this.addMessagesForGenerateStatus(output, status).withAddedMessages(new NewLine()).writeMessages();
     }
@@ -409,28 +409,41 @@ export abstract class GenerateDataFromAst extends GenerateFromAst {
 
                 Object.assign(allRoutes, attrResult.routes);
                 Object.assign(allRouteData, attrResult.routeData);
+                this.mergeReaderImports(importMap, attrResult.importMap, config);
             }
         }
 
         this.httpGenerator.classImportMap = importMap;
 
-        const status =
-            imperativeRoutes.length > 0
-                ? this.httpGenerator.generateFileFromRoutes(
-                      config.dataPath,
-                      'AppHttpRoutingData',
-                      config.dataNamespace,
-                      imperativeRoutes,
-                  )
-                : this.httpGenerator.generateFile(
-                      config.dataPath,
-                      'AppHttpRoutingData',
-                      config.dataNamespace,
-                      allRoutes,
-                      allRouteData,
-                  );
+        // Merge attribute-scanned routes with imperative getRoutes() routes.
+        const status = this.httpGenerator.generateMergedFile(
+            config.dataPath,
+            'AppHttpRoutingData',
+            config.dataNamespace,
+            allRoutes,
+            allRouteData,
+            imperativeRoutes,
+        );
 
         return this.addMessagesForGenerateStatus(output, status).withAddedMessages(new NewLine()).writeMessages();
+    }
+
+    /**
+     * Merge the class-name → absolute-file-path imports a route attribute reader
+     * resolved (handler/help-text/middleware classes) into the generated data
+     * file's import map, converting each absolute path to the specifier the
+     * generated file imports it by — relative to the output directory for
+     * application source, or the owning package's own specifier for a class an
+     * installed package exposes.
+     */
+    protected mergeReaderImports(
+        importMap: Record<string, string>,
+        readerImportMap: Record<string, string>,
+        config: ConfigResult,
+    ): void {
+        for (const [name, absolutePath] of Object.entries(readerImportMap)) {
+            importMap[name] = this.importSpecifier(config.dataPath, absolutePath);
+        }
     }
 
     protected addMessagesForGenerateStatus(output: OutputContract, status: GenerateStatus): OutputContract {
