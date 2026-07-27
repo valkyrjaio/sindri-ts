@@ -13,7 +13,7 @@ export class AppHttpRoutingDataDynamic extends HttpRoutingData {
     constructor() {
         super(
             {
-                    ['users.show']: (): RouteContract => new DynamicRoute("/users/{id}", "users.show", "/^\\/users\\/(?<id>[0-9]+)$/", [new Parameter("id", "[0-9]+", null, false, true)], UsersController.show, [RequestMethod.GET], [], [], [], [], [], null, null),
+                    ['users.show']: (): RouteContract => new DynamicRoute("/users/{id}", "users.show", "^\\/users\\/(?<id>[0-9]+)$", [new Parameter("id", "[0-9]+", null, false, true)], UsersController.show, [RequestMethod.GET], [], [], [], [], [], null, null),
                 },
             {},
             {
@@ -23,7 +23,7 @@ export class AppHttpRoutingDataDynamic extends HttpRoutingData {
 },
             {
     "GET": {
-        "/^\\/users\\/(?<id>[0-9]+)$/": "users.show"
+        "^\\/users\\/(?<id>[0-9]+)$": "users.show"
     }
 },
         );

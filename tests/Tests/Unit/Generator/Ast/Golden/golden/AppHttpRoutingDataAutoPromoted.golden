@@ -14,7 +14,7 @@ export class AppHttpRoutingDataAutoPromoted extends HttpRoutingData {
     constructor() {
         super(
             {
-                    ['users.index']: (): RouteContract => new DynamicRoute("/users/{id}", "users.index", "/^\\/users\\/(?<id>\\d+)$/", [new Parameter("id", "\\d+", null, false, true)], TestHttpControllerFixture.index, [RequestMethod.GET], [AllMiddlewareFixture], [AllMiddlewareFixture], [AllMiddlewareFixture], [AllMiddlewareFixture], [AllMiddlewareFixture], "SomeRequestStruct", "SomeResponseStruct"),
+                    ['users.index']: (): RouteContract => new DynamicRoute("/users/{id}", "users.index", "^\\/users\\/(?<id>\\d+)$", [new Parameter("id", "\\d+", null, false, true)], TestHttpControllerFixture.index, [RequestMethod.GET], [AllMiddlewareFixture], [AllMiddlewareFixture], [AllMiddlewareFixture], [AllMiddlewareFixture], [AllMiddlewareFixture], "SomeRequestStruct", "SomeResponseStruct"),
                 },
             {},
             {
@@ -24,7 +24,7 @@ export class AppHttpRoutingDataAutoPromoted extends HttpRoutingData {
 },
             {
     "GET": {
-        "/^\\/users\\/(?<id>\\d+)$/": "users.index"
+        "^\\/users\\/(?<id>\\d+)$": "users.index"
     }
 },
         );
