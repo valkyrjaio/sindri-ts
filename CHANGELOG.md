@@ -1,6 +1,15 @@
 # Release Notes for 26.x
 
-## [Unreleased](https://github.com/valkyrjaio/sindri-ts/compare/v26.3.0...26.x)
+## [Unreleased](https://github.com/valkyrjaio/sindri-ts/compare/v26.4.0...26.x)
+
+## [v26.4.0](https://github.com/valkyrjaio/sindri-ts/compare/v26.3.0...v26.4.0) - 2026-07-27
+
+* [npm] Update npm dependencies by [@valkyrja-volundr](https://github.com/valkyrja-volundr)[bot] in https://github.com/valkyrjaio/sindri-ts/pull/64
+* [Sindri] Resolve package specifiers so framework providers reach the generated cache by [@MelechMizrachi](https://github.com/MelechMizrachi) in https://github.com/valkyrjaio/sindri-ts/pull/66
+* [Sindri] Resolve binding-key constants declared with as const by [@MelechMizrachi](https://github.com/MelechMizrachi) in https://github.com/valkyrjaio/sindri-ts/pull/67
+* [Sindri] Resolve binding keys declared locally and as module-level constants by [@MelechMizrachi](https://github.com/MelechMizrachi) in https://github.com/valkyrjaio/sindri-ts/pull/68
+* [GitHub] Update .github workflow refs to v26.12.0 by [@valkyrja-volundr](https://github.com/valkyrja-volundr)[bot] in https://github.com/valkyrjaio/sindri-ts/pull/69
+* [npm] Update npm dependencies by [@valkyrja-volundr](https://github.com/valkyrja-volundr)[bot] in https://github.com/valkyrjaio/sindri-ts/pull/70
 
 ## [v26.3.0](https://github.com/valkyrjaio/sindri-ts/compare/v26.2.0...v26.3.0) - 2026-07-25
 
