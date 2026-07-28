@@ -24,7 +24,7 @@ export class TestHttpControllerFixture {
     })
     show() {}
 
-    @Route({ path: '/by', name: 'byHandler', handler: [OtherController, 'byHandler'] })
+    @Route({ path: '/by', name: 'byHandler', handler: [() => OtherController, 'byHandler'] })
     byHandler() {}
 
     @Route({ path: '', name: '' })

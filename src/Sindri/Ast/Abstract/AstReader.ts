@@ -839,7 +839,12 @@ export abstract class AstReader {
             return undefined;
         }
 
-        const classValue = this.extractExprValue(array.elements[0], useMap, currentFilePath, currentClass);
+        const classValue = this.extractExprValue(
+            this.unwrapClassThunk(array.elements[0]),
+            useMap,
+            currentFilePath,
+            currentClass,
+        );
         const methodValue = this.extractExprValue(array.elements[1], useMap, currentFilePath, currentClass);
 
         if (typeof classValue !== 'string' || classValue === '') {
@@ -851,6 +856,30 @@ export abstract class AstReader {
         }
 
         return new HandlerData(classValue, methodValue);
+    }
+
+    /**
+     * Unwrap a handler reference's class **thunk** to the class expression it
+     * returns — `() => HomeController` becomes `HomeController`.
+     *
+     * Handler references are authored as `[() => SomeClass, 'method']` rather
+     * than `[SomeClass, 'method']` because a TC39 Stage-3 method decorator runs
+     * while the class binding is still in its temporal dead zone, so naming the
+     * class directly throws at class-definition time on a circular or
+     * self-referential import. The thunk is purely a runtime deferral: the
+     * emitted cache is unchanged (`HttpRouteProvider.versionHandler`), so the
+     * reader simply looks through it. A bare class expression is returned
+     * untouched, and a block-bodied arrow (`() => { … }`) is left alone so it
+     * falls through to the usual "not a class reference" handling.
+     */
+    protected unwrapClassThunk(node: ts.Expression | undefined): ts.Expression | undefined {
+        if (node === undefined || !ts.isArrowFunction(node) || node.parameters.length !== 0) {
+            return node;
+        }
+
+        const body = node.body;
+
+        return ts.isBlock(body) ? node : body;
     }
 
     protected extractClassListFromArrayExpr(

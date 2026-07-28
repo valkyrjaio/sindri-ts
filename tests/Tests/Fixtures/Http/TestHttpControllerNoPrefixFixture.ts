@@ -11,6 +11,6 @@ export class TestHttpControllerNoPrefixFixture {
     @RequestMethod('M::PUT')
     @RequestStruct('MethodReq')
     @ResponseStruct('MethodRes')
-    @RouteHandler([UnresolvedHandler, 'handle'])
+    @RouteHandler([() => UnresolvedHandler, 'handle'])
     list() {}
 }

@@ -7,7 +7,7 @@ export class TestCliControllerFixture {
     @Route({
         name: 'build',
         description: 'Builds the app',
-        helpText: [HelpProvider, 'buildHelp'],
+        helpText: [() => HelpProvider, 'buildHelp'],
         middleware: [AllCliMiddlewareFixture, UnknownMiddleware],
     })
     @Name('build:app')
@@ -38,7 +38,7 @@ export class TestCliControllerFixture {
     @OptionParameter({ name: 'flag', description: 'A flag' })
     opts() {}
 
-    @Route({ name: 'handled', description: 'Has an object handler', handler: [OtherCli, 'run'] })
+    @Route({ name: 'handled', description: 'Has an object handler', handler: [() => OtherCli, 'run'] })
     handled() {}
 
     @Route({ name: '', description: '' })
