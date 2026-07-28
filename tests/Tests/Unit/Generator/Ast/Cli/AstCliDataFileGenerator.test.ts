@@ -71,12 +71,47 @@ describe('AstCliDataFileGenerator', () => {
 
     it('skips non-new and unnamed route expressions when generating from route objects', () => {
         // Ignored: a non-new expression, a bare `new Route` with no argument list, and a
-        // route whose first argument is not a string literal.
-        const routeExprs = parseRouteExprs(`someHelper(), new Route, new Route(commandName, 'desc', handler)`);
+        // route whose first argument is neither a string literal nor a constant reference.
+        const routeExprs = parseRouteExprs(`someHelper(), new Route, new Route(commandName(), 'desc', handler)`);
 
         const status = new AstCliDataFileGenerator().generateFileFromRoutes('/out', 'AppCliRoutingData', 'App.Data', routeExprs);
 
         expect(status).toBe(GenerateStatus.SUCCESS);
         expect(lastWrittenFile()).toContain('super({});');
+    });
+
+    it('keys a route named by a constant on the constant reference', () => {
+        const generator = new AstCliDataFileGenerator();
+        generator.classImportMap = {
+            CliCommandName: '@valkyrjaio/valkyrja/Cli/Server/Constant/CommandName.ts',
+            CliRoutingCliRouteProvider: '@valkyrjaio/valkyrja/Cli/Routing/Provider/CliRoutingCliRouteProvider.ts',
+        };
+
+        const routeExprs = parseRouteExprs(
+            `new Route(CliCommandName.LIST, 'List all commands', CliRoutingCliRouteProvider.listHandler)`,
+        );
+
+        expect(generator.generateFileFromRoutes('/out', 'AppCliRoutingData', 'App.Data', routeExprs)).toBe(
+            GenerateStatus.SUCCESS,
+        );
+
+        const file = lastWrittenFile();
+
+        // The key is the constant reference itself, not the value it holds today.
+        expect(file).toContain('[CliCommandName.LIST]: (): RouteContract => new Route(CliCommandName.LIST,');
+        expect(file).toContain(`import { CliCommandName } from '@valkyrjaio/valkyrja/Cli/Server/Constant/CommandName.ts';`);
+    });
+
+    it('does not re-import a name the framework header already binds', () => {
+        const generator = new AstCliDataFileGenerator();
+        // A provider importing the framework `Route` under the same name would
+        // otherwise be emitted twice — a duplicate identifier.
+        generator.classImportMap = { Route: '@valkyrjaio/valkyrja/Cli/Routing/Data/Route.ts' };
+
+        expect(generator.generateFile('/out', 'AppCliRoutingData', 'App.Data', {})).toBe(GenerateStatus.SUCCESS);
+
+        const matches = lastWrittenFile().match(/^import \{ Route \} from/gm) ?? [];
+
+        expect(matches).toHaveLength(1);
     });
 });

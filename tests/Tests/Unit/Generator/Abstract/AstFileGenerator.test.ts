@@ -35,6 +35,14 @@ class TestAstFileGenerator extends AstFileGenerator {
     publicWriteFile(directory: string, className: string, data: string): GenerateStatus {
         return this.writeFile(directory, className, data);
     }
+
+    publicBuildUserImportsBlock(map: Record<string, string>, reserved: readonly string[]): string {
+        return this.buildUserImportsBlock(map, reserved);
+    }
+
+    publicBuildFrameworkImportLines(imports: Readonly<Record<string, string>>, isType?: boolean): string[] {
+        return this.buildFrameworkImportLines(imports, isType);
+    }
 }
 
 beforeEach(() => {
@@ -71,6 +79,34 @@ describe('AstFileGenerator', () => {
         readFileSync.mockReturnValue('contents' as never);
 
         expect(new TestAstFileGenerator().publicWriteFile('/out/', 'Data', 'contents')).toBe(GenerateStatus.SKIPPED);
+    });
+
+    describe('buildUserImportsBlock', () => {
+        it('emits an import per class, dropping names the framework header binds', () => {
+            const block = new TestAstFileGenerator().publicBuildUserImportsBlock(
+                { Route: '@valkyrjaio/valkyrja/Cli/Routing/Data/Route.ts', CliRouteProvider: './CliRouteProvider.ts' },
+                ['Route'],
+            );
+
+            expect(block).toBe(`import { CliRouteProvider } from './CliRouteProvider.ts';\n`);
+        });
+
+        it('returns an empty string when every name is reserved', () => {
+            expect(new TestAstFileGenerator().publicBuildUserImportsBlock({ Route: './Route.ts' }, ['Route'])).toBe('');
+        });
+    });
+
+    describe('buildFrameworkImportLines', () => {
+        it('renders value imports by default and type imports on request', () => {
+            const generator = new TestAstFileGenerator();
+
+            expect(generator.publicBuildFrameworkImportLines({ Route: './Route.ts' })).toEqual([
+                `import { Route } from './Route.ts';`,
+            ]);
+            expect(generator.publicBuildFrameworkImportLines({ RouteContract: './RouteContract.ts' }, true)).toEqual([
+                `import type { RouteContract } from './RouteContract.ts';`,
+            ]);
+        });
     });
 
     it('returns FAILURE when writing throws', () => {

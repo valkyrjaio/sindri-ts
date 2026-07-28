@@ -51,4 +51,18 @@ describe('RouteProviderReader', () => {
             0,
         );
     });
+
+    describe('routeImports', () => {
+        it('resolves the classes the route expressions reference', () => {
+            const result = new RouteProviderReader().readFile(fixture('Provider/TestConstantNamedRouteProviderFixture'));
+
+            expect(result.routeImports).toStrictEqual({ CliA: fixture('Provider/CliA') });
+        });
+
+        it('is empty when the provider registers no imperative routes', () => {
+            expect(new RouteProviderReader().readFile(fixture('Provider/TestRouteProviderFixture')).routeImports).toStrictEqual(
+                {},
+            );
+        });
+    });
 });
