@@ -34,6 +34,20 @@ describe('ServiceProviderReader', () => {
         expect(result.publishers['svc.const.contract']).toStrictEqual(['ProviderB', 'publishContract']);
     });
 
+    it("extracts publishers keyed by the provider's own constant and by an imported one", () => {
+        const result = new ServiceProviderReader().readFile(fixture('Provider/TestServiceProviderLocalKeysFixture'));
+
+        expect(result.serviceClasses).toStrictEqual(['app.own.service', 'svc.constant-id']);
+        expect(result.publishers['app.own.service']).toStrictEqual([
+            'TestServiceProviderLocalKeysFixture',
+            'publishOwn',
+        ]);
+        expect(result.publishers['svc.constant-id']).toStrictEqual([
+            'TestServiceProviderLocalKeysFixture',
+            'publishConstant',
+        ]);
+    });
+
     it('returns an empty result when there is no class', () => {
         expect(new ServiceProviderReader().readFile(fixture('Config/TestConfigNoClassFixture')).serviceClasses).toHaveLength(
             0,
