@@ -32,7 +32,7 @@ export class AppHttpRoutingData extends HttpRoutingData {
 },
             {
     "GET": {
-        "/^\\/users\\/(?<id>[0-9]+)$/": "users.show"
+        "^\\/users\\/(?<id>[0-9]+)$": "users.show"
     }
 },
         );
