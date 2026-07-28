@@ -10,7 +10,7 @@
 import * as path from 'path';
 import { fileURLToPath } from 'node:url';
 
-import { ClassDeclaration, Decorator, MethodDeclaration, Project, SourceFile, ts } from 'ts-morph';
+import { ClassDeclaration, Decorator, Expression, MethodDeclaration, Project, SourceFile, ts } from 'ts-morph';
 
 import { describe, expect, it } from 'vitest';
 
@@ -58,12 +58,13 @@ class TestAstReader extends AstReader {
     ): string | undefined => super.resolvePropertyKeyToString(k, u, f);
     public resolveNodeToString = (n: ts.Expression, u: Record<string, string>, f: string): string | undefined =>
         super.resolveNodeToString(n, u, f);
-    public resolveStaticProperty = (
-        c: string,
-        p: string | undefined,
-        u: Record<string, string>,
-        f: string,
-    ): string | undefined => super.resolveStaticProperty(c, p, u, f);
+    public resolveStaticProperty = (c: string, p: string, u: Record<string, string>, f: string): string | undefined =>
+        super.resolveStaticProperty(c, p, u, f);
+    public resolveConstant = (n: string, u: Record<string, string>, f: string): string | undefined =>
+        super.resolveConstant(n, u, f);
+    public parseDeclaringSourceFile = (n: string, u: Record<string, string>, f: string): SourceFile | undefined =>
+        super.parseDeclaringSourceFile(n, u, f);
+    public stringValueOf = (i: Expression | undefined): string | undefined => super.stringValueOf(i);
     public unwrapTypeAssertions = (n: ts.Expression): ts.Expression => super.unwrapTypeAssertions(n);
     public resolveClassToFilePath = (n: string, u: Record<string, string>, f: string): string =>
         super.resolveClassToFilePath(n, u, f);
@@ -125,9 +126,13 @@ const fixtureDir = fileURLToPath(new URL('../../../Fixtures/Ast/', import.meta.u
 const packageDir = fileURLToPath(new URL('../../../Fixtures/Package/', import.meta.url));
 const packageAnchor = path.join(packageDir, 'PackageConsumerFixture.ts');
 const anchor = path.join(fixtureDir, 'anchor.ts');
+const staticHolder = path.join(fixtureDir, 'StaticHolderFixture.ts');
+const constantHolder = path.join(fixtureDir, 'ConstantHolderFixture.ts');
 const useMap: Record<string, string> = {
     StaticHolderFixture: './StaticHolderFixture.ts',
     ImplementorFixture: './ImplementorFixture.ts',
+    CONSTANT_ID: './ConstantHolderFixture.ts',
+    CONSTANT_NUM: './ConstantHolderFixture.ts',
     Empty: './EmptyModuleFixture.ts',
     Missing: './DoesNotExist.ts',
     Bare: 'node:fs',
@@ -395,7 +400,13 @@ describe('AstReader', () => {
             );
         });
 
-        it('returns undefined for a bare identifier without a property', () => {
+        it('resolves a bare identifier naming a module-level constant', () => {
+            expect(reader.resolveNodeToString(expr('CONSTANT_ID') as ts.Expression, useMap, anchor)).toBe(
+                'svc.constant-id',
+            );
+        });
+
+        it('returns undefined for a bare identifier naming no constant', () => {
             expect(reader.resolveNodeToString(expr('SomeId') as ts.Expression, useMap, anchor)).toBeUndefined();
         });
 
@@ -415,10 +426,6 @@ describe('AstReader', () => {
 
         it('returns undefined when the import cannot be resolved', () => {
             expect(reader.resolveStaticProperty('Missing', 'NAME', useMap, anchor)).toBeUndefined();
-        });
-
-        it('returns undefined when the property name is undefined', () => {
-            expect(reader.resolveStaticProperty('StaticHolderFixture', undefined, useMap, anchor)).toBeUndefined();
         });
 
         it('returns undefined when the class is not found in the file', () => {
@@ -447,6 +454,55 @@ describe('AstReader', () => {
             expect(
                 reader.resolveStaticProperty('StaticHolderFixture', 'UNINITIALIZED', useMap, anchor),
             ).toBeUndefined();
+        });
+
+        it('reads a class the current file declares itself, with nothing to import', () => {
+            // `[Provider.SomeId]` inside Provider.ts — the name is in no import map.
+            expect(reader.resolveStaticProperty('StaticHolderFixture', 'AS_CONST', {}, staticHolder)).toBe(
+                'svc.as-const',
+            );
+        });
+    });
+
+    describe('resolveConstant', () => {
+        it('returns the value of an imported module-level constant', () => {
+            expect(reader.resolveConstant('CONSTANT_ID', useMap, anchor)).toBe('svc.constant-id');
+        });
+
+        it('returns the value of a constant the current file declares itself', () => {
+            expect(reader.resolveConstant('CONSTANT_ID', {}, constantHolder)).toBe('svc.constant-id');
+        });
+
+        it('returns undefined for a non-string constant', () => {
+            expect(reader.resolveConstant('CONSTANT_NUM', useMap, anchor)).toBeUndefined();
+        });
+
+        it('returns undefined when no such constant is declared', () => {
+            expect(reader.resolveConstant('MISSING_ID', {}, constantHolder)).toBeUndefined();
+        });
+    });
+
+    describe('parseDeclaringSourceFile', () => {
+        it('parses the module an imported name comes from', () => {
+            expect(reader.parseDeclaringSourceFile('StaticHolderFixture', useMap, anchor)?.getFilePath()).toContain(
+                'StaticHolderFixture.ts',
+            );
+        });
+
+        it('falls back to the current file for a name that is not imported', () => {
+            expect(reader.parseDeclaringSourceFile('Whatever', {}, staticHolder)?.getFilePath()).toContain(
+                'StaticHolderFixture.ts',
+            );
+        });
+
+        it('returns undefined when neither file can be read', () => {
+            expect(reader.parseDeclaringSourceFile('Missing', useMap, anchor)).toBeUndefined();
+        });
+    });
+
+    describe('stringValueOf', () => {
+        it('returns undefined for a missing initializer', () => {
+            expect(reader.stringValueOf(undefined)).toBeUndefined();
         });
     });
 

@@ -13,6 +13,7 @@ import * as path from 'path';
 import {
     ClassDeclaration,
     Decorator,
+    Expression,
     MethodDeclaration,
     Node,
     ParameterDeclaration,
@@ -455,7 +456,7 @@ export abstract class AstReader {
         }
 
         if (ts.isIdentifier(node)) {
-            return this.resolveStaticProperty(node.text, undefined, useMap, currentFilePath);
+            return this.resolveConstant(node.text, useMap, currentFilePath);
         }
 
         if (ts.isPropertyAccessExpression(node)) {
@@ -470,51 +471,84 @@ export abstract class AstReader {
     }
 
     /**
-     * Resolve a static property value by reading the imported source file.
+     * Resolve a static property value by reading the file that declares its class.
      */
     protected resolveStaticProperty(
         className: string,
-        propName: string | undefined,
+        propName: string,
         useMap: Record<string, string>,
         currentFilePath: string,
     ): string | undefined {
-        const importedFilePath = this.resolveImportToFilePath(className, useMap, currentFilePath);
+        const declaringClass = this.parseDeclaringSourceFile(className, useMap, currentFilePath)?.getClass(className);
 
-        if (importedFilePath === '') {
+        if (declaringClass === undefined) {
             return undefined;
         }
 
-        try {
-            const project = new Project({ skipAddingFilesFromTsConfig: true, skipFileDependencyResolution: true });
-            const importedSource = project.addSourceFileAtPath(importedFilePath);
-            const importedClass = importedSource.getClass(className);
+        const prop = declaringClass.getStaticProperty(propName);
 
-            if (importedClass === undefined || propName === undefined) {
-                return undefined;
-            }
-
-            const prop = importedClass.getStaticProperty(propName);
-
-            if (prop === undefined) {
-                return undefined;
-            }
-
-            if (Node.isPropertyDeclaration(prop)) {
-                const initializer = prop.getInitializer();
-
-                if (initializer !== undefined) {
-                    const value = this.unwrapTypeAssertions(initializer.compilerNode);
-
-                    if (ts.isStringLiteral(value)) {
-                        return value.text;
-                    }
-                }
-            }
-        } catch {
-            // Silently skip unresolvable references
+        if (prop === undefined || !Node.isPropertyDeclaration(prop)) {
+            return undefined;
         }
 
-        return undefined;
+        return this.stringValueOf(prop.getInitializer());
+    }
+
+    /**
+     * Resolve a module-level `const` to its string value.
+     *
+     * Not every binding key is a class static — some are plain exported
+     * constants, e.g. `export const LoggerContractId = 'Valkyrja.Log.Logger.LoggerContract' as const;`
+     */
+    protected resolveConstant(
+        name: string,
+        useMap: Record<string, string>,
+        currentFilePath: string,
+    ): string | undefined {
+        const declaration = this.parseDeclaringSourceFile(name, useMap, currentFilePath)?.getVariableDeclaration(name);
+
+        return this.stringValueOf(declaration?.getInitializer());
+    }
+
+    /**
+     * Parse the file that declares a name: the module it is imported from, or
+     * the current file when the name is not imported.
+     *
+     * A provider commonly declares the binding keys for its own services
+     * alongside the publishers that use them, so `[Provider.SomeId]` names a
+     * constant that no import map can resolve — it lives in the file being read.
+     *
+     * Returns undefined when the file cannot be read.
+     */
+    protected parseDeclaringSourceFile(
+        name: string,
+        useMap: Record<string, string>,
+        currentFilePath: string,
+    ): SourceFile | undefined {
+        const importedFilePath = this.resolveImportToFilePath(name, useMap, currentFilePath);
+        const filePath = importedFilePath !== '' ? importedFilePath : currentFilePath;
+
+        try {
+            const project = new Project({ skipAddingFilesFromTsConfig: true, skipFileDependencyResolution: true });
+
+            return project.addSourceFileAtPath(filePath);
+        } catch {
+            // Silently skip unresolvable references
+            return undefined;
+        }
+    }
+
+    /**
+     * The string a declaration's initializer holds, once its type-only wrappers are stripped.
+     */
+    protected stringValueOf(initializer: Expression | undefined): string | undefined {
+        if (initializer === undefined) {
+            return undefined;
+        }
+
+        const value = this.unwrapTypeAssertions(initializer.compilerNode);
+
+        return ts.isStringLiteral(value) ? value.text : undefined;
     }
 
     /**
