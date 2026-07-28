@@ -18,7 +18,6 @@ import {
     ParameterDeclaration,
     Project,
     SourceFile,
-    SyntaxKind,
     ts,
 } from 'ts-morph';
 
@@ -503,8 +502,12 @@ export abstract class AstReader {
             if (Node.isPropertyDeclaration(prop)) {
                 const initializer = prop.getInitializer();
 
-                if (initializer?.isKind(SyntaxKind.StringLiteral) === true) {
-                    return (initializer as Node<ts.StringLiteral>).compilerNode.text;
+                if (initializer !== undefined) {
+                    const value = this.unwrapTypeAssertions(initializer.compilerNode);
+
+                    if (ts.isStringLiteral(value)) {
+                        return value.text;
+                    }
                 }
             }
         } catch {
@@ -512,6 +515,30 @@ export abstract class AstReader {
         }
 
         return undefined;
+    }
+
+    /**
+     * Strip the type-only wrappers an expression may be dressed in — `as`,
+     * `satisfies` and parentheses — to reach the value node underneath.
+     *
+     * Binding-key constants are declared `static readonly Data = 'Some.Id' as
+     * const;`, so the initializer node is an `AsExpression`, not the
+     * `StringLiteral` holding the value. Without unwrapping, every such key
+     * resolves to nothing and the publishers it names are dropped from the
+     * generated cache.
+     */
+    protected unwrapTypeAssertions(node: ts.Expression): ts.Expression {
+        let current = node;
+
+        while (
+            ts.isAsExpression(current) ||
+            ts.isSatisfiesExpression(current) ||
+            ts.isParenthesizedExpression(current)
+        ) {
+            current = current.expression;
+        }
+
+        return current;
     }
 
     /**

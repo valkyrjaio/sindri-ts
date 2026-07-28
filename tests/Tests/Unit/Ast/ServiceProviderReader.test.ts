@@ -26,6 +26,14 @@ describe('ServiceProviderReader', () => {
         expect(result.publishers['service.b']).toStrictEqual(['ProviderB', 'publishB']);
     });
 
+    it('extracts publishers keyed by `as const` binding-key constants', () => {
+        const result = new ServiceProviderReader().readFile(fixture('Provider/TestServiceProviderConstantKeysFixture'));
+
+        expect(result.serviceClasses).toStrictEqual(['svc.const.data', 'svc.const.contract']);
+        expect(result.publishers['svc.const.data']).toStrictEqual(['ProviderA', 'publishData']);
+        expect(result.publishers['svc.const.contract']).toStrictEqual(['ProviderB', 'publishContract']);
+    });
+
     it('returns an empty result when there is no class', () => {
         expect(new ServiceProviderReader().readFile(fixture('Config/TestConfigNoClassFixture')).serviceClasses).toHaveLength(
             0,

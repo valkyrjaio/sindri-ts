@@ -64,6 +64,7 @@ class TestAstReader extends AstReader {
         u: Record<string, string>,
         f: string,
     ): string | undefined => super.resolveStaticProperty(c, p, u, f);
+    public unwrapTypeAssertions = (n: ts.Expression): ts.Expression => super.unwrapTypeAssertions(n);
     public resolveClassToFilePath = (n: string, u: Record<string, string>, f: string): string =>
         super.resolveClassToFilePath(n, u, f);
     public extractExprValue = (n: ts.Node | undefined, u: Record<string, string>, f: string, c: string = ''): unknown =>
@@ -430,6 +431,46 @@ describe('AstReader', () => {
 
         it('returns undefined when the property is not a string literal', () => {
             expect(reader.resolveStaticProperty('StaticHolderFixture', 'NUM', useMap, anchor)).toBeUndefined();
+        });
+
+        it('returns the value of a binding-key constant declared with `as const`', () => {
+            expect(reader.resolveStaticProperty('StaticHolderFixture', 'AS_CONST', useMap, anchor)).toBe(
+                'svc.as-const',
+            );
+        });
+
+        it('returns undefined for a non-string constant declared with `as const`', () => {
+            expect(reader.resolveStaticProperty('StaticHolderFixture', 'AS_CONST_NUM', useMap, anchor)).toBeUndefined();
+        });
+
+        it('returns undefined when the property is declared without an initializer', () => {
+            expect(
+                reader.resolveStaticProperty('StaticHolderFixture', 'UNINITIALIZED', useMap, anchor),
+            ).toBeUndefined();
+        });
+    });
+
+    describe('unwrapTypeAssertions', () => {
+        const unwrapped = (code: string): string => reader.unwrapTypeAssertions(expr(code) as ts.Expression).getText();
+
+        it('strips an as-expression', () => {
+            expect(unwrapped("'v' as const")).toBe("'v'");
+        });
+
+        it('strips a satisfies-expression', () => {
+            expect(unwrapped("'v' satisfies string")).toBe("'v'");
+        });
+
+        it('strips parentheses', () => {
+            expect(unwrapped("('v')")).toBe("'v'");
+        });
+
+        it('strips nested wrappers', () => {
+            expect(unwrapped("(('v' as const) satisfies string)")).toBe("'v'");
+        });
+
+        it('returns an unwrapped expression as-is', () => {
+            expect(unwrapped("'v'")).toBe("'v'");
         });
     });
 
