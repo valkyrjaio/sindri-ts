@@ -23,6 +23,8 @@ import { GenerateDataFromAst } from '../../../../../src/Sindri/Generate/Abstract
 import type { OutputContract } from '@valkyrjaio/valkyrja/Cli/Interaction/Output/Contract/OutputContract.ts';
 
 const appDir = fileURLToPath(new URL('../../../Fixtures/App', import.meta.url));
+const packageDir = fileURLToPath(new URL('../../../Fixtures/Package', import.meta.url));
+const nodeModules = path.join(packageDir, 'node_modules');
 const configFile = path.join(appDir, 'ConfigFixture.ts');
 
 /** A generator stub returning a fixed status. */
@@ -61,7 +63,7 @@ class TestGenerate extends GenerateDataFromAst {
             'Generating Data',
             reader(new ConfigResult()) as never,
             (deps.componentProviderReader ?? reader(new ComponentProviderResult())) as never,
-            (deps.routeProviderReader ?? reader({ controllerClasses: [], routes: [] })) as never,
+            (deps.routeProviderReader ?? reader({ controllerClasses: [], routes: [], routeImports: {} })) as never,
             (deps.listenerProviderReader ?? reader({ listenerClasses: [] })) as never,
             (deps.serviceProviderReader ?? reader({ publishers: {} })) as never,
             (deps.cliRouteAttributeReader ?? reader({ routes: {} })) as never,
@@ -104,6 +106,26 @@ class TestGenerate extends GenerateDataFromAst {
 
     public http(providers: readonly string[], config: ConfigResult, output: OutputContract): OutputContract {
         return this.generateHttpData(providers, config, output);
+    }
+
+    public specifier(fromDir: string, toFile: string): string {
+        return this.importSpecifier(fromDir, toFile);
+    }
+
+    public packageFor(filePath: string): string | undefined {
+        return this.packageSpecifier(filePath);
+    }
+
+    public exported(packageDir: string, relative: string): string | undefined {
+        return this.exportedSubpath(packageDir, relative);
+    }
+
+    public exportsOf(packageDir: string): Record<string, string> {
+        return this.readPackageExports(packageDir);
+    }
+
+    public firstTarget(target: unknown): string | undefined {
+        return this.firstStringTarget(target);
     }
 
     public addStatus(output: OutputContract, status: GenerateStatus): OutputContract {
@@ -235,7 +257,7 @@ describe('GenerateDataFromAst', () => {
     describe('generateCliData', () => {
         it('skips unresolvable providers and controller classes', () => {
             const gen = new TestGenerate({
-                routeProviderReader: reader({ controllerClasses: ['MissingController'], routes: [] }),
+                routeProviderReader: reader({ controllerClasses: ['MissingController'], routes: [], routeImports: {} }),
             });
 
             expect(() => gen.cli(['DoesNotExist', 'AppCliRouteProviderFixture'], config, gen.freshOutput())).not.toThrow();
@@ -244,7 +266,7 @@ describe('GenerateDataFromAst', () => {
         it('generates from imperative routes and populates the provider import map', () => {
             const cliGenerator = generator();
             const gen = new TestGenerate({
-                routeProviderReader: reader({ controllerClasses: [], routes: [{} as never] }),
+                routeProviderReader: reader({ controllerClasses: [], routes: [{} as never], routeImports: {} }),
                 cliGenerator,
             });
 
@@ -255,12 +277,35 @@ describe('GenerateDataFromAst', () => {
                 AppCliRouteProviderFixture: './Provider/AppCliRouteProviderFixture.ts',
             });
         });
+
+        it('imports the classes the route expressions reference, by package specifier', () => {
+            const cliGenerator = generator();
+            const gen = new TestGenerate({
+                routeProviderReader: reader({
+                    controllerClasses: [],
+                    routes: [{} as never],
+                    routeImports: {
+                        CliA: path.join(appDir, '../Provider/CliA.ts'),
+                        PackageCommandName: path.join(nodeModules, '@fixture/routes/src/PackageCommandNameFixture.ts'),
+                    },
+                }),
+                cliGenerator,
+            });
+
+            gen.cli(['AppCliRouteProviderFixture'], config, gen.freshOutput());
+
+            expect(cliGenerator.classImportMap).toStrictEqual({
+                AppCliRouteProviderFixture: './Provider/AppCliRouteProviderFixture.ts',
+                CliA: '../Provider/CliA.ts',
+                PackageCommandName: '@fixture/routes/PackageCommandNameFixture.ts',
+            });
+        });
     });
 
     describe('generateHttpData', () => {
         it('skips unresolvable providers and controller classes', () => {
             const gen = new TestGenerate({
-                routeProviderReader: reader({ controllerClasses: ['MissingController'], routes: [] }),
+                routeProviderReader: reader({ controllerClasses: ['MissingController'], routes: [], routeImports: {} }),
             });
 
             expect(() => gen.http(['DoesNotExist', 'AppHttpRouteProviderFixture'], config, gen.freshOutput())).not.toThrow();
@@ -269,7 +314,7 @@ describe('GenerateDataFromAst', () => {
         it('generates from imperative routes and populates the provider import map', () => {
             const httpGenerator = generator();
             const gen = new TestGenerate({
-                routeProviderReader: reader({ controllerClasses: [], routes: [{} as never] }),
+                routeProviderReader: reader({ controllerClasses: [], routes: [{} as never], routeImports: {} }),
                 httpGenerator,
             });
 
@@ -279,6 +324,144 @@ describe('GenerateDataFromAst', () => {
             expect(httpGenerator.classImportMap).toStrictEqual({
                 AppHttpRouteProviderFixture: './Provider/AppHttpRouteProviderFixture.ts',
             });
+        });
+
+        it('imports the classes the route expressions reference, by package specifier', () => {
+            const httpGenerator = generator();
+            const gen = new TestGenerate({
+                routeProviderReader: reader({
+                    controllerClasses: [],
+                    routes: [{} as never],
+                    routeImports: {
+                        PackageCommandName: path.join(
+                            nodeModules,
+                            '@fixture/routes/src/PackageCommandNameFixture.ts',
+                        ),
+                    },
+                }),
+                httpGenerator,
+            });
+
+            gen.http(['AppHttpRouteProviderFixture'], config, gen.freshOutput());
+
+            expect(httpGenerator.classImportMap).toStrictEqual({
+                AppHttpRouteProviderFixture: './Provider/AppHttpRouteProviderFixture.ts',
+                PackageCommandName: '@fixture/routes/PackageCommandNameFixture.ts',
+            });
+        });
+    });
+
+    describe('importSpecifier', () => {
+        it('imports application source by a path relative to the data directory', () => {
+            const gen = new TestGenerate();
+
+            expect(gen.specifier(appDir, path.join(appDir, 'Provider/AppServiceProviderFixture.ts'))).toBe(
+                './Provider/AppServiceProviderFixture.ts',
+            );
+        });
+
+        it('imports an installed package file by the package specifier', () => {
+            const gen = new TestGenerate();
+
+            expect(
+                gen.specifier(appDir, path.join(nodeModules, '@fixture/routes/src/PackageRouteProviderFixture.ts')),
+            ).toBe('@fixture/routes/PackageRouteProviderFixture.ts');
+        });
+    });
+
+    describe('packageSpecifier', () => {
+        it('returns undefined for a path outside node_modules', () => {
+            expect(new TestGenerate().packageFor(path.join(appDir, 'ConfigFixture.ts'))).toBeUndefined();
+        });
+
+        it('returns undefined for a bare package directory with no file below it', () => {
+            expect(new TestGenerate().packageFor(path.join(nodeModules, 'plain'))).toBeUndefined();
+        });
+
+        it('resolves an unscoped package without an exports map to its path under the package root', () => {
+            expect(new TestGenerate().packageFor(path.join(nodeModules, 'plain/lib/PlainFixture.ts'))).toBe(
+                'plain/lib/PlainFixture.ts',
+            );
+        });
+
+        it('resolves a scoped package through its exports map', () => {
+            expect(
+                new TestGenerate().packageFor(path.join(nodeModules, '@fixture/routes/src/PackageCommandNameFixture.ts')),
+            ).toBe('@fixture/routes/PackageCommandNameFixture.ts');
+        });
+
+        it('falls back to the path under the package root when no exports pattern matches', () => {
+            expect(new TestGenerate().packageFor(path.join(nodeModules, '@fixture/routes/other/Elsewhere.ts'))).toBe(
+                '@fixture/routes/other/Elsewhere.ts',
+            );
+        });
+    });
+
+    describe('exportedSubpath', () => {
+        it('inverts a matching wildcard pattern', () => {
+            expect(new TestGenerate().exported(path.join(nodeModules, '@fixture/routes'), 'src/Thing.ts')).toBe(
+                'Thing.ts',
+            );
+        });
+
+        it('skips a pattern whose target prefix does not match, and a key with no wildcard', () => {
+            // './*.ts' targets './src/*.ts' — 'other/' is not 'src/'. The '.'
+            // entry that follows has no wildcard to invert at all.
+            expect(new TestGenerate().exported(path.join(nodeModules, '@fixture/routes'), 'other/Thing.ts')).toBeUndefined();
+        });
+
+        it('skips a pattern whose target suffix does not match', () => {
+            expect(
+                new TestGenerate().exported(path.join(nodeModules, '@fixture/routes'), 'src/Thing.js'),
+            ).toBeUndefined();
+        });
+
+        it('skips a wildcard key whose target names a fixed file', () => {
+            expect(new TestGenerate().exported(path.join(nodeModules, 'oddexports'), 'src/fixed.ts')).toBeUndefined();
+        });
+    });
+
+    describe('readPackageExports', () => {
+        it('returns nothing for a directory without a package.json', () => {
+            expect(new TestGenerate().exportsOf(path.join(nodeModules, '@fixture'))).toStrictEqual({});
+        });
+
+        it('returns nothing for an unparsable package.json', () => {
+            expect(new TestGenerate().exportsOf(path.join(nodeModules, 'broken'))).toStrictEqual({});
+        });
+
+        it('returns nothing for a package.json without an exports map', () => {
+            expect(new TestGenerate().exportsOf(path.join(nodeModules, 'plain'))).toStrictEqual({});
+        });
+
+        it('flattens conditional and string targets', () => {
+            expect(new TestGenerate().exportsOf(path.join(nodeModules, '@fixture/routes'))).toStrictEqual({
+                './*.ts': './src/*.ts',
+                '.': './src/index.ts',
+            });
+        });
+
+        it('drops a subpath whose target names no file', () => {
+            // The fixture's './nothing' entry is explicitly blocked (null).
+            expect(new TestGenerate().exportsOf(path.join(nodeModules, 'oddexports'))).toStrictEqual({
+                './*.ts': './src/fixed.ts',
+            });
+        });
+
+        it('returns nothing for a string exports value', () => {
+            // `"exports": "./index.d.ts"` names no subpaths to invert.
+            expect(new TestGenerate().exportsOf(path.join(nodeModules, 'typed'))).toStrictEqual({});
+        });
+    });
+
+    describe('firstStringTarget', () => {
+        it('returns undefined for a non-string, non-object target', () => {
+            expect(new TestGenerate().firstTarget(null)).toBeUndefined();
+            expect(new TestGenerate().firstTarget(42)).toBeUndefined();
+        });
+
+        it('returns undefined when no condition names a file', () => {
+            expect(new TestGenerate().firstTarget({ import: null })).toBeUndefined();
         });
     });
 

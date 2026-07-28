@@ -34,6 +34,20 @@ import { HandlerData } from '../Data/HandlerData.ts';
  * All methods are protected so subclasses can override any step of the pipeline.
  */
 export abstract class AstReader {
+    /**
+     * Module resolution settings for {@link resolveModuleSpecifierToFilePath}.
+     *
+     * NodeNext mirrors how the application itself resolves its imports, and
+     * `allowImportingTsExtensions` matches the framework convention of writing
+     * the `.ts` extension in every import specifier.
+     */
+    protected static readonly MODULE_RESOLUTION_OPTIONS: ts.CompilerOptions = {
+        module: ts.ModuleKind.NodeNext,
+        moduleResolution: ts.ModuleResolutionKind.NodeNext,
+        allowImportingTsExtensions: true,
+        noEmit: true,
+    };
+
     protected parseFileToSourceFile(filePath: string): SourceFile {
         if (!fs.existsSync(filePath)) {
             throw new AstFileReadException(`Cannot read file '${filePath}'.`);
@@ -98,14 +112,44 @@ export abstract class AstReader {
             return '';
         }
 
-        if (!moduleSpecifier.startsWith('.')) {
+        return this.resolveModuleSpecifierToFilePath(moduleSpecifier, currentFilePath);
+    }
+
+    /**
+     * Resolve a module specifier to the absolute path of the TypeScript file it points at.
+     *
+     * Relative specifiers resolve against the importing file's directory. Bare
+     * package specifiers (`@valkyrjaio/valkyrja/Cli/Routing/Data/Route.ts`) go
+     * through the TypeScript compiler's NodeNext resolver, which honors the
+     * package's `exports` map — so a provider tree that reaches into an
+     * installed package (the framework's own component providers, reached from
+     * the app config) is walked exactly like application source.
+     *
+     * Returns '' when the specifier cannot be resolved to an existing `.ts`
+     * source file. A package shipping only compiled `.js` — or only `.d.ts`
+     * declarations, which carry no `getRoutes()` body to read — has nothing for
+     * the AST readers to walk.
+     */
+    protected resolveModuleSpecifierToFilePath(moduleSpecifier: string, currentFilePath: string): string {
+        if (moduleSpecifier.startsWith('.')) {
+            const dir = path.dirname(currentFilePath);
+            const resolved = path.resolve(dir, moduleSpecifier.replace(/\.js$/, '.ts'));
+
+            return fs.existsSync(resolved) ? resolved : '';
+        }
+
+        const resolved = ts.resolveModuleName(
+            moduleSpecifier,
+            currentFilePath,
+            AstReader.MODULE_RESOLUTION_OPTIONS,
+            ts.sys,
+        ).resolvedModule?.resolvedFileName;
+
+        if (resolved === undefined || !resolved.endsWith('.ts') || resolved.endsWith('.d.ts')) {
             return '';
         }
 
-        const dir = path.dirname(currentFilePath);
-        const resolved = path.resolve(dir, moduleSpecifier.replace(/\.js$/, '.ts'));
-
-        return fs.existsSync(resolved) ? resolved : '';
+        return resolved;
     }
 
     /**
@@ -219,6 +263,42 @@ export abstract class AstReader {
         }
 
         return paths;
+    }
+
+    /**
+     * Collect every identifier an expression references as a value.
+     *
+     * Expressions taken from a provider's `getRoutes()` body are emitted into
+     * the generated data cache verbatim, so the cache must import everything
+     * they name — not just the provider class, but the parameter/enum/constant
+     * classes the route arguments reach for. Property *names* are skipped (the
+     * `HELP` of `CommandName.HELP` is not an import) as are type positions,
+     * which erase at runtime and must never become a value import.
+     */
+    protected collectReferencedIdentifiers(node: ts.Node, names: Set<string> = new Set<string>()): Set<string> {
+        if (ts.isTypeNode(node)) {
+            return names;
+        }
+
+        if (ts.isIdentifier(node)) {
+            names.add(node.text);
+
+            return names;
+        }
+
+        if (ts.isPropertyAccessExpression(node)) {
+            return this.collectReferencedIdentifiers(node.expression, names);
+        }
+
+        if (ts.isPropertyAssignment(node)) {
+            return this.collectReferencedIdentifiers(node.initializer, names);
+        }
+
+        ts.forEachChild(node, (child: ts.Node): void => {
+            this.collectReferencedIdentifiers(child, names);
+        });
+
+        return names;
     }
 
     /**

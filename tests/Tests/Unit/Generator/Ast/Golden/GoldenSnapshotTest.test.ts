@@ -22,6 +22,7 @@ import { AstCliDataFileGenerator } from '../../../../../../src/Sindri/Generator/
 import { AstContainerDataFileGenerator } from '../../../../../../src/Sindri/Generator/Ast/Container/AstContainerDataFileGenerator.ts';
 import { AstEventDataFileGenerator } from '../../../../../../src/Sindri/Generator/Ast/Event/AstEventDataFileGenerator.ts';
 import { AstHttpDataFileGenerator } from '../../../../../../src/Sindri/Generator/Ast/Http/AstHttpDataFileGenerator.ts';
+import { parseRouteExprs } from '../generatorTestUtil.ts';
 
 /**
  * Full-output golden/snapshot tests for the four Ast data-file generators.
@@ -114,6 +115,37 @@ describe('GoldenSnapshotTest', () => {
         });
 
         assertGolden(actual, 'AppCliRoutingData');
+    });
+
+    it('matches the AppCliRoutingData framework-commands golden', () => {
+        // The shape sindri emits for an app whose component-provider tree reaches
+        // the framework's own CLI route providers: commands keyed by the constant
+        // that names them, route expressions emitted verbatim from the framework
+        // source, and every class they reference imported by package specifier.
+        const routeExprs = parseRouteExprs(
+            [
+                `new Route(CliCommandName.LIST, 'List all commands', CliRoutingCliRouteProvider.listHandler, () => new Message('A command to list all the commands.'), [], [], [], [], [], [new OptionParameter('namespace', 'An optional namespace', 'namespace', null, '', ['n'])])`,
+                `new Route(HttpCommandName.LIST, 'List all routes', HttpRoutingCliRouteProvider.listHandler, () => ListCommand.help())`,
+                `new Route('test', 'Test command', CliRouteProvider.testCommandHandler)`,
+            ].join(', '),
+        );
+
+        const actual = generate('AppCliRoutingData', (directory) => {
+            const generator = new AstCliDataFileGenerator();
+            generator.classImportMap = {
+                CliRoutingCliRouteProvider: '@valkyrjaio/valkyrja/Cli/Routing/Provider/CliRoutingCliRouteProvider.ts',
+                CliCommandName: '@valkyrjaio/valkyrja/Cli/Server/Constant/CommandName.ts',
+                Message: '@valkyrjaio/valkyrja/Cli/Interaction/Message/Message.ts',
+                OptionParameter: '@valkyrjaio/valkyrja/Cli/Routing/Data/OptionParameter.ts',
+                HttpRoutingCliRouteProvider: '@valkyrjaio/valkyrja/Http/Routing/Provider/HttpRoutingCliRouteProvider.ts',
+                HttpCommandName: '@valkyrjaio/valkyrja/Http/Routing/Cli/Command/Constant/CommandName.ts',
+                ListCommand: '@valkyrjaio/valkyrja/Http/Routing/Cli/Command/ListCommand.ts',
+                CliRouteProvider: '../Provider/CliRouteProvider.ts',
+            };
+            generator.generateFileFromRoutes(directory, 'AppCliRoutingData', 'App.Data', routeExprs);
+        });
+
+        assertGolden(actual, 'AppCliRoutingDataFrameworkCommands');
     });
 
     it('matches the AppContainerData golden', () => {

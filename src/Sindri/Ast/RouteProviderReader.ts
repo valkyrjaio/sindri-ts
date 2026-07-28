@@ -28,11 +28,41 @@ export class RouteProviderReader extends AstReader implements RouteProviderReade
 
         const useMap = this.buildUseMap(sourceFile);
         const methods = this.indexMethods(classDecl);
+        const routes = this.extractRoutes(methods[RouteProviderReader.METHOD_ROUTES], useMap, filePath);
 
         return new RouteProviderResult(
             this.extractClassListFromValues(methods[RouteProviderReader.METHOD_CONTROLLER_CLASSES], useMap, filePath),
-            this.extractRoutes(methods[RouteProviderReader.METHOD_ROUTES], useMap, filePath),
+            routes,
+            this.extractRouteImports(routes, useMap, filePath),
         );
+    }
+
+    /**
+     * Resolve every class the imperative route expressions reference to its
+     * absolute file path, so the generated data cache can import them.
+     *
+     * Names that are not imported by the provider file — locals, globals, and
+     * the provider's own class (which the generator imports separately) — have
+     * no entry in the use map and are skipped.
+     */
+    protected extractRouteImports(
+        routes: readonly ts.Expression[],
+        useMap: Record<string, string>,
+        filePath: string,
+    ): Record<string, string> {
+        const imports: Record<string, string> = {};
+
+        for (const route of routes) {
+            for (const name of this.collectReferencedIdentifiers(route)) {
+                const resolved = this.resolveImportToFilePath(name, useMap, filePath);
+
+                if (resolved !== '') {
+                    imports[name] = resolved;
+                }
+            }
+        }
+
+        return imports;
     }
 
     /**

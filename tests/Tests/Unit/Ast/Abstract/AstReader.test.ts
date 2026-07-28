@@ -116,9 +116,13 @@ class TestAstReader extends AstReader {
         super.buildClassIdentifierArrayExpr(c);
     public classImplementsInterface = (c: string, i: string, u: Record<string, string>, f: string): boolean =>
         super.classImplementsInterface(c, i, u, f);
+    public collectReferencedIdentifiers = (n: ts.Node, names?: Set<string>): Set<string> =>
+        super.collectReferencedIdentifiers(n, names);
 }
 
 const fixtureDir = fileURLToPath(new URL('../../../Fixtures/Ast/', import.meta.url));
+const packageDir = fileURLToPath(new URL('../../../Fixtures/Package/', import.meta.url));
+const packageAnchor = path.join(packageDir, 'PackageConsumerFixture.ts');
 const anchor = path.join(fixtureDir, 'anchor.ts');
 const useMap: Record<string, string> = {
     StaticHolderFixture: './StaticHolderFixture.ts',
@@ -127,6 +131,11 @@ const useMap: Record<string, string> = {
     Missing: './DoesNotExist.ts',
     Bare: 'node:fs',
 };
+// Built from the fixture's own import list, so the specifiers under test are
+// the ones a real file writes rather than a hand-copied transcription.
+const packageUseMap: Record<string, string> = new TestAstReader().buildUseMap(
+    new TestAstReader().parseFileToSourceFile(packageAnchor),
+);
 
 const reader = new TestAstReader();
 
@@ -197,7 +206,7 @@ describe('AstReader', () => {
             expect(reader.resolveImportToFilePath('Unknown', useMap, anchor)).toBe('');
         });
 
-        it('returns empty for a non-relative module specifier', () => {
+        it('returns empty for a bare specifier with no TypeScript source behind it', () => {
             expect(reader.resolveImportToFilePath('Bare', useMap, anchor)).toBe('');
         });
 
@@ -209,6 +218,50 @@ describe('AstReader', () => {
 
         it('returns empty when the resolved file does not exist', () => {
             expect(reader.resolveImportToFilePath('Missing', useMap, anchor)).toBe('');
+        });
+
+        it('resolves a package specifier through the package exports map', () => {
+            expect(reader.resolveImportToFilePath('PackageRouteProviderFixture', packageUseMap, packageAnchor)).toBe(
+                path.join(packageDir, 'node_modules/@fixture/routes/src/PackageRouteProviderFixture.ts'),
+            );
+        });
+
+        it('resolves a package specifier for a package without an exports map', () => {
+            expect(reader.resolveImportToFilePath('PlainFixture', packageUseMap, packageAnchor)).toBe(
+                path.join(packageDir, 'node_modules/plain/lib/PlainFixture.ts'),
+            );
+        });
+
+        it('returns empty for a package exposing only declaration files', () => {
+            expect(reader.resolveImportToFilePath('TypedFixture', packageUseMap, packageAnchor)).toBe('');
+        });
+
+        it('returns empty for an uninstalled package', () => {
+            expect(reader.resolveImportToFilePath('MissingFixture', packageUseMap, packageAnchor)).toBe('');
+        });
+    });
+
+    describe('collectReferencedIdentifiers', () => {
+        it('collects the value identifiers an expression references', () => {
+            const names = reader.collectReferencedIdentifiers(
+                expr("new Route(CommandName.LIST, 'List', Provider.handler, [new OptionParameter('n')])"),
+            );
+
+            expect([...names].sort()).toEqual(['CommandName', 'OptionParameter', 'Provider', 'Route']);
+        });
+
+        it('collects an object literal value but not its property name', () => {
+            expect([...reader.collectReferencedIdentifiers(expr('({ help: Helper })'))]).toEqual(['Helper']);
+        });
+
+        it('skips identifiers in type positions', () => {
+            expect([...reader.collectReferencedIdentifiers(expr('(): OutputContract => Helper.run()'))]).toEqual([
+                'Helper',
+            ]);
+        });
+
+        it('collects nothing from a literal', () => {
+            expect([...reader.collectReferencedIdentifiers(expr("'plain'"))]).toEqual([]);
         });
     });
 

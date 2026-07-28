@@ -35,13 +35,27 @@ export abstract class AstFileGenerator {
      * Build the `import { X } from '...';` block for the provider/handler classes
      * a generated data cache references, followed by a trailing newline (or an
      * empty string when there are no such imports).
+     *
+     * Names the generated file's fixed framework header already binds are
+     * dropped: those are the same framework classes under the same names, and
+     * emitting them twice is a duplicate-identifier error.
      */
-    protected buildUserImportsBlock(classImportMap: Record<string, string>): string {
+    protected buildUserImportsBlock(classImportMap: Record<string, string>, reservedNames: readonly string[]): string {
         const userImports = Object.entries(classImportMap)
+            .filter(([name]) => !reservedNames.includes(name))
             .map(([name, specifier]) => `import { ${name} } from '${specifier}';`)
             .join('\n');
 
         return userImports ? `${userImports}\n` : '';
+    }
+
+    /**
+     * Render the fixed framework imports a generated data file always carries.
+     */
+    protected buildFrameworkImportLines(imports: Readonly<Record<string, string>>, isType: boolean = false): string[] {
+        const keyword = isType ? 'import type' : 'import';
+
+        return Object.entries(imports).map(([name, specifier]) => `${keyword} { ${name} } from '${specifier}';`);
     }
 
     protected writeFile(directory: string, className: string, data: string): GenerateStatus {
