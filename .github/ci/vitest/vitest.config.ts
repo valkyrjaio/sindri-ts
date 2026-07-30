@@ -16,6 +16,15 @@ export default defineConfig({
             include  : ['src/**/*.ts'],
             exclude  : ['src/**/*.test.ts'],
             reportsDirectory,
+            // The gate's floor. The architecture guide's definition of done is 100% line *and*
+            // branch, per file, and nothing enforced it before: the report was generated and then
+            // ignored, so a run at 55% passed exactly like one at 100%.
+            thresholds : {
+                lines      : 100,
+                branches   : 100,
+                functions  : 100,
+                statements : 100,
+            },
         },
     },
 });
