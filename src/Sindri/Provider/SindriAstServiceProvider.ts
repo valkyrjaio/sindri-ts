@@ -20,6 +20,7 @@ import { ServiceProviderReader } from '../Ast/ServiceProviderReader.ts';
 import { AstCliDataFileGenerator } from '../Generator/Ast/Cli/AstCliDataFileGenerator.ts';
 import { AstContainerDataFileGenerator } from '../Generator/Ast/Container/AstContainerDataFileGenerator.ts';
 import { AstEventDataFileGenerator } from '../Generator/Ast/Event/AstEventDataFileGenerator.ts';
+import { AstGrpcDataFileGenerator } from '../Generator/Ast/Grpc/AstGrpcDataFileGenerator.ts';
 import { AstHttpDataFileGenerator } from '../Generator/Ast/Http/AstHttpDataFileGenerator.ts';
 import { SindriServiceId } from '../Constant/SindriServiceId.ts';
 
@@ -37,6 +38,7 @@ import type { ServiceProviderReaderContract } from '../Ast/Contract/ServiceProvi
 import type { CliDataFileGeneratorContract } from '../Generator/Cli/Contract/CliDataFileGeneratorContract.ts';
 import type { ContainerDataFileGeneratorContract } from '../Generator/Container/Contract/ContainerDataFileGeneratorContract.ts';
 import type { EventDataFileGeneratorContract } from '../Generator/Event/Contract/EventDataFileGeneratorContract.ts';
+import type { GrpcDataFileGeneratorContract } from '../Generator/Grpc/Contract/GrpcDataFileGeneratorContract.ts';
 import type { HttpDataFileGeneratorContract } from '../Generator/Http/Contract/HttpDataFileGeneratorContract.ts';
 import type { ContainerContract } from '@valkyrjaio/valkyrja/Container/Manager/Contract/ContainerContract.ts';
 import type { ServiceProviderContract } from '@valkyrjaio/valkyrja/Container/Provider/Contract/ServiceProviderContract.ts';
@@ -148,6 +150,13 @@ export class SindriAstServiceProvider implements ServiceProviderContract {
         );
     }
 
+    static publishGrpcDataFileGenerator(this: void, container: ContainerContract): void {
+        container.setSingleton<GrpcDataFileGeneratorContract>(
+            SindriServiceId.GrpcDataFileGeneratorContract,
+            new AstGrpcDataFileGenerator(),
+        );
+    }
+
     static publishHttpDataFileGenerator(this: void, container: ContainerContract): void {
         container.setSingleton<HttpDataFileGeneratorContract>(
             SindriServiceId.HttpDataFileGeneratorContract,
@@ -175,6 +184,7 @@ export class SindriAstServiceProvider implements ServiceProviderContract {
             [SindriServiceId.ContainerDataFileGeneratorContract]:
                 SindriAstServiceProvider.publishContainerDataFileGenerator,
             [SindriServiceId.EventDataFileGeneratorContract]: SindriAstServiceProvider.publishEventDataFileGenerator,
+            [SindriServiceId.GrpcDataFileGeneratorContract]: SindriAstServiceProvider.publishGrpcDataFileGenerator,
             [SindriServiceId.HttpDataFileGeneratorContract]: SindriAstServiceProvider.publishHttpDataFileGenerator,
         };
     }
