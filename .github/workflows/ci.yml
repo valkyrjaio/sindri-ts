@@ -44,7 +44,7 @@ jobs:
   # as `CI / Tools / <Tool> / …`.
   tools:
     name: Tools
-    uses: valkyrjaio/.github/.github/workflows/_ts-ci-tools.yml@72a0fead5c352c8b4fb7db827a8e54c70df31c6a
+    uses: valkyrjaio/.github/.github/workflows/_ts-ci-tools.yml@41d9c881616a104cc1a94b187958e2606445fba2
     with:
       eslint-additional-directory: '.github/ci/typescript'
       source-paths: |
