@@ -17,6 +17,7 @@ export class ComponentProviderReader extends AstReader implements ComponentProvi
     protected static readonly METHOD_EVENT = 'getEventProviders';
     protected static readonly METHOD_CLI = 'getCliProviders';
     protected static readonly METHOD_HTTP = 'getHttpProviders';
+    protected static readonly METHOD_GRPC = 'getGrpcProviders';
 
     readFile(filePath: string): ComponentProviderResult {
         const sourceFile = this.parseFileToSourceFile(filePath);
@@ -39,6 +40,7 @@ export class ComponentProviderReader extends AstReader implements ComponentProvi
             this.extractClassPathListFromValues(methods[ComponentProviderReader.METHOD_EVENT], useMap, filePath),
             this.extractClassPathListFromValues(methods[ComponentProviderReader.METHOD_CLI], useMap, filePath),
             this.extractClassPathListFromValues(methods[ComponentProviderReader.METHOD_HTTP], useMap, filePath),
+            this.extractClassPathListFromValues(methods[ComponentProviderReader.METHOD_GRPC], useMap, filePath),
         );
     }
 }

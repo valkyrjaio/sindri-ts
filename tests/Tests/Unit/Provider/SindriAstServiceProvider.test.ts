@@ -13,10 +13,10 @@ import { SindriAstServiceProvider } from '../../../../src/Sindri/Provider/Sindri
 import { Container } from '@valkyrjaio/valkyrja/Container/Manager/Container.ts';
 
 describe('SindriAstServiceProvider', () => {
-    it('publishes all fifteen reader and generator service ids', () => {
+    it('publishes all sixteen reader and generator service ids', () => {
         const publishers = new SindriAstServiceProvider().publishers();
 
-        expect(Object.keys(publishers)).toHaveLength(15);
+        expect(Object.keys(publishers)).toHaveLength(16);
     });
 
     it('each publisher registers its singleton', () => {
