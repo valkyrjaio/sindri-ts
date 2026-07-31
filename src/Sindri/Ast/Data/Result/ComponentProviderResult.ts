@@ -13,6 +13,7 @@ export class ComponentProviderResult {
         readonly listenerProviders: readonly string[] = [],
         readonly cliRouteProviders: readonly string[] = [],
         readonly httpRouteProviders: readonly string[] = [],
+        readonly grpcRouteProviders: readonly string[] = [],
     ) {}
 
     merge(other: ComponentProviderResult): ComponentProviderResult {
@@ -22,6 +23,7 @@ export class ComponentProviderResult {
             [...new Set([...this.listenerProviders, ...other.listenerProviders])],
             [...new Set([...this.cliRouteProviders, ...other.cliRouteProviders])],
             [...new Set([...this.httpRouteProviders, ...other.httpRouteProviders])],
+            [...new Set([...this.grpcRouteProviders, ...other.grpcRouteProviders])],
         );
     }
 }
