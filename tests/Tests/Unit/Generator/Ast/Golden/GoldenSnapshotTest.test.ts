@@ -19,6 +19,9 @@ import { describe, expect, it } from 'vitest';
 import { HttpParameterData } from '../../../../../../src/Sindri/Ast/Data/HttpParameterData.ts';
 import { HttpRouteData } from '../../../../../../src/Sindri/Ast/Data/HttpRouteData.ts';
 import { AstCliDataFileGenerator } from '../../../../../../src/Sindri/Generator/Ast/Cli/AstCliDataFileGenerator.ts';
+import { ConfigImport } from '../../../../../../src/Sindri/Ast/Data/ConfigImport.ts';
+import { ConfigSourceResult } from '../../../../../../src/Sindri/Ast/Data/Result/ConfigSourceResult.ts';
+import { AstCachedConfigFileGenerator } from '../../../../../../src/Sindri/Generator/Ast/Config/AstCachedConfigFileGenerator.ts';
 import { AstContainerDataFileGenerator } from '../../../../../../src/Sindri/Generator/Ast/Container/AstContainerDataFileGenerator.ts';
 import { AstEventDataFileGenerator } from '../../../../../../src/Sindri/Generator/Ast/Event/AstEventDataFileGenerator.ts';
 import { AstHttpDataFileGenerator } from '../../../../../../src/Sindri/Generator/Ast/Http/AstHttpDataFileGenerator.ts';
@@ -176,5 +179,72 @@ describe('GoldenSnapshotTest', () => {
         });
 
         assertGolden(actual, 'AppEventData');
+    });
+
+    it('matches the CachedConfig golden', () => {
+        // Mirrors what ConfigSourceReader produces for an application config that
+        // extends a framework config: values the author passed, defaults filled in
+        // from the base, and a provider import that must not survive.
+        const source = new ConfigSourceResult(
+            'Config',
+            'HttpConfigContract',
+            '@valkyrjaio/valkyrja/Application/Data/Contract/HttpConfigContract.ts',
+            {
+                namespace: "'App'",
+                dir: 'process.cwd()',
+                version: "'1.0.0'",
+                environment: "'production'",
+                debugMode: 'true',
+                timezone: "'UTC'",
+                key: "process.env['APP_KEY'] ?? ''",
+                dataPath: "'src/App/Http/Data'",
+                dataNamespace: "'App/Http/Data'",
+                providers: '[new ComponentProvider()]',
+                callbacks: '[ComponentProvider.publish]',
+                requestReceivedMiddleware: '[CacheResponseMiddleware]',
+                routeMatchedMiddleware: '[]',
+                routeNotMatchedMiddleware: '[]',
+                routeDispatchedMiddleware: '[]',
+                throwableCaughtMiddleware: '[]',
+                sendingResponseMiddleware: '[]',
+                responseSentMiddleware: '[]',
+            },
+            {
+                namespace: 'string',
+                version: 'string',
+                environment: 'string',
+                debugMode: 'boolean',
+                timezone: 'string',
+                key: 'string',
+                dataPath: 'string',
+                dataNamespace: 'string',
+                requestReceivedMiddleware: 'string[]',
+                routeMatchedMiddleware: 'string[]',
+                routeNotMatchedMiddleware: 'string[]',
+                routeDispatchedMiddleware: 'string[]',
+                throwableCaughtMiddleware: 'string[]',
+                sendingResponseMiddleware: 'string[]',
+                responseSentMiddleware: 'string[]',
+            },
+            [
+                new ConfigImport('ComponentProvider', './Provider/ComponentProvider.ts'),
+                new ConfigImport(
+                    'CacheResponseMiddleware',
+                    '@valkyrjaio/valkyrja/Http/Server/Middleware/CacheResponseMiddleware.ts',
+                ),
+            ],
+        );
+
+        const actual = generate('CachedConfig', (directory) => {
+            new AstCachedConfigFileGenerator().generateFile(
+                directory,
+                'CachedConfig',
+                source,
+                'AppContainerData',
+                './Data/AppContainerData.ts',
+            );
+        });
+
+        assertGolden(actual, 'CachedConfig');
     });
 });

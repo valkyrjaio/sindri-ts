@@ -7,7 +7,8 @@
  * file that was distributed with this source code.
  */
 
-export class CommandName {
-    static readonly DATA_GENERATE = 'data:generate' as const;
-    static readonly CONFIG_GENERATE = 'config:generate' as const;
+import type { ConfigSourceResult } from '../Data/Result/ConfigSourceResult.ts';
+
+export interface ConfigSourceReaderContract {
+    readFile(filePath: string): ConfigSourceResult;
 }
