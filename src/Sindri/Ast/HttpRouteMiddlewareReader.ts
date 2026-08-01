@@ -93,7 +93,13 @@ export class HttpRouteMiddlewareReader extends AstReader implements HttpRouteMid
         }
 
         for (const decorator of this.findDecoratorsOnNode(method, 'Middleware', useMap, namespace)) {
-            const mwName = this.extractExprValue(this.getDecoratorArg(decorator, 0), useMap, namespace, currentClass);
+            // `@Middleware` takes a thunked class reference (`() => AuthMiddleware`).
+            const mwName = this.extractExprValue(
+                this.unwrapClassThunk(this.getDecoratorArg(decorator, 0)),
+                useMap,
+                namespace,
+                currentClass,
+            );
 
             if (typeof mwName !== 'string' || mwName === '') {
                 continue;

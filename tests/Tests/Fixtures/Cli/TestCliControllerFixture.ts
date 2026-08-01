@@ -8,12 +8,12 @@ export class TestCliControllerFixture {
         name: 'build',
         description: 'Builds the app',
         helpText: [() => HelpProvider, 'buildHelp'],
-        middleware: [AllCliMiddlewareFixture, UnknownMiddleware],
+        middleware: [() => AllCliMiddlewareFixture, () => UnknownMiddleware],
     })
     @Name('build:app')
     @Name(999)
-    @Middleware(AllCliMiddlewareFixture)
-    @Middleware(UnknownMiddleware)
+    @Middleware(() => AllCliMiddlewareFixture)
+    @Middleware(() => UnknownMiddleware)
     @Middleware()
     @ArgumentParameter({ name: 'source', description: 'The source dir', cast: 'string', mode: 'REQUIRED', valueMode: 'ARRAY' })
     @ArgumentParameter({ name: 'target', description: 'The target dir' })

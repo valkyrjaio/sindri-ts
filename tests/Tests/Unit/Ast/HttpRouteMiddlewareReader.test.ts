@@ -77,7 +77,7 @@ describe('HttpRouteMiddlewareReader', () => {
 
     describe('updateMiddleware', () => {
         it('classifies the object middleware list and method @Middleware decorators, appending each', () => {
-            const m = method('@Middleware(AllMiddlewareFixture) @Middleware() m() {}');
+            const m = method('@Middleware(() => AllMiddlewareFixture) @Middleware() m() {}');
 
             // The list contributes one entry, the method decorator another (append, never dedupe).
             const result = reader.updateMiddleware(m, useMap, anchor, 'C', ['AllMiddlewareFixture']);

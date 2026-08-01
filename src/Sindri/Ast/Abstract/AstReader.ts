@@ -859,27 +859,32 @@ export abstract class AstReader {
     }
 
     /**
-     * Unwrap a handler reference's class **thunk** to the class expression it
-     * returns — `() => HomeController` becomes `HomeController`.
+     * Unwrap a class **thunk** to the class expression it returns —
+     * `() => HomeController` becomes `HomeController`.
      *
-     * Handler references are authored as `[() => SomeClass, 'method']` rather
-     * than `[SomeClass, 'method']` because a TC39 Stage-3 method decorator runs
-     * while the class binding is still in its temporal dead zone, so naming the
-     * class directly throws at class-definition time on a circular or
-     * self-referential import. The thunk is purely a runtime deferral: the
+     * Every class reference in a decorator argument is authored as a thunk —
+     * `[() => SomeClass, 'method']` for a handler, `@Middleware(() => SomeClass)`
+     * for middleware — rather than as a bare class name. A TC39 Stage-3
+     * decorator runs while the class binding is still in its temporal dead zone,
+     * so naming the class directly throws at class-definition time on a circular
+     * or self-referential import. The thunk is purely a runtime deferral: the
      * emitted cache is unchanged (`HttpRouteProvider.versionHandler`), so the
      * reader simply looks through it. A bare class expression is returned
      * untouched, and a block-bodied arrow (`() => { … }`) is left alone so it
      * falls through to the usual "not a class reference" handling.
      */
-    protected unwrapClassThunk(node: ts.Expression | undefined): ts.Expression | undefined {
-        if (node === undefined || !ts.isArrowFunction(node) || node.parameters.length !== 0) {
+    protected unwrapClassThunk(node: Node | ts.Node | undefined): Node | ts.Node | undefined {
+        if (node === undefined) {
             return node;
         }
 
-        const body = node.body;
+        const tsNode = Node.isNode(node) ? node.compilerNode : node;
 
-        return ts.isBlock(body) ? node : body;
+        if (!ts.isArrowFunction(tsNode) || tsNode.parameters.length !== 0) {
+            return node;
+        }
+
+        return ts.isBlock(tsNode.body) ? node : tsNode.body;
     }
 
     protected extractClassListFromArrayExpr(
@@ -891,7 +896,9 @@ export abstract class AstReader {
         const classes: string[] = [];
 
         for (const element of array.elements) {
-            const value = this.extractExprValue(element, useMap, currentFilePath, currentClass);
+            // A class list inside a decorator argument holds thunked references
+            // (`middleware: [() => AuthMiddleware]`), so look through the thunk.
+            const value = this.extractExprValue(this.unwrapClassThunk(element), useMap, currentFilePath, currentClass);
 
             if (typeof value === 'string' && value !== '') {
                 classes.push(value);

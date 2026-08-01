@@ -172,8 +172,9 @@ export class CliRouteAttributeReader extends RouteAttributeReader implements Cli
         }
 
         for (const decorator of this.findDecoratorsOnNode(method, 'Middleware', useMap, currentFilePath)) {
+            // `@Middleware` takes a thunked class reference (`() => AuthMiddleware`).
             const mwName = this.extractExprValue(
-                this.getDecoratorArg(decorator, 0),
+                this.unwrapClassThunk(this.getDecoratorArg(decorator, 0)),
                 useMap,
                 currentFilePath,
                 currentClass,

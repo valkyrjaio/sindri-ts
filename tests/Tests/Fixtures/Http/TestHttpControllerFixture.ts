@@ -10,7 +10,7 @@ export class TestHttpControllerFixture {
         path: '/{id}',
         name: 'index',
         requestMethods: [RequestMethod.GET],
-        middleware: [AllMiddlewareFixture],
+        middleware: [() => AllMiddlewareFixture],
         requestStruct: SomeRequestStruct,
         responseStruct: SomeResponseStruct,
         parameters: [{ name: 'id', regex: '\\d+' }],
