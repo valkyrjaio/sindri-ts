@@ -75,6 +75,7 @@ class TestAstReader extends AstReader {
         u: Record<string, string>,
         f: string,
     ): HandlerData | undefined => super.extractHandlerFromTsArray(a, u, f);
+    public unwrapClassThunk = (n: ts.Expression | undefined): ts.Expression | undefined => super.unwrapClassThunk(n);
     public parseClassFile = (f: string): unknown => super.parseClassFile(f);
     public extractStringArg = (
         d: Decorator,
@@ -118,6 +119,10 @@ class TestAstReader extends AstReader {
         super.buildClassIdentifierArrayExpr(c);
     public classImplementsInterface = (c: string, i: string, u: Record<string, string>, f: string): boolean =>
         super.classImplementsInterface(c, i, u, f);
+    public getDecoratorObjectArg = (d: Decorator): ts.ObjectLiteralExpression | undefined =>
+        super.getDecoratorObjectArg(d);
+    public getObjectProp = (o: ts.ObjectLiteralExpression, k: string): ts.Expression | undefined =>
+        super.getObjectProp(o, k);
     public collectReferencedIdentifiers = (n: ts.Node, names?: Set<string>): Set<string> =>
         super.collectReferencedIdentifiers(n, names);
 }
@@ -600,6 +605,42 @@ describe('AstReader', () => {
         it('returns undefined when the method value is not a string', () => {
             expect(reader.extractHandlerFromTsArray(arr('[A, 1]'), useMap, anchor)).toBeUndefined();
         });
+
+        it('looks through the class thunk of a `[() => Class, method]` pair', () => {
+            expect(reader.extractHandlerFromTsArray(arr("[() => A, 'm']"), useMap, anchor)).toEqual(
+                new HandlerData('A', 'm'),
+            );
+        });
+    });
+
+    describe('unwrapClassThunk', () => {
+        it('unwraps a zero-parameter expression-bodied arrow to its class expression', () => {
+            const unwrapped = reader.unwrapClassThunk(expr('() => A') as ts.Expression);
+
+            expect(unwrapped !== undefined && ts.isIdentifier(unwrapped)).toBe(true);
+        });
+
+        it('leaves a bare class reference untouched', () => {
+            const node = expr('A') as ts.Expression;
+
+            expect(reader.unwrapClassThunk(node)).toBe(node);
+        });
+
+        it('leaves an arrow that takes parameters untouched', () => {
+            const node = expr('(a) => A') as ts.Expression;
+
+            expect(reader.unwrapClassThunk(node)).toBe(node);
+        });
+
+        it('leaves a block-bodied arrow untouched', () => {
+            const node = expr('() => { return A; }') as ts.Expression;
+
+            expect(reader.unwrapClassThunk(node)).toBe(node);
+        });
+
+        it('passes an absent node straight through', () => {
+            expect(reader.unwrapClassThunk(undefined)).toBeUndefined();
+        });
     });
 
     describe('parseClassFile', () => {
@@ -688,10 +729,27 @@ describe('AstReader', () => {
 
         it('falls back to an empty current class for an anonymous class', () => {
             const context = reader.parseClassFile(path.join(fixtureDir, 'AnonymousFixture.ts')) as
-                | { currentClass: string }
-                | undefined;
+                { currentClass: string } | undefined;
 
             expect(context?.currentClass).toBe('');
+        });
+    });
+
+    describe('object-literal decorator helpers', () => {
+        it('returns undefined for a decorator with no arguments', () => {
+            expect(reader.getDecoratorObjectArg(decorator('@Foo()'))).toBeUndefined();
+        });
+
+        it('returns the object-literal argument and undefined for a non-object argument', () => {
+            expect(reader.getDecoratorObjectArg(decorator("@Foo({ path: '/p' })"))).toBeDefined();
+            expect(reader.getDecoratorObjectArg(decorator("@Foo('x')"))).toBeUndefined();
+        });
+
+        it('finds a property by name and skips non-identifier/string property names', () => {
+            const obj = expr("{ 5: 1, path: '/p' }") as ts.ObjectLiteralExpression;
+
+            expect(reader.getObjectProp(obj, 'path')).toBeDefined();
+            expect(reader.getObjectProp(obj, 'missing')).toBeUndefined();
         });
     });
 });

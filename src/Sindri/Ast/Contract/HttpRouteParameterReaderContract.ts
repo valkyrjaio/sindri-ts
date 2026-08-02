@@ -9,14 +9,11 @@
 
 import type { ts } from 'ts-morph';
 
-import type { MethodDeclaration } from 'ts-morph';
-
 import type { HttpParameterData } from '../Data/HttpParameterData.ts';
 
 export interface HttpRouteParameterReaderContract {
     updateParameters(
-        decoratorArgs: ts.NodeArray<ts.Expression> | ts.Expression[],
-        method: MethodDeclaration,
+        obj: ts.ObjectLiteralExpression,
         useMap: Record<string, string>,
         namespace: string,
         currentClass: string,

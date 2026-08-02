@@ -14,8 +14,8 @@ import type { MethodDeclaration } from 'ts-morph';
 import type { HttpRouteData } from '../Data/HttpRouteData.ts';
 
 export interface HttpRouteMiddlewareReaderContract {
-    extractInlineRequestMethods(
-        decoratorArgs: ts.NodeArray<ts.Expression> | ts.Expression[],
+    extractObjectRequestMethods(
+        obj: ts.ObjectLiteralExpression,
         useMap: Record<string, string>,
         namespace: string,
         currentClass: string,
@@ -34,11 +34,7 @@ export interface HttpRouteMiddlewareReaderContract {
         useMap: Record<string, string>,
         namespace: string,
         currentClass: string,
-        routeMatchedMiddleware: string[],
-        routeDispatchedMiddleware: string[],
-        throwableCaughtMiddleware: string[],
-        sendingResponseMiddleware: string[],
-        responseSentMiddleware: string[],
+        middleware: string[],
     ): [string[], string[], string[], string[], string[]];
 
     updateRequestStruct(

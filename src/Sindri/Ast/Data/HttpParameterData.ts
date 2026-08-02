@@ -16,5 +16,6 @@ export class HttpParameterData implements HttpParameterDataContract {
         readonly cast: string | null = null,
         readonly isOptional: boolean = false,
         readonly shouldCapture: boolean = true,
+        readonly defaultValue: string | number | boolean | null = null,
     ) {}
 }

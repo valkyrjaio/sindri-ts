@@ -28,10 +28,18 @@ const nodeModules = path.join(packageDir, 'node_modules');
 const configFile = path.join(appDir, 'ConfigFixture.ts');
 
 /** A generator stub returning a fixed status. */
-function generator(
-    status: GenerateStatus = GenerateStatus.SUCCESS,
-): { classImportMap: Record<string, string>; generateFile: () => GenerateStatus; generateFileFromRoutes: () => GenerateStatus } {
-    return { classImportMap: {}, generateFile: vi.fn(() => status), generateFileFromRoutes: vi.fn(() => status) };
+function generator(status: GenerateStatus = GenerateStatus.SUCCESS): {
+    classImportMap: Record<string, string>;
+    generateFile: () => GenerateStatus;
+    generateFileFromRoutes: () => GenerateStatus;
+    generateMergedFile: () => GenerateStatus;
+} {
+    return {
+        classImportMap: {},
+        generateFile: vi.fn(() => status),
+        generateFileFromRoutes: vi.fn(() => status),
+        generateMergedFile: vi.fn(() => status),
+    };
 }
 
 /** A reader stub whose readFile returns a fixed result. */
@@ -66,8 +74,8 @@ class TestGenerate extends GenerateDataFromAst {
             (deps.routeProviderReader ?? reader({ controllerClasses: [], routes: [], routeImports: {} })) as never,
             (deps.listenerProviderReader ?? reader({ listenerClasses: [] })) as never,
             (deps.serviceProviderReader ?? reader({ publishers: {} })) as never,
-            (deps.cliRouteAttributeReader ?? reader({ routes: {} })) as never,
-            (deps.httpRouteAttributeReader ?? reader({ routes: {}, routeData: {} })) as never,
+            (deps.cliRouteAttributeReader ?? reader({ routes: {}, importMap: {} })) as never,
+            (deps.httpRouteAttributeReader ?? reader({ routes: {}, routeData: {}, importMap: {} })) as never,
             (deps.listenerAttributeReader ?? reader({ listeners: {} })) as never,
             (deps.containerGenerator ?? generator()) as never,
             (deps.eventGenerator ?? generator()) as never,
@@ -272,10 +280,44 @@ describe('GenerateDataFromAst', () => {
 
             gen.cli(['AppCliRouteProviderFixture'], config, gen.freshOutput());
 
-            expect(cliGenerator.generateFileFromRoutes).toHaveBeenCalled();
+            expect(cliGenerator.generateMergedFile).toHaveBeenCalled();
             expect(cliGenerator.classImportMap).toStrictEqual({
                 AppCliRouteProviderFixture: './Provider/AppCliRouteProviderFixture.ts',
             });
+        });
+
+        it('merges attribute command routes and their import map with imperative routes', () => {
+            const cliGenerator = generator();
+            const controllerPath = path.join(appDir, 'Controller', 'AppCliControllerFixture.ts');
+            const packagePath = path.join(nodeModules, '@fixture/routes/src/PackageCommandNameFixture.ts');
+            const gen = new TestGenerate({
+                routeProviderReader: reader({
+                    controllerClasses: ['AppCliControllerFixture'],
+                    routes: [{} as never],
+                    routeImports: {},
+                }),
+                cliRouteAttributeReader: reader({
+                    routes: { build: {} },
+                    importMap: {
+                        AppCliControllerFixture: controllerPath,
+                        PackageCommandNameFixture: packagePath,
+                    },
+                }),
+                cliGenerator,
+            });
+
+            gen.cli(['AppCliRouteProviderFixture'], config, gen.freshOutput());
+
+            expect(cliGenerator.generateMergedFile).toHaveBeenCalled();
+            expect(cliGenerator.classImportMap.AppCliRouteProviderFixture).toBe(
+                './Provider/AppCliRouteProviderFixture.ts',
+            );
+            expect(cliGenerator.classImportMap.AppCliControllerFixture).toBe('./Controller/AppCliControllerFixture.ts');
+            // A decorator-scanned class an installed package owns is imported by that
+            // package's own specifier, exactly as an imperative route argument is.
+            expect(cliGenerator.classImportMap.PackageCommandNameFixture).toBe(
+                '@fixture/routes/PackageCommandNameFixture.ts',
+            );
         });
 
         it('imports the classes the route expressions reference, by package specifier', () => {
@@ -320,10 +362,47 @@ describe('GenerateDataFromAst', () => {
 
             gen.http(['AppHttpRouteProviderFixture'], config, gen.freshOutput());
 
-            expect(httpGenerator.generateFileFromRoutes).toHaveBeenCalled();
+            expect(httpGenerator.generateMergedFile).toHaveBeenCalled();
             expect(httpGenerator.classImportMap).toStrictEqual({
                 AppHttpRouteProviderFixture: './Provider/AppHttpRouteProviderFixture.ts',
             });
+        });
+
+        it('merges attribute routes and their import map with imperative routes', () => {
+            const httpGenerator = generator();
+            const controllerPath = path.join(appDir, 'Controller', 'AppHttpControllerFixture.ts');
+            const packagePath = path.join(nodeModules, '@fixture/routes/src/PackageRouteProviderFixture.ts');
+            const gen = new TestGenerate({
+                routeProviderReader: reader({
+                    controllerClasses: ['AppHttpControllerFixture'],
+                    routes: [{} as never],
+                    routeImports: {},
+                }),
+                httpRouteAttributeReader: reader({
+                    routes: { 'users.show': {} },
+                    routeData: {},
+                    importMap: {
+                        AppHttpControllerFixture: controllerPath,
+                        PackageRouteProviderFixture: packagePath,
+                    },
+                }),
+                httpGenerator,
+            });
+
+            gen.http(['AppHttpRouteProviderFixture'], config, gen.freshOutput());
+
+            expect(httpGenerator.generateMergedFile).toHaveBeenCalled();
+            expect(httpGenerator.classImportMap.AppHttpRouteProviderFixture).toBe(
+                './Provider/AppHttpRouteProviderFixture.ts',
+            );
+            expect(httpGenerator.classImportMap.AppHttpControllerFixture).toBe(
+                './Controller/AppHttpControllerFixture.ts',
+            );
+            // A decorator-scanned class an installed package owns is imported by that
+            // package's own specifier, exactly as an imperative route argument is.
+            expect(httpGenerator.classImportMap.PackageRouteProviderFixture).toBe(
+                '@fixture/routes/PackageRouteProviderFixture.ts',
+            );
         });
 
         it('imports the classes the route expressions reference, by package specifier', () => {

@@ -12,29 +12,48 @@ import { ts } from 'ts-morph';
 import { AstReader } from './Abstract/AstReader.ts';
 import { HttpParameterData } from './Data/HttpParameterData.ts';
 
-import type { Decorator, MethodDeclaration } from 'ts-morph';
-
 import type { HttpRouteParameterReaderContract } from './Contract/HttpRouteParameterReaderContract.ts';
 
 /**
  * Reads and builds AST expressions for HTTP dynamic route parameters.
+ *
+ * The shipped `@DynamicRoute` decorator folds parameter definitions into its
+ * options object as `parameters: [{ name, regex, cast?, isOptional?,
+ * shouldCapture?, default? }]` (TC39 Stage-3 has no parameter decorators), so
+ * this reader parses that array of object literals rather than a separate
+ * `@Parameter` decorator.
  *
  * Extracted from HttpRouteAttributeReader to keep each class under the
  * complexity threshold; injected as a constructor argument.
  */
 export class HttpRouteParameterReader extends AstReader implements HttpRouteParameterReaderContract {
     updateParameters(
-        decoratorArgs: ts.NodeArray<ts.Expression> | ts.Expression[],
-        method: MethodDeclaration,
+        obj: ts.ObjectLiteralExpression,
         useMap: Record<string, string>,
         namespace: string,
         currentClass: string,
     ): HttpParameterData[] {
-        return [
-            ...this.collectInlineParameters(decoratorArgs, useMap, namespace, currentClass),
-            ...this.collectAttributeParameters(method, useMap, namespace, currentClass),
-            ...this.collectMethodParamParameters(method, useMap, namespace, currentClass),
-        ];
+        const node = this.getObjectProp(obj, 'parameters');
+
+        if (node === undefined || !ts.isArrayLiteralExpression(node)) {
+            return [];
+        }
+
+        const parameters: HttpParameterData[] = [];
+
+        for (const element of node.elements) {
+            if (!ts.isObjectLiteralExpression(element)) {
+                continue;
+            }
+
+            const param = this.buildParameterData(element, useMap, namespace, currentClass);
+
+            if (param !== null) {
+                parameters.push(param);
+            }
+        }
+
+        return parameters;
     }
 
     buildParameterListExpr(parameters: HttpParameterData[]): ts.ArrayLiteralExpression {
@@ -42,137 +61,44 @@ export class HttpRouteParameterReader extends AstReader implements HttpRoutePara
         return ts.factory.createArrayLiteralExpression(elements);
     }
 
-    protected collectInlineParameters(
-        decoratorArgs: ts.NodeArray<ts.Expression> | ts.Expression[],
-        useMap: Record<string, string>,
-        currentFilePath: string,
-        currentClass: string,
-    ): HttpParameterData[] {
-        const inlineArg = decoratorArgs[2];
-
-        if (inlineArg === undefined || !ts.isArrayLiteralExpression(inlineArg)) {
-            return [];
-        }
-
-        const parameters: HttpParameterData[] = [];
-
-        for (const element of inlineArg.elements) {
-            if (!ts.isNewExpression(element) || element.arguments === undefined) {
-                continue;
-            }
-
-            const param = this.buildParameterDataFromTsArgs(element.arguments, useMap, currentFilePath, currentClass);
-
-            if (param !== null) {
-                parameters.push(param);
-            }
-        }
-
-        return parameters;
-    }
-
-    protected collectAttributeParameters(
-        method: MethodDeclaration,
-        useMap: Record<string, string>,
-        currentFilePath: string,
-        currentClass: string,
-    ): HttpParameterData[] {
-        const parameters: HttpParameterData[] = [];
-
-        for (const decorator of this.findDecoratorsOnNode(method, 'Parameter', useMap, currentFilePath)) {
-            const param = this.buildParameterDataFromDecorator(decorator, useMap, currentFilePath, currentClass);
-
-            if (param !== null) {
-                parameters.push(param);
-            }
-        }
-
-        return parameters;
-    }
-
-    protected collectMethodParamParameters(
-        method: MethodDeclaration,
-        useMap: Record<string, string>,
-        currentFilePath: string,
-        currentClass: string,
-    ): HttpParameterData[] {
-        const parameters: HttpParameterData[] = [];
-
-        for (const methodParam of method.getParameters()) {
-            for (const decorator of this.findDecoratorsOnNode(methodParam, 'Parameter', useMap, currentFilePath)) {
-                const param = this.buildParameterDataFromDecorator(decorator, useMap, currentFilePath, currentClass);
-
-                if (param !== null) {
-                    parameters.push(param);
-                }
-            }
-        }
-
-        return parameters;
-    }
-
-    protected buildParameterDataFromDecorator(
-        decorator: Decorator,
+    protected buildParameterData(
+        obj: ts.ObjectLiteralExpression,
         useMap: Record<string, string>,
         currentFilePath: string,
         currentClass: string,
     ): HttpParameterData | null {
-        const name = this.extractStringArg(decorator, 0, useMap, currentFilePath, currentClass);
-        const regex = this.extractStringArg(decorator, 1, useMap, currentFilePath, currentClass);
+        const name = this.getObjectStringProp(obj, 'name', useMap, currentFilePath, currentClass);
+        const regex = this.getObjectStringProp(obj, 'regex', useMap, currentFilePath, currentClass);
 
         if (name === '' || regex === '') {
             return null;
         }
 
+        const cast = this.getObjectStringProp(obj, 'cast', useMap, currentFilePath, currentClass) || null;
+
         return new HttpParameterData(
             name,
             regex,
-            this.extractStringArg(decorator, 2, useMap, currentFilePath, currentClass) || null,
-            this.extractBoolArg(decorator, 3, useMap, currentFilePath, currentClass, false),
-            this.extractBoolArg(decorator, 4, useMap, currentFilePath, currentClass, true),
+            cast,
+            this.getObjectBoolProp(obj, 'isOptional', useMap, currentFilePath, currentClass, false),
+            this.getObjectBoolProp(obj, 'shouldCapture', useMap, currentFilePath, currentClass, true),
+            this.extractDefault(obj, useMap, currentFilePath, currentClass),
         );
     }
 
-    protected buildParameterDataFromTsArgs(
-        args: ts.NodeArray<ts.Expression>,
+    protected extractDefault(
+        obj: ts.ObjectLiteralExpression,
         useMap: Record<string, string>,
         currentFilePath: string,
         currentClass: string,
-    ): HttpParameterData | null {
-        const nameNode = args[0];
-        const regexNode = args[1];
+    ): string | number | boolean | null {
+        const value = this.extractExprValue(this.getObjectProp(obj, 'default'), useMap, currentFilePath, currentClass);
 
-        if (nameNode === undefined || regexNode === undefined) {
-            return null;
+        if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+            return value;
         }
 
-        const name = this.extractExprValue(nameNode, useMap, currentFilePath, currentClass);
-        const regex = this.extractExprValue(regexNode, useMap, currentFilePath, currentClass);
-
-        if (typeof name !== 'string' || name === '' || typeof regex !== 'string' || regex === '') {
-            return null;
-        }
-
-        const castNode = args[2];
-        const castRaw =
-            castNode !== undefined ? this.extractExprValue(castNode, useMap, currentFilePath, currentClass) : null;
-        const cast = typeof castRaw === 'string' && castRaw !== '' ? castRaw : null;
-
-        const isOptionalNode = args[3];
-        const isOptionalRaw =
-            isOptionalNode !== undefined
-                ? this.extractExprValue(isOptionalNode, useMap, currentFilePath, currentClass)
-                : false;
-        const isOptional = typeof isOptionalRaw === 'boolean' ? isOptionalRaw : false;
-
-        const shouldCaptureNode = args[4];
-        const shouldCaptureRaw =
-            shouldCaptureNode !== undefined
-                ? this.extractExprValue(shouldCaptureNode, useMap, currentFilePath, currentClass)
-                : true;
-        const shouldCapture = typeof shouldCaptureRaw === 'boolean' ? shouldCaptureRaw : true;
-
-        return new HttpParameterData(name, regex, cast, isOptional, shouldCapture);
+        return null;
     }
 
     protected buildParameterExpr(data: HttpParameterData): ts.Expression {
@@ -188,6 +114,22 @@ export class HttpRouteParameterReader extends AstReader implements HttpRoutePara
             this.buildBoolExpr(data.shouldCapture),
         ];
 
+        if (data.defaultValue !== null) {
+            args.push(this.buildScalarExpr(data.defaultValue));
+        }
+
         return this.buildNewExpr('Valkyrja\\Http\\Routing\\Data\\Parameter', args);
+    }
+
+    protected buildScalarExpr(value: string | number | boolean): ts.Expression {
+        if (typeof value === 'string') {
+            return this.buildStringExpr(value);
+        }
+
+        if (typeof value === 'boolean') {
+            return this.buildBoolExpr(value);
+        }
+
+        return ts.factory.createNumericLiteral(value);
     }
 }

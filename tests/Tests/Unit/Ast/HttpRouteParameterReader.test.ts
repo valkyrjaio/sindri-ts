@@ -7,7 +7,7 @@
  * file that was distributed with this source code.
  */
 
-import { MethodDeclaration, Project, SourceFile, ts } from 'ts-morph';
+import { Project, SourceFile, ts } from 'ts-morph';
 
 import { describe, expect, it } from 'vitest';
 
@@ -18,84 +18,62 @@ function sourceFile(code: string): SourceFile {
     return new Project({ useInMemoryFileSystem: true }).createSourceFile('f.ts', code);
 }
 
-function method(body: string, name = 'm'): MethodDeclaration {
-    return sourceFile(`class C { ${body} }`).getClassOrThrow('C').getMethodOrThrow(name);
+/** Compiler object-literal node for `const __x = <code>;`. */
+function objectLiteral(code: string): ts.ObjectLiteralExpression {
+    return sourceFile(`const __x = ${code};`).getVariableDeclarationOrThrow('__x').getInitializerOrThrow()
+        .compilerNode as ts.ObjectLiteralExpression;
 }
 
-/** Compiler expression node for `const __x = <code>;`. */
-function expr(code: string): ts.Expression {
-    return sourceFile(`const __x = ${code};`).getVariableDeclarationOrThrow('__x').getInitializerOrThrow()
-        .compilerNode as ts.Expression;
+class TestHttpRouteParameterReader extends HttpRouteParameterReader {
+    public buildOne(data: HttpParameterData): ts.NewExpression {
+        return this.buildParameterExpr(data) as ts.NewExpression;
+    }
 }
 
 const reader = new HttpRouteParameterReader();
-const emptyMethod = method('m() {}');
 
 describe('HttpRouteParameterReader', () => {
-    describe('updateParameters - inline parameters', () => {
-        it('returns no inline parameters when the third arg is missing or not an array', () => {
-            expect(reader.updateParameters([], emptyMethod, {}, '', 'C')).toEqual([]);
-            expect(reader.updateParameters([expr("'a'"), expr("'b'"), expr("'c'")], emptyMethod, {}, '', 'C')).toEqual(
-                [],
+    describe('updateParameters', () => {
+        it('returns no parameters when the parameters prop is missing or not an array', () => {
+            expect(reader.updateParameters(objectLiteral("{ path: '/p' }"), {}, '', 'C')).toEqual([]);
+            expect(reader.updateParameters(objectLiteral("{ parameters: 'nope' }"), {}, '', 'C')).toEqual([]);
+        });
+
+        it('builds parameters from object literals, skipping non-object elements', () => {
+            const obj = objectLiteral(
+                "{ parameters: [42, { name: 'id', regex: '\\\\d+', cast: 'int', isOptional: true, shouldCapture: false }] }",
             );
-        });
 
-        it('builds parameters from inline new-expressions, skipping non-new elements', () => {
-            const args = [
-                expr("'path'"),
-                expr("'name'"),
-                expr("[42, new Parameter('id', '\\\\d+', 'int', true, false)]"),
-            ];
-
-            const params = reader.updateParameters(args, emptyMethod, {}, '', 'C');
-
-            expect(params).toEqual([new HttpParameterData('id', '\\d+', 'int', true, false)]);
-        });
-
-        it('applies defaults when optional inline args are omitted', () => {
-            const args = [expr("'path'"), expr("'name'"), expr("[new Parameter('id', '\\\\d+')]")];
-
-            const params = reader.updateParameters(args, emptyMethod, {}, '', 'C');
-
-            expect(params).toEqual([new HttpParameterData('id', '\\d+', null, false, true)]);
-        });
-
-        it('ignores inline new-expressions with missing or invalid name/regex or non-string optionals', () => {
-            const args = [
-                expr("'path'"),
-                expr("'name'"),
-                expr("[new Parameter(), new Parameter(1, '\\\\d+'), new Parameter('id', '\\\\d+', 9, 'x', 'y')]"),
-            ];
-
-            const params = reader.updateParameters(args, emptyMethod, {}, '', 'C');
-
-            // First two are dropped; the third keeps name/regex with cast/optional/capture defaulted.
-            expect(params).toEqual([new HttpParameterData('id', '\\d+', null, false, true)]);
-        });
-    });
-
-    describe('updateParameters - decorator and method parameters', () => {
-        it('reads @Parameter decorators on the method and on its parameters', () => {
-            const m = method("@Parameter('attr', '\\\\d+') m(@Parameter('arg', '\\\\w+') id: string) {}");
-
-            const params = reader.updateParameters([], m, {}, '', 'C');
-
-            expect(params).toEqual([
-                new HttpParameterData('attr', '\\d+', null, false, true),
-                new HttpParameterData('arg', '\\w+', null, false, true),
+            expect(reader.updateParameters(obj, {}, '', 'C')).toEqual([
+                new HttpParameterData('id', '\\d+', 'int', true, false, null),
             ]);
         });
 
-        it('drops decorator parameters with an empty name or regex', () => {
-            const m = method("@Parameter('', '') m() {}");
+        it('applies defaults when optional props are omitted', () => {
+            const obj = objectLiteral("{ parameters: [{ name: 'id', regex: '\\\\d+' }] }");
 
-            expect(reader.updateParameters([], m, {}, '', 'C')).toEqual([]);
+            expect(reader.updateParameters(obj, {}, '', 'C')).toEqual([
+                new HttpParameterData('id', '\\d+', null, false, true, null),
+            ]);
         });
 
-        it('drops method-parameter decorators with an empty name or regex', () => {
-            const m = method("m(@Parameter('', '') id: string) {}");
+        it('drops object parameters with an empty or non-string name or regex', () => {
+            const obj = objectLiteral("{ parameters: [{ name: '', regex: '' }, { name: 1, regex: '\\\\d+' }] }");
 
-            expect(reader.updateParameters([], m, {}, '', 'C')).toEqual([]);
+            expect(reader.updateParameters(obj, {}, '', 'C')).toEqual([]);
+        });
+
+        it('reads string, number and boolean default values, ignoring non-scalar defaults', () => {
+            const obj = objectLiteral(
+                "{ parameters: [{ name: 's', regex: '.', default: 'x' }, { name: 'n', regex: '.', default: 5 }, { name: 'b', regex: '.', default: true }, { name: 'z', regex: '.', default: {} }] }",
+            );
+
+            expect(reader.updateParameters(obj, {}, '', 'C')).toEqual([
+                new HttpParameterData('s', '.', null, false, true, 'x'),
+                new HttpParameterData('n', '.', null, false, true, 5),
+                new HttpParameterData('b', '.', null, false, true, true),
+                new HttpParameterData('z', '.', null, false, true, null),
+            ]);
         });
     });
 
@@ -108,6 +86,21 @@ describe('HttpRouteParameterReader', () => {
 
             expect(ts.isArrayLiteralExpression(list)).toBe(true);
             expect(list.elements).toHaveLength(2);
+        });
+    });
+
+    describe('buildParameterExpr', () => {
+        it('omits the default argument when none is set and appends it otherwise', () => {
+            const builder = new TestHttpRouteParameterReader();
+
+            expect(builder.buildOne(new HttpParameterData('id', '\\d+')).arguments).toHaveLength(5);
+            expect(builder.buildOne(new HttpParameterData('id', '\\d+', null, false, true, 'x')).arguments).toHaveLength(
+                6,
+            );
+            expect(builder.buildOne(new HttpParameterData('id', '\\d+', null, false, true, 7)).arguments).toHaveLength(6);
+            expect(
+                builder.buildOne(new HttpParameterData('id', '\\d+', null, false, true, true)).arguments,
+            ).toHaveLength(6);
         });
     });
 });

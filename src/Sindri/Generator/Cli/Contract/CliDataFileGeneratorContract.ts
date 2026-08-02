@@ -29,5 +29,13 @@ export interface CliDataFileGeneratorContract {
         routeExprs: readonly ts.Expression[],
     ): GenerateStatus;
 
+    generateMergedFile(
+        directory: string,
+        className: string,
+        namespace: string,
+        routes: Record<string, ts.Expression>,
+        routeExprs: readonly ts.Expression[],
+    ): GenerateStatus;
+
     generateClassContents(routes: Record<string, ts.Expression>): string;
 }

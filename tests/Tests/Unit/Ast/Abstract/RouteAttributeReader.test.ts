@@ -33,7 +33,7 @@ const reader = new TestRouteAttributeReader();
 
 describe('RouteAttributeReader', () => {
     it('resolves the handler from a @RouteHandler decorator argument', () => {
-        const handler = reader.update(method("@RouteHandler([OtherClass, 'handle']) m() {}"), 'CurrentClass');
+        const handler = reader.update(method("@RouteHandler([() => OtherClass, 'handle']) m() {}"), 'CurrentClass');
 
         expect(handler).toEqual(new HandlerData('OtherClass', 'handle'));
     });

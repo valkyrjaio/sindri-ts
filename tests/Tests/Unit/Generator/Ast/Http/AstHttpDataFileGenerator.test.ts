@@ -223,6 +223,7 @@ describe('AstHttpDataFileGenerator', () => {
             'empty.route': newRouteExpr(),
             'reg.none': newRouteExpr(),
             'no.param': newRouteExpr(),
+            'bad.method': newRouteExpr(),
             'Orphan::KEY': newRouteExpr(),
         };
 
@@ -239,6 +240,8 @@ describe('AstHttpDataFileGenerator', () => {
             'reg.none': dyn('/r/{id}', 'reg.none', 'Regex::NONEXISTENT'),
             // A dynamic route with no parameters yields an empty computed regex.
             'no.param': new HttpRouteData('/np', 'no.param', null, [GET], [], [], [], [], [], null, null, true, []),
+            // A request method without the `::` separator is skipped by extractMethodNames.
+            'bad.method': new HttpRouteData('/bad', 'bad.method', null, ['NOSEP']),
             // 'Orphan::KEY' is intentionally absent from routeData.
         };
 

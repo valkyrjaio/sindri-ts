@@ -6,11 +6,11 @@
 @Path(123)
 @Name(456)
 export class TestHttpControllerNonStringFixture {
-    @Route('/items', 'list')
+    @Route({ path: '/items', name: 'list' })
     @Path(789)
     @Name(101)
     list() {}
 
-    @Route('', '')
+    @Route({ path: '', name: '' })
     invalid() {}
 }

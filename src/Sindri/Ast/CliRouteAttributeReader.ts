@@ -18,6 +18,7 @@ import type { Decorator, MethodDeclaration } from 'ts-morph';
 
 import type { CliRouteAttributeReaderContract } from './Contract/CliRouteAttributeReaderContract.ts';
 import type { CliRouteParameterReaderContract } from './Contract/CliRouteParameterReaderContract.ts';
+import type { HandlerData } from './Data/HandlerData.ts';
 
 /**
  * Scans a CLI controller class file for @Route and related sub-decorators and
@@ -40,6 +41,7 @@ export class CliRouteAttributeReader extends RouteAttributeReader implements Cli
 
         const { classDecl, useMap, currentClass } = context;
         const routes: Record<string, ts.Expression> = {};
+        const routeData: Record<string, CliRouteData> = {};
 
         for (const method of classDecl.getMethods()) {
             for (const decorator of this.findDecoratorsOnNode(method, 'Route', useMap, filePath)) {
@@ -47,11 +49,14 @@ export class CliRouteAttributeReader extends RouteAttributeReader implements Cli
 
                 if (data !== null) {
                     routes[data.name] = this.buildRouteExpr(data);
+                    routeData[data.name] = data;
                 }
             }
         }
 
-        return new CliRouteAttributeResult(routes);
+        const importMap = this.buildImportMap(routeData, useMap, filePath, currentClass);
+
+        return new CliRouteAttributeResult(routes, importMap);
     }
 
     protected getRouteHandlerDecoratorName(): string {
@@ -65,8 +70,14 @@ export class CliRouteAttributeReader extends RouteAttributeReader implements Cli
         currentFilePath: string,
         currentClass: string,
     ): CliRouteData | null {
-        const name = this.extractStringArg(decorator, 0, useMap, currentFilePath, currentClass);
-        const description = this.extractStringArg(decorator, 1, useMap, currentFilePath, currentClass);
+        const obj = this.getDecoratorObjectArg(decorator);
+
+        if (obj === undefined) {
+            return null;
+        }
+
+        const name = this.getObjectStringProp(obj, 'name', useMap, currentFilePath, currentClass);
+        const description = this.getObjectStringProp(obj, 'description', useMap, currentFilePath, currentClass);
 
         if (name === '' || description === '') {
             return null;
@@ -79,17 +90,14 @@ export class CliRouteAttributeReader extends RouteAttributeReader implements Cli
                 useMap,
                 currentFilePath,
                 currentClass,
-                this.extractClassListArgFromDecorator(decorator, 4, useMap, currentFilePath, currentClass),
-                this.extractClassListArgFromDecorator(decorator, 5, useMap, currentFilePath, currentClass),
-                this.extractClassListArgFromDecorator(decorator, 6, useMap, currentFilePath, currentClass),
-                this.extractClassListArgFromDecorator(decorator, 7, useMap, currentFilePath, currentClass),
+                this.getObjectClassListProp(obj, 'middleware', useMap, currentFilePath, currentClass),
             );
 
         return new CliRouteData(
             updatedName,
             description,
-            this.updateHandler(method, useMap, currentFilePath, currentClass),
-            null,
+            this.resolveHandler(obj, method, useMap, currentFilePath, currentClass),
+            this.getObjectHandlerProp(obj, 'helpText', useMap, currentFilePath, currentClass) ?? null,
             routeMatchedMiddleware,
             routeDispatchedMiddleware,
             throwableCaughtMiddleware,
@@ -97,6 +105,22 @@ export class CliRouteAttributeReader extends RouteAttributeReader implements Cli
             this.parameterReader.updateArguments(method, useMap, currentFilePath, currentClass),
             this.parameterReader.updateOptions(method, useMap, currentFilePath, currentClass),
         );
+    }
+
+    protected resolveHandler(
+        obj: ts.ObjectLiteralExpression,
+        method: MethodDeclaration,
+        useMap: Record<string, string>,
+        currentFilePath: string,
+        currentClass: string,
+    ): HandlerData {
+        const fromObj = this.getObjectHandlerProp(obj, 'handler', useMap, currentFilePath, currentClass);
+
+        if (fromObj !== undefined) {
+            return fromObj;
+        }
+
+        return this.updateHandler(method, useMap, currentFilePath, currentClass);
     }
 
     protected updateName(
@@ -127,14 +151,30 @@ export class CliRouteAttributeReader extends RouteAttributeReader implements Cli
         useMap: Record<string, string>,
         currentFilePath: string,
         currentClass: string,
-        routeMatchedMiddleware: string[],
-        routeDispatchedMiddleware: string[],
-        throwableCaughtMiddleware: string[],
-        processExitingMiddleware: string[],
+        middleware: string[],
     ): [string[], string[], string[], string[]] {
+        let routeMatchedMiddleware: string[] = [];
+        let routeDispatchedMiddleware: string[] = [];
+        let throwableCaughtMiddleware: string[] = [];
+        let processExitingMiddleware: string[] = [];
+
+        for (const mwName of middleware) {
+            [routeMatchedMiddleware, routeDispatchedMiddleware, throwableCaughtMiddleware, processExitingMiddleware] =
+                this.classifyMiddleware(
+                    mwName,
+                    useMap,
+                    currentFilePath,
+                    routeMatchedMiddleware,
+                    routeDispatchedMiddleware,
+                    throwableCaughtMiddleware,
+                    processExitingMiddleware,
+                );
+        }
+
         for (const decorator of this.findDecoratorsOnNode(method, 'Middleware', useMap, currentFilePath)) {
+            // `@Middleware` takes a thunked class reference (`() => AuthMiddleware`).
             const mwName = this.extractExprValue(
-                this.getDecoratorArg(decorator, 0),
+                this.unwrapClassThunk(this.getDecoratorArg(decorator, 0)),
                 useMap,
                 currentFilePath,
                 currentClass,
@@ -215,5 +255,51 @@ export class CliRouteAttributeReader extends RouteAttributeReader implements Cli
             this.buildClassArrayExpr(data.throwableCaughtMiddleware),
             this.buildClassArrayExpr(data.processExitingMiddleware),
         ];
+    }
+
+    /**
+     * Build the class-name → absolute-file-path map for every handler and
+     * help-text class the generated data cache references, so the generator can
+     * emit the matching import statements. (Middleware are emitted as string
+     * literals and therefore need no import.)
+     */
+    protected buildImportMap(
+        routeData: Record<string, CliRouteData>,
+        useMap: Record<string, string>,
+        currentFilePath: string,
+        currentClass: string,
+    ): Record<string, string> {
+        const importMap: Record<string, string> = {};
+
+        for (const data of Object.values(routeData)) {
+            if (data.handler !== null) {
+                this.addClassImport(importMap, data.handler.class, useMap, currentFilePath, currentClass);
+            }
+
+            if (data.helpText !== null) {
+                this.addClassImport(importMap, data.helpText.class, useMap, currentFilePath, currentClass);
+            }
+        }
+
+        return importMap;
+    }
+
+    protected addClassImport(
+        importMap: Record<string, string>,
+        className: string,
+        useMap: Record<string, string>,
+        currentFilePath: string,
+        currentClass: string,
+    ): void {
+        const shortName = className.slice(className.lastIndexOf('\\') + 1);
+
+        const filePath =
+            shortName === currentClass
+                ? currentFilePath
+                : this.resolveImportToFilePath(shortName, useMap, currentFilePath);
+
+        if (filePath !== '') {
+            importMap[shortName] = filePath;
+        }
     }
 }

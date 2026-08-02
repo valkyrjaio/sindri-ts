@@ -15,18 +15,22 @@ import { HttpRouteAttributeResult } from './Data/Result/HttpRouteAttributeResult
 import { HttpRouteMiddlewareReader } from './HttpRouteMiddlewareReader.ts';
 import { HttpRouteParameterReader } from './HttpRouteParameterReader.ts';
 
-import type { ClassDeclaration, Decorator, MethodDeclaration, Node } from 'ts-morph';
+import type { ClassDeclaration, Decorator, MethodDeclaration } from 'ts-morph';
 
 import type { HttpRouteAttributeReaderContract } from './Contract/HttpRouteAttributeReaderContract.ts';
 import type { HttpRouteMiddlewareReaderContract } from './Contract/HttpRouteMiddlewareReaderContract.ts';
 import type { HttpRouteParameterReaderContract } from './Contract/HttpRouteParameterReaderContract.ts';
+import type { HandlerData } from './Data/HandlerData.ts';
 
 /**
  * Scans an HTTP controller class file for @Route / @DynamicRoute and related
  * sub-decorators and returns TypeScript compiler API Expr nodes ready for the data cache generator.
  *
- * Mirrors the logic of the framework's runtime AttributeRouteCollector but operates
- * entirely on AST without executing any TypeScript code.
+ * The shipped decorators accept a single options object
+ * (`@Route({ path, name, ... })`), so this reader parses object-literal
+ * properties rather than positional arguments. It mirrors the logic of the
+ * framework's runtime AttributeRouteCollector but operates entirely on AST
+ * without executing any TypeScript code.
  */
 export class HttpRouteAttributeReader extends RouteAttributeReader implements HttpRouteAttributeReaderContract {
     constructor(
@@ -112,7 +116,7 @@ export class HttpRouteAttributeReader extends RouteAttributeReader implements Ht
 
         for (const method of classDecl.getMethods()) {
             for (const decorator of this.findDecoratorsOnNode(method, 'Route', useMap, currentFilePath)) {
-                const data = this.buildRouteData(
+                this.collectRoute(
                     decorator,
                     method,
                     useMap,
@@ -121,16 +125,13 @@ export class HttpRouteAttributeReader extends RouteAttributeReader implements Ht
                     classPathPrefix,
                     classNamePrefix,
                     false,
+                    routes,
+                    routeData,
                 );
-
-                if (data !== null) {
-                    routes[data.name] = this.buildRouteExpr(data);
-                    routeData[data.name] = data;
-                }
             }
 
             for (const decorator of this.findDecoratorsOnNode(method, 'DynamicRoute', useMap, currentFilePath)) {
-                const data = this.buildRouteData(
+                this.collectRoute(
                     decorator,
                     method,
                     useMap,
@@ -139,16 +140,44 @@ export class HttpRouteAttributeReader extends RouteAttributeReader implements Ht
                     classPathPrefix,
                     classNamePrefix,
                     true,
+                    routes,
+                    routeData,
                 );
-
-                if (data !== null) {
-                    routes[data.name] = this.buildRouteExpr(data);
-                    routeData[data.name] = data;
-                }
             }
         }
 
-        return new HttpRouteAttributeResult(routes, routeData);
+        const importMap = this.buildImportMap(routeData, useMap, currentFilePath, currentClass);
+
+        return new HttpRouteAttributeResult(routes, routeData, importMap);
+    }
+
+    protected collectRoute(
+        decorator: Decorator,
+        method: MethodDeclaration,
+        useMap: Record<string, string>,
+        currentFilePath: string,
+        currentClass: string,
+        classPathPrefix: string,
+        classNamePrefix: string,
+        isDynamic: boolean,
+        routes: Record<string, ts.Expression>,
+        routeData: Record<string, HttpRouteData>,
+    ): void {
+        const data = this.buildRouteData(
+            decorator,
+            method,
+            useMap,
+            currentFilePath,
+            currentClass,
+            classPathPrefix,
+            classNamePrefix,
+            isDynamic,
+        );
+
+        if (data !== null) {
+            routes[data.name] = this.buildRouteExpr(data);
+            routeData[data.name] = data;
+        }
     }
 
     protected buildRouteData(
@@ -161,8 +190,14 @@ export class HttpRouteAttributeReader extends RouteAttributeReader implements Ht
         classNamePrefix: string,
         isDynamic: boolean,
     ): HttpRouteData | null {
-        const path = this.extractStringArg(decorator, 0, useMap, currentFilePath, currentClass);
-        const name = this.extractStringArg(decorator, 1, useMap, currentFilePath, currentClass);
+        const obj = this.getDecoratorObjectArg(decorator);
+
+        if (obj === undefined) {
+            return null;
+        }
+
+        const path = this.getObjectStringProp(obj, 'path', useMap, currentFilePath, currentClass);
+        const name = this.getObjectStringProp(obj, 'name', useMap, currentFilePath, currentClass);
 
         if (path === '' || name === '') {
             return null;
@@ -173,10 +208,8 @@ export class HttpRouteAttributeReader extends RouteAttributeReader implements Ht
 
         const resolvedIsDynamic = isDynamic || updatedPath.includes('{');
 
-        const decoratorArgs = decorator.getArguments().map((a: Node) => a.compilerNode as ts.Expression);
-
         const requestMethods = this.middlewareReader.updateRequestMethods(
-            this.middlewareReader.extractInlineRequestMethods(decoratorArgs, useMap, currentFilePath, currentClass),
+            this.middlewareReader.extractObjectRequestMethods(obj, useMap, currentFilePath, currentClass),
             method,
             useMap,
             currentFilePath,
@@ -194,30 +227,82 @@ export class HttpRouteAttributeReader extends RouteAttributeReader implements Ht
             useMap,
             currentFilePath,
             currentClass,
-            this.extractClassListArgFromDecorator(decorator, 5, useMap, currentFilePath, currentClass),
-            this.extractClassListArgFromDecorator(decorator, 6, useMap, currentFilePath, currentClass),
-            this.extractClassListArgFromDecorator(decorator, 7, useMap, currentFilePath, currentClass),
-            this.extractClassListArgFromDecorator(decorator, 8, useMap, currentFilePath, currentClass),
-            this.extractClassListArgFromDecorator(decorator, 9, useMap, currentFilePath, currentClass),
+            this.getObjectClassListProp(obj, 'middleware', useMap, currentFilePath, currentClass),
         );
 
         return new HttpRouteData(
             updatedPath,
             updatedName,
-            this.updateHandler(method, useMap, currentFilePath, currentClass),
+            this.resolveHandler(obj, method, useMap, currentFilePath, currentClass),
             requestMethods,
             routeMatchedMiddleware,
             routeDispatchedMiddleware,
             throwableCaughtMiddleware,
             sendingResponseMiddleware,
             responseSentMiddleware,
-            this.middlewareReader.updateRequestStruct(method, useMap, currentFilePath, currentClass),
-            this.middlewareReader.updateResponseStruct(method, useMap, currentFilePath, currentClass),
+            this.resolveRequestStruct(obj, method, useMap, currentFilePath, currentClass),
+            this.resolveResponseStruct(obj, method, useMap, currentFilePath, currentClass),
             resolvedIsDynamic,
-            resolvedIsDynamic
-                ? this.updateParameters(decoratorArgs, method, useMap, currentFilePath, currentClass)
-                : [],
+            resolvedIsDynamic ? this.parameterReader.updateParameters(obj, useMap, currentFilePath, currentClass) : [],
         );
+    }
+
+    protected resolveHandler(
+        obj: ts.ObjectLiteralExpression,
+        method: MethodDeclaration,
+        useMap: Record<string, string>,
+        currentFilePath: string,
+        currentClass: string,
+    ): HandlerData {
+        const fromObj = this.getObjectHandlerProp(obj, 'handler', useMap, currentFilePath, currentClass);
+
+        if (fromObj !== undefined) {
+            return fromObj;
+        }
+
+        return this.updateHandler(method, useMap, currentFilePath, currentClass);
+    }
+
+    protected resolveRequestStruct(
+        obj: ts.ObjectLiteralExpression,
+        method: MethodDeclaration,
+        useMap: Record<string, string>,
+        currentFilePath: string,
+        currentClass: string,
+    ): string | null {
+        const value = this.extractExprValue(
+            this.getObjectProp(obj, 'requestStruct'),
+            useMap,
+            currentFilePath,
+            currentClass,
+        );
+
+        if (typeof value === 'string' && value !== '') {
+            return value;
+        }
+
+        return this.middlewareReader.updateRequestStruct(method, useMap, currentFilePath, currentClass);
+    }
+
+    protected resolveResponseStruct(
+        obj: ts.ObjectLiteralExpression,
+        method: MethodDeclaration,
+        useMap: Record<string, string>,
+        currentFilePath: string,
+        currentClass: string,
+    ): string | null {
+        const value = this.extractExprValue(
+            this.getObjectProp(obj, 'responseStruct'),
+            useMap,
+            currentFilePath,
+            currentClass,
+        );
+
+        if (typeof value === 'string' && value !== '') {
+            return value;
+        }
+
+        return this.middlewareReader.updateResponseStruct(method, useMap, currentFilePath, currentClass);
     }
 
     protected updatePath(
@@ -276,23 +361,27 @@ export class HttpRouteAttributeReader extends RouteAttributeReader implements Ht
         return name;
     }
 
+    /**
+     * Emit `new DynamicRoute(path, name, regex, parameters, handler,
+     * requestMethods, ...5 middleware, requestStruct, responseStruct)` or
+     * `new Route(path, name, handler, requestMethods, ...5 middleware,
+     * requestStruct, responseStruct)`, matching the framework constructor order.
+     *
+     * For dynamic routes the regex slot is emitted as an empty-string
+     * placeholder; the generator computes and injects the real regex (it owns
+     * the routing `Processor`), and the parameters array is always emitted (`[]`
+     * when empty).
+     */
     protected buildRouteExpr(data: HttpRouteData): ts.Expression {
         const args: ts.Expression[] = [this.buildEnumCaseExpr(data.path), this.buildEnumCaseExpr(data.name)];
 
-        if (data.isDynamic && data.parameters.length > 0) {
+        if (data.isDynamic) {
+            args.push(this.buildStringExpr(''));
             args.push(this.parameterReader.buildParameterListExpr([...data.parameters]));
         }
 
-        if (data.handler !== null) {
-            args.push(this.buildHandlerExpr(data.handler));
-        } else {
-            args.push(this.buildNullExpr());
-        }
-
-        if (data.requestMethods.length > 0) {
-            args.push(this.buildEnumCaseArrayExpr(data.requestMethods));
-        }
-
+        args.push(data.handler !== null ? this.buildHandlerExpr(data.handler) : this.buildNullExpr());
+        args.push(this.buildEnumCaseArrayExpr(data.requestMethods));
         args.push(...this.middlewareReader.buildRouteMiddlewareArgs(data));
         args.push(...this.middlewareReader.buildRouteStructArgs(data));
 
@@ -303,13 +392,54 @@ export class HttpRouteAttributeReader extends RouteAttributeReader implements Ht
         return this.buildNewExpr(targetClass, args);
     }
 
-    protected updateParameters(
-        decoratorArgs: ts.Expression[],
-        method: MethodDeclaration,
+    /**
+     * Build the class-name → absolute-file-path map for every handler and
+     * middleware class the generated data cache references, so the generator can
+     * emit the matching import statements.
+     */
+    protected buildImportMap(
+        routeData: Record<string, HttpRouteData>,
         useMap: Record<string, string>,
         currentFilePath: string,
         currentClass: string,
-    ): import('./Data/HttpParameterData.ts').HttpParameterData[] {
-        return this.parameterReader.updateParameters(decoratorArgs, method, useMap, currentFilePath, currentClass);
+    ): Record<string, string> {
+        const importMap: Record<string, string> = {};
+
+        for (const data of Object.values(routeData)) {
+            if (data.handler !== null) {
+                this.addClassImport(importMap, data.handler.class, useMap, currentFilePath, currentClass);
+            }
+
+            for (const middleware of [
+                ...data.routeMatchedMiddleware,
+                ...data.routeDispatchedMiddleware,
+                ...data.throwableCaughtMiddleware,
+                ...data.sendingResponseMiddleware,
+                ...data.responseSentMiddleware,
+            ]) {
+                this.addClassImport(importMap, middleware, useMap, currentFilePath, currentClass);
+            }
+        }
+
+        return importMap;
+    }
+
+    protected addClassImport(
+        importMap: Record<string, string>,
+        className: string,
+        useMap: Record<string, string>,
+        currentFilePath: string,
+        currentClass: string,
+    ): void {
+        const shortName = className.slice(className.lastIndexOf('\\') + 1);
+
+        const filePath =
+            shortName === currentClass
+                ? currentFilePath
+                : this.resolveImportToFilePath(shortName, useMap, currentFilePath);
+
+        if (filePath !== '') {
+            importMap[shortName] = filePath;
+        }
     }
 }

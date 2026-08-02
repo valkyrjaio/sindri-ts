@@ -84,7 +84,23 @@ export class AstCliDataFileGenerator extends AstFileGenerator implements CliData
         namespace: string,
         routeExprs: readonly ts.Expression[],
     ): GenerateStatus {
-        const routes: Record<string, ts.Expression> = {};
+        return this.generateMergedFile(directory, className, namespace, {}, routeExprs);
+    }
+
+    /**
+     * Generate the CLI routing data file by MERGING attribute-scanned command
+     * routes with imperative `getRoutes()` route objects — both are keyed by
+     * command name into a single routes map. Attribute entries come first;
+     * imperative entries override on a name collision.
+     */
+    public generateMergedFile(
+        directory: string,
+        className: string,
+        namespace: string,
+        routes: Record<string, ts.Expression>,
+        routeExprs: readonly ts.Expression[],
+    ): GenerateStatus {
+        const merged: Record<string, ts.Expression> = { ...routes };
 
         for (const expr of routeExprs) {
             if (!ts.isNewExpression(expr)) {
@@ -97,10 +113,10 @@ export class AstCliDataFileGenerator extends AstFileGenerator implements CliData
                 continue;
             }
 
-            routes[key] = expr;
+            merged[key] = expr;
         }
 
-        return this.generateFile(directory, className, namespace, routes);
+        return this.generateFile(directory, className, namespace, merged);
     }
 
     /**

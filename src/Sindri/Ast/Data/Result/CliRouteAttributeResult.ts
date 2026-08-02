@@ -10,5 +10,9 @@
 import type { ts } from 'ts-morph';
 
 export class CliRouteAttributeResult {
-    constructor(readonly routes: Record<string, ts.Expression> = {}) {}
+    constructor(
+        readonly routes: Record<string, ts.Expression> = {},
+        /** Class short name → absolute file path for handler/help-text imports. */
+        readonly importMap: Record<string, string> = {},
+    ) {}
 }

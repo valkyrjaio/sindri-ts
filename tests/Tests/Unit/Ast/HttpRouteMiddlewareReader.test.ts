@@ -25,9 +25,10 @@ function method(body: string, name = 'm'): MethodDeclaration {
     return sourceFile(`class C { ${body} }`).getClassOrThrow('C').getMethodOrThrow(name);
 }
 
-function expr(code: string): ts.Expression {
+/** Compiler object-literal node for `const __x = <code>;`. */
+function objectLiteral(code: string): ts.ObjectLiteralExpression {
     return sourceFile(`const __x = ${code};`).getVariableDeclarationOrThrow('__x').getInitializerOrThrow()
-        .compilerNode as ts.Expression;
+        .compilerNode as ts.ObjectLiteralExpression;
 }
 
 const fixtureDir = fileURLToPath(new URL('../../Fixtures/Http/', import.meta.url));
@@ -37,22 +38,17 @@ const useMap: Record<string, string> = { AllMiddlewareFixture: './AllMiddlewareF
 const reader = new HttpRouteMiddlewareReader();
 
 describe('HttpRouteMiddlewareReader', () => {
-    describe('extractInlineRequestMethods', () => {
-        it('returns the methods from an inline array argument', () => {
-            const args = [expr("'a'"), expr("'b'"), expr("'c'"), expr("['GET', 'POST']")];
-
-            expect(reader.extractInlineRequestMethods(args, useMap, anchor, 'C')).toEqual(['GET', 'POST']);
+    describe('extractObjectRequestMethods', () => {
+        it('returns the request methods from the requestMethods object property', () => {
+            expect(
+                reader.extractObjectRequestMethods(objectLiteral("{ requestMethods: ['GET', 'POST'] }"), useMap, anchor, 'C'),
+            ).toEqual(['GET', 'POST']);
         });
 
-        it('returns empty when the fourth argument is missing or not an array', () => {
-            expect(reader.extractInlineRequestMethods([], useMap, anchor, 'C')).toEqual([]);
+        it('returns empty when the requestMethods property is missing or not an array', () => {
+            expect(reader.extractObjectRequestMethods(objectLiteral('{}'), useMap, anchor, 'C')).toEqual([]);
             expect(
-                reader.extractInlineRequestMethods(
-                    [expr("'a'"), expr("'b'"), expr("'c'"), expr("'x'")],
-                    useMap,
-                    anchor,
-                    'C',
-                ),
+                reader.extractObjectRequestMethods(objectLiteral("{ requestMethods: 'x' }"), useMap, anchor, 'C'),
             ).toEqual([]);
         });
     });
@@ -80,17 +76,28 @@ describe('HttpRouteMiddlewareReader', () => {
     });
 
     describe('updateMiddleware', () => {
-        it('classifies a middleware that implements every contract and skips empty names', () => {
-            const m = method('@Middleware(AllMiddlewareFixture) @Middleware() m() {}');
+        it('classifies the object middleware list and method @Middleware decorators, appending each', () => {
+            const m = method('@Middleware(() => AllMiddlewareFixture) @Middleware() m() {}');
 
-            const result = reader.updateMiddleware(m, useMap, anchor, 'C', [], [], [], [], []);
+            // The list contributes one entry, the method decorator another (append, never dedupe).
+            const result = reader.updateMiddleware(m, useMap, anchor, 'C', ['AllMiddlewareFixture']);
 
             expect(result).toEqual([
-                ['AllMiddlewareFixture'],
-                ['AllMiddlewareFixture'],
-                ['AllMiddlewareFixture'],
-                ['AllMiddlewareFixture'],
-                ['AllMiddlewareFixture'],
+                ['AllMiddlewareFixture', 'AllMiddlewareFixture'],
+                ['AllMiddlewareFixture', 'AllMiddlewareFixture'],
+                ['AllMiddlewareFixture', 'AllMiddlewareFixture'],
+                ['AllMiddlewareFixture', 'AllMiddlewareFixture'],
+                ['AllMiddlewareFixture', 'AllMiddlewareFixture'],
+            ]);
+        });
+
+        it('skips an unresolvable middleware class from the list', () => {
+            expect(reader.updateMiddleware(method('m() {}'), useMap, anchor, 'C', ['Unknown'])).toEqual([
+                [],
+                [],
+                [],
+                [],
+                [],
             ]);
         });
     });

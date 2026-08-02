@@ -75,19 +75,7 @@ export class AstHttpDataFileGenerator extends AstFileGenerator implements HttpDa
         routes: Record<string, ts.Expression>,
         routeData: Record<string, HttpRouteData>,
     ): GenerateStatus {
-        const userImportsBlock = this.buildUserImportsBlock(this.classImportMap, [
-            ...Object.keys(AstHttpDataFileGenerator.FRAMEWORK_IMPORTS),
-            ...Object.keys(AstHttpDataFileGenerator.FRAMEWORK_TYPE_IMPORTS),
-        ]);
-
-        const routesContent = this.getRoutesAsContent(routes, routeData);
-        const paths = this.printNestedObject(this.buildPaths(routeData));
-        const dynamicPaths = this.printNestedObject(this.buildDynamicPaths(routeData));
-        const regexes = this.printNestedObject(this.buildRegexes(routeData));
-
-        const data = this.assembleFile(className, userImportsBlock, routesContent, paths, dynamicPaths, regexes);
-
-        return this.writeFile(directory, className, data);
+        return this.generateMergedFile(directory, className, namespace, routes, routeData, []);
     }
 
     /**
@@ -102,7 +90,24 @@ export class AstHttpDataFileGenerator extends AstFileGenerator implements HttpDa
     public generateFileFromRoutes(
         directory: string,
         className: string,
+        namespace: string,
+        routeExprs: readonly ts.Expression[],
+    ): GenerateStatus {
+        return this.generateMergedFile(directory, className, namespace, {}, {}, routeExprs);
+    }
+
+    /**
+     * Generate the routing data file by MERGING attribute-scanned routes with
+     * imperative `getRoutes()` route objects — the four lookup maps (routes,
+     * paths, dynamicPaths, regexes) are built from both sources and combined.
+     * Attribute entries are emitted first, then imperative ones.
+     */
+    public generateMergedFile(
+        directory: string,
+        className: string,
         _namespace: string,
+        routes: Record<string, ts.Expression>,
+        routeData: Record<string, HttpRouteData>,
         routeExprs: readonly ts.Expression[],
     ): GenerateStatus {
         const userImportsBlock = this.buildUserImportsBlock(this.classImportMap, [
@@ -114,14 +119,37 @@ export class AstHttpDataFileGenerator extends AstFileGenerator implements HttpDa
             .map((expr) => this.extractRouteMeta(expr))
             .filter((meta): meta is ImperativeRouteMeta => meta !== undefined);
 
-        const routesContent = this.getImperativeRoutesContent(metas);
-        const paths = this.printNestedObject(this.buildImperativePaths(metas, false));
-        const dynamicPaths = this.printNestedObject(this.buildImperativePaths(metas, true));
-        const regexes = this.printNestedObject(this.buildImperativeRegexes(metas));
+        const routesContent = this.wrapRoutes([
+            ...this.getRouteLines(routes, routeData),
+            ...this.getImperativeRouteLines(metas),
+        ]);
+        const paths = this.printNestedObject(
+            this.mergeNested(this.buildPaths(routeData), this.buildImperativePaths(metas, false)),
+        );
+        const dynamicPaths = this.printNestedObject(
+            this.mergeNested(this.buildDynamicPaths(routeData), this.buildImperativePaths(metas, true)),
+        );
+        const regexes = this.printNestedObject(
+            this.mergeNested(this.buildRegexes(routeData), this.buildImperativeRegexes(metas)),
+        );
 
         const data = this.assembleFile(className, userImportsBlock, routesContent, paths, dynamicPaths, regexes);
 
         return this.writeFile(directory, className, data);
+    }
+
+    /** Deep-merge two `method → key → name` maps; entries in `b` override `a`. */
+    protected mergeNested(
+        a: Record<string, Record<string, string>>,
+        b: Record<string, Record<string, string>>,
+    ): Record<string, Record<string, string>> {
+        const merged: Record<string, Record<string, string>> = {};
+
+        for (const [outerKey, innerMap] of [...Object.entries(a), ...Object.entries(b)]) {
+            merged[outerKey] = { ...(merged[outerKey] ?? {}), ...innerMap };
+        }
+
+        return merged;
     }
 
     protected assembleFile(
@@ -339,23 +367,25 @@ export class AstHttpDataFileGenerator extends AstFileGenerator implements HttpDa
         routes: Record<string, ts.Expression>,
         routeData: Record<string, HttpRouteData>,
     ): string {
-        const entries = Object.entries(routes);
+        return this.wrapRoutes(this.getRouteLines(routes, routeData));
+    }
 
-        if (entries.length === 0) {
+    /** Wrap route closure lines in the `{ ... }` object-literal body (or `{}`). */
+    protected wrapRoutes(lines: readonly string[]): string {
+        if (lines.length === 0) {
             return '{}';
         }
 
+        return ['{', ...lines, '        }'].join('\n        ');
+    }
+
+    /** Build the per-route closure lines for attribute-scanned routes. */
+    protected getRouteLines(routes: Record<string, ts.Expression>, routeData: Record<string, HttpRouteData>): string[] {
         const lines: string[] = [];
 
-        for (const [key, routeExpr] of entries) {
+        for (const [key, routeExpr] of Object.entries(routes)) {
             const data = routeData[key] ?? null;
-            let expr = routeExpr;
-
-            if (data !== null && data.isDynamic && ts.isNewExpression(expr)) {
-                const computedRegex = data.parameters.length > 0 ? this.computeRegex(data) : '';
-                const args = [...(expr.arguments ?? []), ts.factory.createStringLiteral(computedRegex)];
-                expr = ts.factory.createNewExpression(expr.expression, expr.typeArguments, args);
-            }
+            const expr = data !== null ? this.injectRegex(routeExpr, data) : routeExpr;
 
             const printedRoute = this.printer.printNode(ts.EmitHint.Unspecified, expr, this.dummySourceFile);
             const formattedKey = key.includes('::')
@@ -365,7 +395,25 @@ export class AstHttpDataFileGenerator extends AstFileGenerator implements HttpDa
             lines.push(`            ${formattedKey}: (): RouteContract => ${printedRoute},`);
         }
 
-        return ['{', ...lines, '        }'].join('\n        ');
+        return lines;
+    }
+
+    /**
+     * Replace the regex argument (slot 2) of a dynamic `new DynamicRoute(...)`
+     * expression with the regex computed from the route's parameters. The reader
+     * emits an empty-string placeholder there; the generator owns the routing
+     * `Processor` and computes the real value here.
+     */
+    protected injectRegex(expr: ts.Expression, data: HttpRouteData): ts.Expression {
+        if (!(data.isDynamic && ts.isNewExpression(expr))) {
+            return expr;
+        }
+
+        const computedRegex = data.parameters.length > 0 ? this.computeRegex(data) : '';
+        const original = expr.arguments ?? ts.factory.createNodeArray<ts.Expression>();
+        const args = original.map((arg, index) => (index === 2 ? ts.factory.createStringLiteral(computedRegex) : arg));
+
+        return ts.factory.createNewExpression(expr.expression, expr.typeArguments, args);
     }
 
     // -------------------------------------------------------------------------
@@ -433,20 +481,11 @@ export class AstHttpDataFileGenerator extends AstFileGenerator implements HttpDa
         return methods;
     }
 
-    protected getImperativeRoutesContent(metas: readonly ImperativeRouteMeta[]): string {
-        if (metas.length === 0) {
-            return '{}';
-        }
-
-        const lines: string[] = [];
-
-        for (const meta of metas) {
-            // Imperative route expressions come parsed from a provider's `getRoutes()`
-            // body, so they are emitted verbatim via their original source text.
-            lines.push(`            ['${meta.name}']: (): RouteContract => ${meta.expr.getText()},`);
-        }
-
-        return ['{', ...lines, '        }'].join('\n        ');
+    /** Build the per-route closure lines for imperative `getRoutes()` routes. */
+    protected getImperativeRouteLines(metas: readonly ImperativeRouteMeta[]): string[] {
+        // Imperative route expressions come parsed from a provider's `getRoutes()`
+        // body, so they are emitted verbatim via their original source text.
+        return metas.map((meta) => `            ['${meta.name}']: (): RouteContract => ${meta.expr.getText()},`);
     }
 
     protected buildImperativePaths(
