@@ -30,6 +30,7 @@ import { AstCachedConfigFileGenerator } from '../../../../../../src/Sindri/Gener
 import { AstContainerDataFileGenerator } from '../../../../../../src/Sindri/Generator/Ast/Container/AstContainerDataFileGenerator.ts';
 import { AstEventDataFileGenerator } from '../../../../../../src/Sindri/Generator/Ast/Event/AstEventDataFileGenerator.ts';
 import { AstGrpcDataFileGenerator } from '../../../../../../src/Sindri/Generator/Ast/Grpc/AstGrpcDataFileGenerator.ts';
+import { GrpcRouteAttributeReader } from '../../../../../../src/Sindri/Ast/GrpcRouteAttributeReader.ts';
 import { AstHttpDataFileGenerator } from '../../../../../../src/Sindri/Generator/Ast/Http/AstHttpDataFileGenerator.ts';
 import { parseRouteExprs } from '../generatorTestUtil.ts';
 
@@ -74,7 +75,7 @@ class ExposedCliRouteAttributeReader extends CliRouteAttributeReader {
     }
 }
 
-/** Absolute path of an HTTP/CLI controller fixture. */
+/** Absolute path of a controller fixture. */
 function fixture(name: string): string {
     return fileURLToPath(new URL(`../../../../Fixtures/${name}.ts`, import.meta.url));
 }
@@ -201,6 +202,29 @@ describe('GoldenSnapshotTest', () => {
         });
 
         assertGolden(actual, 'AppGrpcRoutingData');
+    });
+
+    it('matches the AppGrpcRoutingDataFull golden built from a decorated controller and a provider', () => {
+        // Pin the merged shape end to end: a decorator route read from a real controller fixture,
+        // plus an imperative `getRoutes()` route. The decorator route also pins the emitted
+        // constructor argument order — Route(method, handler, service, methodName, requestType,
+        // responseType, clientStreaming, serverStreaming, 5 middleware buckets).
+        const routes = new GrpcRouteAttributeReader().readFile(fixture('Grpc/TestGrpcControllerFixture')).routes;
+
+        const routeExprs = parseRouteExprs(`new Route('/app.Ping/Ping', GrpcRouteProvider.pingHandler)`);
+
+        const actual = generate('AppGrpcRoutingDataFull', (directory) => {
+            const generator = new AstGrpcDataFileGenerator();
+            generator.classImportMap = {
+                TestGrpcControllerFixture: '../Controller/TestGrpcControllerFixture.ts',
+                PingProvider: '../Provider/PingProvider.ts',
+                AllGrpcMiddlewareFixture: '../Middleware/AllGrpcMiddlewareFixture.ts',
+                GrpcRouteProvider: '../Provider/GrpcRouteProvider.ts',
+            };
+            generator.generateMergedFile(directory, 'AppGrpcRoutingDataFull', 'App.Data', routes, routeExprs);
+        });
+
+        assertGolden(actual, 'AppGrpcRoutingDataFull');
     });
 
     it('matches the AppCliRoutingData golden', () => {
