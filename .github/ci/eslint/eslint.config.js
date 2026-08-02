@@ -1,10 +1,9 @@
 /*
  * This file is part of the Sindri package.
  *
- * (c) Melech Mizrachi <melechmizrachi@gmail.com>
+ * Copyright (c) 2016-present Melech Mizrachi
  *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
+ * Released under the MIT License. See LICENSE.md for details.
  */
 
 import path from 'path';
@@ -14,13 +13,17 @@ import tseslint from 'typescript-eslint';
 const HEADER = `/*
  * This file is part of the Sindri package.
  *
- * (c) Melech Mizrachi <melechmizrachi@gmail.com>
+ * Copyright (c) 2016-present Melech Mizrachi
  *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
+ * Released under the MIT License. See LICENSE.md for details.
  */
 
 `;
+
+// The text between the delimiters of HEADER. The rule compares the first comment of
+// a file against it, so a file whose header body is wrong fails too, and not only a
+// file that carries no header at all.
+const HEADER_COMMENT = HEADER.slice(HEADER.indexOf('/*') + 2, HEADER.lastIndexOf('*/'));
 
 const copyrightHeader = {
     meta: {
@@ -28,6 +31,7 @@ const copyrightHeader = {
         fixable: 'code',
         messages: {
             missing: 'Missing copyright header. Add the standard block comment at the top of the file.',
+            incorrect: 'Incorrect copyright header. The block comment must match the standard header exactly.',
         },
     },
     create(context) {
@@ -36,12 +40,13 @@ const copyrightHeader = {
                 const sourceCode = context.sourceCode;
                 const comments = sourceCode.getAllComments();
                 const first = comments.filter((c) => c.type === 'Block').sort((a, b) => a.range[0] - b.range[0])[0];
+                const inHeaderPosition = first !== undefined && first.loc.start.line === 1;
 
-                if (
-                    first === undefined ||
-                    first.loc.start.line !== 1 ||
-                    !first.value.includes('This file is part of the Sindri package.')
-                ) {
+                if (inHeaderPosition && first.value === HEADER_COMMENT) {
+                    return;
+                }
+
+                if (!inHeaderPosition) {
                     context.report({
                         node,
                         messageId: 'missing',
@@ -49,7 +54,19 @@ const copyrightHeader = {
                             return fixer.insertTextBefore(node, HEADER);
                         },
                     });
+
+                    return;
                 }
+
+                // The file carries a header whose text differs. Replace that comment.
+                // An insert would put a second header above the first one.
+                context.report({
+                    loc: first.loc,
+                    messageId: 'incorrect',
+                    fix(fixer) {
+                        return fixer.replaceText(first, HEADER.trimEnd());
+                    },
+                });
             },
         };
     },
