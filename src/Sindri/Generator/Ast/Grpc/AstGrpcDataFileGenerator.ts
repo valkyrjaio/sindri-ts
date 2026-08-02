@@ -78,7 +78,23 @@ export class AstGrpcDataFileGenerator extends AstFileGenerator implements GrpcDa
         namespace: string,
         routeExprs: readonly ts.Expression[],
     ): GenerateStatus {
-        const routes: Record<string, ts.Expression> = {};
+        return this.generateMergedFile(directory, className, namespace, {}, routeExprs);
+    }
+
+    /**
+     * Generate the gRPC routing data file by merging the routes the decorators declare with the
+     * routes an imperative `getRoutes()` body constructs. Both are keyed by fully-qualified method
+     * into one service map. A decorator entry comes first, and an imperative entry overrides it when
+     * the two name one method.
+     */
+    public generateMergedFile(
+        directory: string,
+        className: string,
+        namespace: string,
+        routes: Record<string, ts.Expression>,
+        routeExprs: readonly ts.Expression[],
+    ): GenerateStatus {
+        const merged: Record<string, ts.Expression> = { ...routes };
 
         for (const expr of routeExprs) {
             const key = this.routeKey(expr);
@@ -87,10 +103,10 @@ export class AstGrpcDataFileGenerator extends AstFileGenerator implements GrpcDa
                 continue;
             }
 
-            routes[key] = expr;
+            merged[key] = expr;
         }
 
-        return this.generateFile(directory, className, namespace, routes);
+        return this.generateFile(directory, className, namespace, merged);
     }
 
     /**

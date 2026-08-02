@@ -53,6 +53,7 @@ interface Deps {
     routeProviderReader?: { readFile: () => unknown };
     listenerAttributeReader?: { readFile: () => unknown };
     cliRouteAttributeReader?: { readFile: () => unknown };
+    grpcRouteAttributeReader?: { readFile: () => unknown };
     httpRouteAttributeReader?: { readFile: () => unknown };
     containerGenerator?: { generateFile: () => GenerateStatus };
     eventGenerator?: { generateFile: () => GenerateStatus };
@@ -81,6 +82,7 @@ class TestGenerate extends GenerateDataFromAst {
             (deps.eventGenerator ?? generator()) as never,
             (deps.cliGenerator ?? generator()) as never,
             (deps.httpGenerator ?? generator()) as never,
+            (deps.grpcRouteAttributeReader ?? reader({ routes: {}, importMap: {} })) as never,
             (deps.grpcGenerator ?? generator()) as never,
         );
     }
@@ -444,7 +446,7 @@ describe('GenerateDataFromAst', () => {
 
             // Still generates, so an app with no resolvable gRPC provider gets an empty service map
             // rather than no file at all.
-            expect(grpcGenerator.generateFileFromRoutes).toHaveBeenCalled();
+            expect(grpcGenerator.generateMergedFile).toHaveBeenCalled();
             expect(grpcGenerator.classImportMap).toStrictEqual({});
         });
 
@@ -469,7 +471,7 @@ describe('GenerateDataFromAst', () => {
 
             gen.grpc(['AppCliRouteProviderFixture'], config, gen.freshOutput());
 
-            expect(grpcGenerator.generateFileFromRoutes).toHaveBeenCalled();
+            expect(grpcGenerator.generateMergedFile).toHaveBeenCalled();
             expect(grpcGenerator.classImportMap).toStrictEqual({
                 AppCliRouteProviderFixture: './Provider/AppCliRouteProviderFixture.ts',
             });
@@ -491,6 +493,42 @@ describe('GenerateDataFromAst', () => {
             gen.grpc(['AppCliRouteProviderFixture'], config, gen.freshOutput());
 
             expect(grpcGenerator.classImportMap['GrpcA']).toBeDefined();
+        });
+
+        it('scans the controller classes a provider declares and merges their decorator routes', () => {
+            const grpcGenerator = generator();
+            const controllerPath = path.join(appDir, 'Controller', 'AppGrpcControllerFixture.ts');
+            const gen = new TestGenerate({
+                routeProviderReader: reader({
+                    controllerClasses: ['AppGrpcControllerFixture'],
+                    routes: [],
+                    routeImports: {},
+                }),
+                grpcRouteAttributeReader: reader({
+                    routes: { '/app.Ping/Ping': {} },
+                    importMap: { AppGrpcControllerFixture: controllerPath },
+                }),
+                grpcGenerator,
+            });
+
+            gen.grpc(['AppCliRouteProviderFixture'], config, gen.freshOutput());
+
+            expect(grpcGenerator.generateMergedFile).toHaveBeenCalled();
+            expect(grpcGenerator.classImportMap.AppGrpcControllerFixture).toBe(
+                './Controller/AppGrpcControllerFixture.ts',
+            );
+        });
+
+        it('skips a controller class whose file cannot be resolved', () => {
+            const grpcGenerator = generator();
+            const gen = new TestGenerate({
+                routeProviderReader: reader({ controllerClasses: ['DoesNotExist'], routes: [], routeImports: {} }),
+                grpcGenerator,
+            });
+
+            gen.grpc(['AppCliRouteProviderFixture'], config, gen.freshOutput());
+
+            expect(grpcGenerator.classImportMap).toStrictEqual({});
         });
     });
 
