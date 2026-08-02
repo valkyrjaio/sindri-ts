@@ -1,6 +1,15 @@
 # Release Notes for 26.x
 
-## [Unreleased](https://github.com/valkyrjaio/sindri-ts/compare/v26.5.1...26.x)
+## [Unreleased](https://github.com/valkyrjaio/sindri-ts/compare/v26.6.0...26.x)
+
+## [v26.6.0](https://github.com/valkyrjaio/sindri-ts/compare/v26.5.1...v26.6.0) - 2026-08-01
+
+* [Workflow] ci: Expose the allow diverged input on the rebase to master workflow by [@MelechMizrachi](https://github.com/MelechMizrachi) in https://github.com/valkyrjaio/sindri-ts/pull/103
+* [Git] chore: Ignore the .worktrees directory by [@MelechMizrachi](https://github.com/MelechMizrachi) in https://github.com/valkyrjaio/sindri-ts/pull/106
+* [Workflow] ci: Update .github workflow refs to v26.19.0 by [@valkyrja-volundr](https://github.com/valkyrja-volundr)[bot] in https://github.com/valkyrjaio/sindri-ts/pull/107
+* [CopyrightHeader] fix: Name the Sindri package in the test file headers by [@MelechMizrachi](https://github.com/MelechMizrachi) in https://github.com/valkyrjaio/sindri-ts/pull/108
+* [Ast] feat: Scan routing decorators into the generated route data by [@MelechMizrachi](https://github.com/MelechMizrachi) in https://github.com/valkyrjaio/sindri-ts/pull/65
+* [Dependency] build: Update npm dependencies by [@valkyrja-volundr](https://github.com/valkyrja-volundr)[bot] in https://github.com/valkyrjaio/sindri-ts/pull/109
 
 ## [v26.5.1](https://github.com/valkyrjaio/sindri-ts/compare/v26.5.0...v26.5.1) - 2026-08-01
 
