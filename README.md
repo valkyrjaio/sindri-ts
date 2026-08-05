@@ -102,7 +102,7 @@ Sindri is open-source software licensed under the
 [framework url]: https://github.com/valkyrjaio/valkyrja-ts
 [github sindri]: https://github.com/valkyrjaio/sindri-ts
 [docs url]: https://valkyrja.io
-[Versioning and Release Process url]: https://github.com/valkyrjaio/.github/blob/master/VERSIONING_AND_RELEASE_PROCESS.md
+[Versioning and Release Process url]: https://github.com/valkyrjaio/architecture/blob/26.x/VERSIONING.md
 [contributing url]: https://github.com/valkyrjaio/.github/blob/26.x/CONTRIBUTING.md
 [vocabulary url]: https://github.com/valkyrjaio/.github/blob/26.x/VOCABULARY.md
 [security vulnerabilities url]: https://github.com/valkyrjaio/.github/blob/26.x/SECURITY.md
