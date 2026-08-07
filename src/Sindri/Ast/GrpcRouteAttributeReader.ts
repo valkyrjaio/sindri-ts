@@ -17,13 +17,6 @@ import type { ClassDeclaration, Decorator, MethodDeclaration } from 'ts-morph';
 
 import type { GrpcRouteAttributeReaderContract } from './Contract/GrpcRouteAttributeReaderContract.ts';
 
-/**
- * Scans a gRPC service controller class file for `@Service` and `@Method` decorators, and returns
- * TypeScript compiler API expression nodes ready for the data cache generator.
- *
- * The reader mirrors the framework runtime attribute collector. The reader operates on the AST only,
- * and it executes no TypeScript code.
- */
 export class GrpcRouteAttributeReader extends AstReader implements GrpcRouteAttributeReaderContract {
     readFile(filePath: string): GrpcRouteAttributeResult {
         const context = this.parseClassFile(filePath);
