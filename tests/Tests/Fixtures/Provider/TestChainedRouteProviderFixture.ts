@@ -7,10 +7,7 @@
  * file that was distributed with this source code.
  */
 
-/**
- * A route provider whose routes are declared as builder chains rather than bare constructions —
- * the shape a gRPC streaming method takes.
- */
+/** A route provider whose routes are declared as builder chains rather than bare constructions — the shape a gRPC streaming method takes. */
 export class TestChainedRouteProviderFixture {
     getRoutes() {
         return [
