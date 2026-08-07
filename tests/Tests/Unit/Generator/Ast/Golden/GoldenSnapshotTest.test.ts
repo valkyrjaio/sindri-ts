@@ -29,11 +29,12 @@ import { ConfigSourceResult } from '../../../../../../src/Sindri/Ast/Data/Result
 import { AstCachedConfigFileGenerator } from '../../../../../../src/Sindri/Generator/Ast/Config/AstCachedConfigFileGenerator.ts';
 import { AstContainerDataFileGenerator } from '../../../../../../src/Sindri/Generator/Ast/Container/AstContainerDataFileGenerator.ts';
 import { AstEventDataFileGenerator } from '../../../../../../src/Sindri/Generator/Ast/Event/AstEventDataFileGenerator.ts';
+import { AstGrpcDataFileGenerator } from '../../../../../../src/Sindri/Generator/Ast/Grpc/AstGrpcDataFileGenerator.ts';
 import { AstHttpDataFileGenerator } from '../../../../../../src/Sindri/Generator/Ast/Http/AstHttpDataFileGenerator.ts';
 import { parseRouteExprs } from '../generatorTestUtil.ts';
 
 /**
- * Full-output golden/snapshot tests for the four Ast data-file generators.
+ * Full-output golden/snapshot tests for the five Ast data-file generators.
  *
  * Unlike the per-generator unit tests (which assert individual substrings such as
  * a single route key or `super(`), these pin the ENTIRE emitted source against a
@@ -61,14 +62,12 @@ function placeholder(text: string): ts.Expression {
     return ts.factory.createStringLiteral(text);
 }
 
-/** Exposes the HTTP reader's route-expression builder to produce real `new DynamicRoute(...)` values. */
 class ExposedHttpRouteAttributeReader extends HttpRouteAttributeReader {
     public build(data: HttpRouteData): ts.Expression {
         return this.buildRouteExpr(data);
     }
 }
 
-/** Exposes the CLI reader's route-expression builder to produce real `new Route(...)` values. */
 class ExposedCliRouteAttributeReader extends CliRouteAttributeReader {
     public build(data: CliRouteData): ts.Expression {
         return this.buildRouteExpr(data);
@@ -181,6 +180,27 @@ describe('GoldenSnapshotTest', () => {
         });
 
         assertGolden(actual, 'AppHttpRoutingDataAutoPromoted');
+    });
+
+    it('matches the AppGrpcRoutingData golden', () => {
+        // The shape sindri emits for an app whose gRPC route provider declares its methods
+        // imperatively: each route keyed by its fully-qualified method, emitted verbatim — including
+        // the `with*` builder chain a streaming method carries, which the key must see through.
+        const routeExprs = parseRouteExprs(
+            [
+                `new Route('/app.Ping/Ping', GrpcRouteProvider.pingHandler)`,
+                `new Route('/app.Ping/Fanout', GrpcRouteProvider.fanoutHandler).withServerStreaming(true)`,
+                `new Route('/app.Ping/Echo', GrpcRouteProvider.echoHandler).withClientStreaming(true).withServerStreaming(true)`,
+            ].join(', '),
+        );
+
+        const actual = generate('AppGrpcRoutingData', (directory) => {
+            const generator = new AstGrpcDataFileGenerator();
+            generator.classImportMap = { GrpcRouteProvider: '../Provider/GrpcRouteProvider.ts' };
+            generator.generateFileFromRoutes(directory, 'AppGrpcRoutingData', 'App.Data', routeExprs);
+        });
+
+        assertGolden(actual, 'AppGrpcRoutingData');
     });
 
     it('matches the AppCliRoutingData golden', () => {
