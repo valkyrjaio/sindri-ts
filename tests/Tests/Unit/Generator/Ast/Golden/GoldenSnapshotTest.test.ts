@@ -62,14 +62,12 @@ function placeholder(text: string): ts.Expression {
     return ts.factory.createStringLiteral(text);
 }
 
-/** Exposes the HTTP reader's route-expression builder to produce real `new DynamicRoute(...)` values. */
 class ExposedHttpRouteAttributeReader extends HttpRouteAttributeReader {
     public build(data: HttpRouteData): ts.Expression {
         return this.buildRouteExpr(data);
     }
 }
 
-/** Exposes the CLI reader's route-expression builder to produce real `new Route(...)` values. */
 class ExposedCliRouteAttributeReader extends CliRouteAttributeReader {
     public build(data: CliRouteData): ts.Expression {
         return this.buildRouteExpr(data);
