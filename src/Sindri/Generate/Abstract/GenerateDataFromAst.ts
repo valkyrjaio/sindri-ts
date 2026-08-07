@@ -18,6 +18,7 @@ import { Message } from '@valkyrjaio/valkyrja/Cli/Interaction/Message/Message.ts
 import { NewLine } from '@valkyrjaio/valkyrja/Cli/Interaction/Message/NewLine.ts';
 
 import { CliRouteAttributeReader } from '../../Ast/CliRouteAttributeReader.ts';
+import { GrpcRouteAttributeReader } from '../../Ast/GrpcRouteAttributeReader.ts';
 import { ComponentProviderReader } from '../../Ast/ComponentProviderReader.ts';
 import { ConfigReader } from '../../Ast/ConfigReader.ts';
 import { HttpRouteAttributeReader } from '../../Ast/HttpRouteAttributeReader.ts';
@@ -40,6 +41,7 @@ import type { EventDataFileGeneratorContract } from '../../Generator/Event/Contr
 import type { GrpcDataFileGeneratorContract } from '../../Generator/Grpc/Contract/GrpcDataFileGeneratorContract.ts';
 import type { HttpDataFileGeneratorContract } from '../../Generator/Http/Contract/HttpDataFileGeneratorContract.ts';
 import type { CliRouteAttributeReaderContract } from '../../Ast/Contract/CliRouteAttributeReaderContract.ts';
+import type { GrpcRouteAttributeReaderContract } from '../../Ast/Contract/GrpcRouteAttributeReaderContract.ts';
 import type { ComponentProviderReaderContract } from '../../Ast/Contract/ComponentProviderReaderContract.ts';
 import type { ConfigReaderContract } from '../../Ast/Contract/ConfigReaderContract.ts';
 import type { HttpRouteAttributeReaderContract } from '../../Ast/Contract/HttpRouteAttributeReaderContract.ts';
@@ -72,6 +74,7 @@ export abstract class GenerateDataFromAst extends GenerateFromAst {
         protected readonly eventGenerator: EventDataFileGeneratorContract = new AstEventDataFileGenerator(),
         protected readonly cliGenerator: CliDataFileGeneratorContract = new AstCliDataFileGenerator(),
         protected readonly httpGenerator: HttpDataFileGeneratorContract = new AstHttpDataFileGenerator(),
+        protected readonly grpcRouteAttributeReader: GrpcRouteAttributeReaderContract = new GrpcRouteAttributeReader(),
         protected readonly grpcGenerator: GrpcDataFileGeneratorContract = new AstGrpcDataFileGenerator(),
     ) {
         super();
@@ -366,10 +369,10 @@ export abstract class GenerateDataFromAst extends GenerateFromAst {
     }
 
     /**
-     * Generate the gRPC service map from each provider's `getRoutes()`.
+     * Generate the gRPC service map from each provider's controller classes and `getRoutes()`.
      *
-     * gRPC has no attribute path here: the decorator collector is a separate concern, so routes come
-     * only from imperative `getRoutes()` bodies, whose expressions are emitted verbatim and keyed by
+     * A route comes from a `@Service` and `@Method` decorator pair on a controller class, or from an
+     * imperative `getRoutes()` body whose expressions are emitted verbatim. Both are keyed by
      * fully-qualified method.
      */
     protected generateGrpcData(
@@ -381,6 +384,7 @@ export abstract class GenerateDataFromAst extends GenerateFromAst {
             .withAddedMessages(new Message('Generating Grpc Routes Data....................'))
             .writeMessages();
 
+        const allRoutes: Record<string, ts.Expression> = {};
         const imperativeRoutes: ts.Expression[] = [];
         const importMap: Record<string, string> = {};
 
@@ -393,27 +397,40 @@ export abstract class GenerateDataFromAst extends GenerateFromAst {
 
             const providerResult = this.routeProviderReader.readFile(filePath);
 
-            if (providerResult.routes.length === 0) {
-                continue;
+            if (providerResult.routes.length > 0) {
+                // Imperative routes reference the provider's static handlers, so the generated data
+                // cache must import the provider class — along with every class the route arguments
+                // themselves name, since those are emitted verbatim.
+                imperativeRoutes.push(...providerResult.routes);
+                importMap[path.basename(filePath, '.ts')] = this.importSpecifier(config.dataPath, filePath);
+
+                for (const [name, importPath] of Object.entries(providerResult.routeImports)) {
+                    importMap[name] = this.importSpecifier(config.dataPath, importPath);
+                }
             }
 
-            // Imperative routes reference the provider's static handlers, so the generated data
-            // cache must import the provider class — along with every class the route arguments
-            // themselves name, since those are emitted verbatim.
-            imperativeRoutes.push(...providerResult.routes);
-            importMap[path.basename(filePath, '.ts')] = this.importSpecifier(config.dataPath, filePath);
+            for (const controllerClass of providerResult.controllerClasses) {
+                const controllerPath = this.fqnToFilePath(controllerClass, config.namespace, config.dir);
 
-            for (const [name, importPath] of Object.entries(providerResult.routeImports)) {
-                importMap[name] = this.importSpecifier(config.dataPath, importPath);
+                if (controllerPath === '' || !fs.existsSync(controllerPath)) {
+                    continue;
+                }
+
+                const attrResult = this.grpcRouteAttributeReader.readFile(controllerPath);
+
+                Object.assign(allRoutes, attrResult.routes);
+                this.mergeReaderImports(importMap, attrResult.importMap, config);
             }
         }
 
         this.grpcGenerator.classImportMap = importMap;
 
-        const status = this.grpcGenerator.generateFileFromRoutes(
+        // Merge attribute-scanned service methods with imperative getRoutes() routes.
+        const status = this.grpcGenerator.generateMergedFile(
             config.dataPath,
             'AppGrpcRoutingData',
             config.dataNamespace,
+            allRoutes,
             imperativeRoutes,
         );
 
