@@ -70,6 +70,6 @@
         "root-and-suggested-npm-update": "cd .github/ci/root-and-suggested && npm update"
     },
     "devDependencies": {
-        "esbuild": "^0.28.1"
+        "esbuild": "^0.28.2"
     }
 }
