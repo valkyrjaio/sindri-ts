@@ -1,6 +1,6 @@
 {
     "name": "@valkyrjaio/sindri",
-    "version": "26.6.13",
+    "version": "26.6.14",
     "description": "The Valkyrja Sindri build tool.",
     "homepage": "https://www.valkyrja.io/sindri",
     "keywords": [
