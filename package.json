@@ -38,7 +38,7 @@
         "node": ">=22"
     },
     "dependencies": {
-        "@valkyrjaio/valkyrja": "^26.7.8",
+        "@valkyrjaio/valkyrja": "^26.7.9",
         "ts-morph": "^28.0.0"
     },
     "scripts": {
