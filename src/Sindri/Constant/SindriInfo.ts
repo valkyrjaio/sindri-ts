@@ -7,8 +7,8 @@
  */
 
 export class SindriInfo {
-    static readonly VERSION = '26.6.17' as const;
-    static readonly VERSION_BUILD_DATE_TIME = 'August 20 2026 06:46:53 MST' as const;
+    static readonly VERSION = '26.6.18' as const;
+    static readonly VERSION_BUILD_DATE_TIME = 'August 21 2026 06:44:54 MST' as const;
     static readonly ICON = `\
     ██████████
     ████  ████
