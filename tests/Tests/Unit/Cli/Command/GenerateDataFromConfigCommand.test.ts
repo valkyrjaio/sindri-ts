@@ -50,8 +50,8 @@ describe('GenerateDataFromConfigCommand', () => {
     it('runs the full pipeline and writes the generated data files', () => {
         const output = command(configPath).run();
 
-        // Container, event, cli and http data files are all generated.
-        expect(writeFileSync).toHaveBeenCalledTimes(4);
+        // Container, event, cli, http and grpc data files are all generated.
+        expect(writeFileSync).toHaveBeenCalledTimes(5);
         expect(output.getMessages().length).toBeGreaterThan(0);
     });
 

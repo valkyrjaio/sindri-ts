@@ -58,6 +58,7 @@ interface Deps {
     eventGenerator?: { generateFile: () => GenerateStatus };
     cliGenerator?: { generateFile: () => GenerateStatus };
     httpGenerator?: { generateFile: () => GenerateStatus };
+    grpcGenerator?: { generateFile: () => GenerateStatus };
 }
 
 class TestGenerate extends GenerateDataFromAst {
@@ -80,6 +81,7 @@ class TestGenerate extends GenerateDataFromAst {
             (deps.eventGenerator ?? generator()) as never,
             (deps.cliGenerator ?? generator()) as never,
             (deps.httpGenerator ?? generator()) as never,
+            (deps.grpcGenerator ?? generator()) as never,
         );
     }
 
@@ -113,6 +115,10 @@ class TestGenerate extends GenerateDataFromAst {
 
     public http(providers: readonly string[], config: ConfigResult, output: OutputContract): OutputContract {
         return this.generateHttpData(providers, config, output);
+    }
+
+    public grpc(providers: readonly string[], config: ConfigResult, output: OutputContract): OutputContract {
+        return this.generateGrpcData(providers, config, output);
     }
 
     public specifier(fromDir: string, toFile: string): string {
@@ -426,6 +432,65 @@ describe('GenerateDataFromAst', () => {
                 AppHttpRouteProviderFixture: './Provider/AppHttpRouteProviderFixture.ts',
                 PackageCommandName: '@fixture/routes/PackageCommandNameFixture.ts',
             });
+        });
+    });
+
+    describe('generateGrpcData', () => {
+        it('skips providers whose file cannot be resolved', () => {
+            const grpcGenerator = generator();
+            const gen = new TestGenerate({ grpcGenerator });
+
+            gen.grpc(['DoesNotExist'], config, gen.freshOutput());
+
+            // Still generates, so an app with no resolvable gRPC provider gets an empty service map
+            // rather than no file at all.
+            expect(grpcGenerator.generateFileFromRoutes).toHaveBeenCalled();
+            expect(grpcGenerator.classImportMap).toStrictEqual({});
+        });
+
+        it('skips a resolvable provider that declares no routes', () => {
+            const grpcGenerator = generator();
+            const gen = new TestGenerate({
+                routeProviderReader: reader({ controllerClasses: [], routes: [], routeImports: {} }),
+                grpcGenerator,
+            });
+
+            gen.grpc(['AppCliRouteProviderFixture'], config, gen.freshOutput());
+
+            expect(grpcGenerator.classImportMap).toStrictEqual({});
+        });
+
+        it('generates from imperative routes and populates the provider import map', () => {
+            const grpcGenerator = generator();
+            const gen = new TestGenerate({
+                routeProviderReader: reader({ controllerClasses: [], routes: [{} as never], routeImports: {} }),
+                grpcGenerator,
+            });
+
+            gen.grpc(['AppCliRouteProviderFixture'], config, gen.freshOutput());
+
+            expect(grpcGenerator.generateFileFromRoutes).toHaveBeenCalled();
+            expect(grpcGenerator.classImportMap).toStrictEqual({
+                AppCliRouteProviderFixture: './Provider/AppCliRouteProviderFixture.ts',
+            });
+        });
+
+        it('imports the classes the route expressions reference, by package specifier', () => {
+            const grpcGenerator = generator();
+            const gen = new TestGenerate({
+                routeProviderReader: reader({
+                    controllerClasses: [],
+                    routes: [{} as never],
+                    routeImports: {
+                        GrpcA: path.join(appDir, '../Provider/GrpcA.ts'),
+                    },
+                }),
+                grpcGenerator,
+            });
+
+            gen.grpc(['AppCliRouteProviderFixture'], config, gen.freshOutput());
+
+            expect(grpcGenerator.classImportMap['GrpcA']).toBeDefined();
         });
     });
 

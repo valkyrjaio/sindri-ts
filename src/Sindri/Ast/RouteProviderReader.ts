@@ -90,6 +90,24 @@ export class RouteProviderReader extends AstReader implements RouteProviderReade
             return [];
         }
 
-        return array.elements.filter((element): element is ts.NewExpression => ts.isNewExpression(element));
+        return array.elements.filter((element) => RouteProviderReader.isRouteExpression(element));
+    }
+
+    /**
+     * Whether an array element declares a route.
+     *
+     * A route is frequently declared as a builder chain rather than a bare construction — gRPC spells
+     * a streaming method `new Route(...).withServerStreaming(true)` — so the chain is walked back to
+     * its base before deciding. Matching only the bare `new` form drops every chained route from the
+     * generated cache without a word, which reads at runtime as the method simply not existing.
+     */
+    protected static isRouteExpression(expression: ts.Expression): boolean {
+        let current: ts.Expression = expression;
+
+        while (ts.isCallExpression(current) && ts.isPropertyAccessExpression(current.expression)) {
+            current = current.expression.expression;
+        }
+
+        return ts.isNewExpression(current);
     }
 }
