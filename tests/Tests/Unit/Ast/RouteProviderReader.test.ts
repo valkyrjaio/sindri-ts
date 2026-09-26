@@ -31,6 +31,15 @@ describe('RouteProviderReader', () => {
         expect(result.routes).toHaveLength(2);
     });
 
+    it('extracts routes declared as builder chains, not just bare constructions', () => {
+        // A gRPC streaming method is declared `new Route(...).withServerStreaming(true)`. Matching
+        // only the bare `new` form drops every chained route from the generated cache silently,
+        // which surfaces at runtime as UNIMPLEMENTED for a method that plainly exists in source.
+        const result = new RouteProviderReader().readFile(fixture('Provider/TestChainedRouteProviderFixture'));
+
+        expect(result.routes).toHaveLength(3);
+    });
+
     it('returns an empty result when there is no class', () => {
         expect(new RouteProviderReader().readFile(fixture('Config/TestConfigNoClassFixture')).controllerClasses).toHaveLength(
             0,

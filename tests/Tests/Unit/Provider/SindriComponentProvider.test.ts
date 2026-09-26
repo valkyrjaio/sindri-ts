@@ -31,9 +31,10 @@ describe('SindriComponentProvider', () => {
         expect(provider.getCliProviders(app)[0]).toBeInstanceOf(SindriCliRouteProvider);
     });
 
-    it('returns no component, event, or http providers', () => {
+    it('returns no component, event, http, or grpc providers', () => {
         expect(provider.getComponentProviders(app)).toHaveLength(0);
         expect(provider.getEventProviders(app)).toHaveLength(0);
         expect(provider.getHttpProviders(app)).toHaveLength(0);
+        expect(provider.getGrpcProviders(app)).toHaveLength(0);
     });
 });
