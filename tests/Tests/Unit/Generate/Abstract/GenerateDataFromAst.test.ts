@@ -77,12 +77,12 @@ class TestGenerate extends GenerateDataFromAst {
             (deps.serviceProviderReader ?? reader({ publishers: {} })) as never,
             (deps.cliRouteAttributeReader ?? reader({ routes: {}, importMap: {} })) as never,
             (deps.httpRouteAttributeReader ?? reader({ routes: {}, routeData: {}, importMap: {} })) as never,
+            (deps.grpcRouteAttributeReader ?? reader({ routes: {}, importMap: {} })) as never,
             (deps.listenerAttributeReader ?? reader({ listeners: {} })) as never,
             (deps.containerGenerator ?? generator()) as never,
             (deps.eventGenerator ?? generator()) as never,
             (deps.cliGenerator ?? generator()) as never,
             (deps.httpGenerator ?? generator()) as never,
-            (deps.grpcRouteAttributeReader ?? reader({ routes: {}, importMap: {} })) as never,
             (deps.grpcGenerator ?? generator()) as never,
         );
     }
