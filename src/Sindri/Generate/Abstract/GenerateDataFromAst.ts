@@ -69,12 +69,12 @@ export abstract class GenerateDataFromAst extends GenerateFromAst {
         protected readonly serviceProviderReader: ServiceProviderReaderContract = new ServiceProviderReader(),
         protected readonly cliRouteAttributeReader: CliRouteAttributeReaderContract = new CliRouteAttributeReader(),
         protected readonly httpRouteAttributeReader: HttpRouteAttributeReaderContract = new HttpRouteAttributeReader(),
+        protected readonly grpcRouteAttributeReader: GrpcRouteAttributeReaderContract = new GrpcRouteAttributeReader(),
         protected readonly listenerAttributeReader: ListenerAttributeReaderContract = new ListenerAttributeReader(),
         protected readonly containerGenerator: ContainerDataFileGeneratorContract = new AstContainerDataFileGenerator(),
         protected readonly eventGenerator: EventDataFileGeneratorContract = new AstEventDataFileGenerator(),
         protected readonly cliGenerator: CliDataFileGeneratorContract = new AstCliDataFileGenerator(),
         protected readonly httpGenerator: HttpDataFileGeneratorContract = new AstHttpDataFileGenerator(),
-        protected readonly grpcRouteAttributeReader: GrpcRouteAttributeReaderContract = new GrpcRouteAttributeReader(),
         protected readonly grpcGenerator: GrpcDataFileGeneratorContract = new AstGrpcDataFileGenerator(),
     ) {
         super();

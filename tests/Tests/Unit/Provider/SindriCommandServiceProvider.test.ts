@@ -33,6 +33,7 @@ describe('SindriCommandServiceProvider', () => {
             SindriServiceId.ServiceProviderReaderContract,
             SindriServiceId.CliRouteAttributeReaderContract,
             SindriServiceId.HttpRouteAttributeReaderContract,
+            SindriServiceId.GrpcRouteAttributeReaderContract,
             SindriServiceId.ListenerAttributeReaderContract,
             SindriServiceId.ContainerDataFileGeneratorContract,
             SindriServiceId.EventDataFileGeneratorContract,
@@ -68,6 +69,7 @@ describe('SindriCommandServiceProvider', () => {
             SindriServiceId.ServiceProviderReaderContract,
             SindriServiceId.CliRouteAttributeReaderContract,
             SindriServiceId.HttpRouteAttributeReaderContract,
+            SindriServiceId.GrpcRouteAttributeReaderContract,
             SindriServiceId.ListenerAttributeReaderContract,
         ]) {
             container.setSingleton(id, {});

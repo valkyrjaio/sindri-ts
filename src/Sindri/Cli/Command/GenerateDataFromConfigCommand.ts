@@ -9,6 +9,7 @@
 import { CliRouteAttributeReader } from '../../Ast/CliRouteAttributeReader.ts';
 import { ComponentProviderReader } from '../../Ast/ComponentProviderReader.ts';
 import { ConfigReader } from '../../Ast/ConfigReader.ts';
+import { GrpcRouteAttributeReader } from '../../Ast/GrpcRouteAttributeReader.ts';
 import { HttpRouteAttributeReader } from '../../Ast/HttpRouteAttributeReader.ts';
 import { ListenerAttributeReader } from '../../Ast/ListenerAttributeReader.ts';
 import { ListenerProviderReader } from '../../Ast/ListenerProviderReader.ts';
@@ -29,6 +30,7 @@ import type { HttpDataFileGeneratorContract } from '../../Generator/Http/Contrac
 import type { CliRouteAttributeReaderContract } from '../../Ast/Contract/CliRouteAttributeReaderContract.ts';
 import type { ComponentProviderReaderContract } from '../../Ast/Contract/ComponentProviderReaderContract.ts';
 import type { ConfigReaderContract } from '../../Ast/Contract/ConfigReaderContract.ts';
+import type { GrpcRouteAttributeReaderContract } from '../../Ast/Contract/GrpcRouteAttributeReaderContract.ts';
 import type { HttpRouteAttributeReaderContract } from '../../Ast/Contract/HttpRouteAttributeReaderContract.ts';
 import type { ListenerAttributeReaderContract } from '../../Ast/Contract/ListenerAttributeReaderContract.ts';
 import type { ListenerProviderReaderContract } from '../../Ast/Contract/ListenerProviderReaderContract.ts';
@@ -49,6 +51,7 @@ export class GenerateDataFromConfigCommand extends GenerateDataFromAst {
         serviceProviderReader: ServiceProviderReaderContract = new ServiceProviderReader(),
         cliRouteAttributeReader: CliRouteAttributeReaderContract = new CliRouteAttributeReader(),
         httpRouteAttributeReader: HttpRouteAttributeReaderContract = new HttpRouteAttributeReader(),
+        grpcRouteAttributeReader: GrpcRouteAttributeReaderContract = new GrpcRouteAttributeReader(),
         listenerAttributeReader: ListenerAttributeReaderContract = new ListenerAttributeReader(),
         containerGenerator: ContainerDataFileGeneratorContract = new AstContainerDataFileGenerator(),
         eventGenerator: EventDataFileGeneratorContract = new AstEventDataFileGenerator(),
@@ -67,6 +70,7 @@ export class GenerateDataFromConfigCommand extends GenerateDataFromAst {
             serviceProviderReader,
             cliRouteAttributeReader,
             httpRouteAttributeReader,
+            grpcRouteAttributeReader,
             listenerAttributeReader,
             containerGenerator,
             eventGenerator,
