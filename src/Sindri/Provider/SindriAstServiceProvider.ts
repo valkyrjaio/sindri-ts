@@ -179,6 +179,8 @@ export class SindriAstServiceProvider implements ServiceProviderContract {
             [SindriServiceId.ComponentProviderReaderContract]: SindriAstServiceProvider.publishComponentProviderReader,
             [SindriServiceId.ConfigReaderContract]: SindriAstServiceProvider.publishConfigReader,
             [SindriServiceId.CliRouteParameterReaderContract]: SindriAstServiceProvider.publishCliRouteParameterReader,
+            [SindriServiceId.GrpcRouteAttributeReaderContract]:
+                SindriAstServiceProvider.publishGrpcRouteAttributeReader,
             [SindriServiceId.HttpRouteMiddlewareReaderContract]:
                 SindriAstServiceProvider.publishHttpRouteMiddlewareReader,
             [SindriServiceId.HttpRouteParameterReaderContract]:
@@ -193,8 +195,6 @@ export class SindriAstServiceProvider implements ServiceProviderContract {
             [SindriServiceId.ContainerDataFileGeneratorContract]:
                 SindriAstServiceProvider.publishContainerDataFileGenerator,
             [SindriServiceId.EventDataFileGeneratorContract]: SindriAstServiceProvider.publishEventDataFileGenerator,
-            [SindriServiceId.GrpcRouteAttributeReaderContract]:
-                SindriAstServiceProvider.publishGrpcRouteAttributeReader,
             [SindriServiceId.GrpcDataFileGeneratorContract]: SindriAstServiceProvider.publishGrpcDataFileGenerator,
             [SindriServiceId.HttpDataFileGeneratorContract]: SindriAstServiceProvider.publishHttpDataFileGenerator,
         };
