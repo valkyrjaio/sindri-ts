@@ -38,6 +38,7 @@ describe('SindriCommandServiceProvider', () => {
             SindriServiceId.EventDataFileGeneratorContract,
             SindriServiceId.CliDataFileGeneratorContract,
             SindriServiceId.HttpDataFileGeneratorContract,
+            SindriServiceId.GrpcDataFileGeneratorContract,
         ]) {
             container.setSingleton(id, {});
         }
@@ -45,5 +46,45 @@ describe('SindriCommandServiceProvider', () => {
         SindriCommandServiceProvider.publishGenerateDataFromConfigCommand(container);
 
         expect(container.isSingleton(SindriServiceId.GenerateDataFromConfigCommand)).toBe(true);
+    });
+
+    it('gives the command the container instance of each data file generator', () => {
+        const container = new Container();
+        const generators = {
+            [SindriServiceId.ContainerDataFileGeneratorContract]: {},
+            [SindriServiceId.EventDataFileGeneratorContract]: {},
+            [SindriServiceId.CliDataFileGeneratorContract]: {},
+            [SindriServiceId.HttpDataFileGeneratorContract]: {},
+            [SindriServiceId.GrpcDataFileGeneratorContract]: {},
+        };
+
+        for (const id of [
+            CliRoutingServiceId.RouteContract,
+            CliInteractionServiceId.OutputFactoryContract,
+            SindriServiceId.ConfigReaderContract,
+            SindriServiceId.ComponentProviderReaderContract,
+            SindriServiceId.RouteProviderReaderContract,
+            SindriServiceId.ListenerProviderReaderContract,
+            SindriServiceId.ServiceProviderReaderContract,
+            SindriServiceId.CliRouteAttributeReaderContract,
+            SindriServiceId.HttpRouteAttributeReaderContract,
+            SindriServiceId.ListenerAttributeReaderContract,
+        ]) {
+            container.setSingleton(id, {});
+        }
+
+        for (const [id, generator] of Object.entries(generators)) {
+            container.setSingleton(id, generator);
+        }
+
+        SindriCommandServiceProvider.publishGenerateDataFromConfigCommand(container);
+
+        const command = container.getSingleton<Record<string, unknown>>(SindriServiceId.GenerateDataFromConfigCommand);
+
+        expect(command.containerGenerator).toBe(generators[SindriServiceId.ContainerDataFileGeneratorContract]);
+        expect(command.eventGenerator).toBe(generators[SindriServiceId.EventDataFileGeneratorContract]);
+        expect(command.cliGenerator).toBe(generators[SindriServiceId.CliDataFileGeneratorContract]);
+        expect(command.httpGenerator).toBe(generators[SindriServiceId.HttpDataFileGeneratorContract]);
+        expect(command.grpcGenerator).toBe(generators[SindriServiceId.GrpcDataFileGeneratorContract]);
     });
 });
