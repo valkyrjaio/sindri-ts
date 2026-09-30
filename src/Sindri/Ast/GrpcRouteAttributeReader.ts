@@ -18,6 +18,8 @@ import type { ClassDeclaration, Decorator, MethodDeclaration } from 'ts-morph';
 import type { GrpcRouteAttributeReaderContract } from './Contract/GrpcRouteAttributeReaderContract.ts';
 
 export class GrpcRouteAttributeReader extends AstReader implements GrpcRouteAttributeReaderContract {
+    protected static readonly STAGE_CONTRACT_PATH = 'Grpc/Middleware/Contract';
+
     readFile(filePath: string): GrpcRouteAttributeResult {
         const context = this.parseClassFile(filePath);
 
@@ -148,6 +150,7 @@ export class GrpcRouteAttributeReader extends AstReader implements GrpcRouteAttr
         currentFilePath: string,
         currentClass: string,
     ): [string[], string[], string[], string[], string[]] {
+        const stagePath = GrpcRouteAttributeReader.STAGE_CONTRACT_PATH;
         const routeMatched: string[] = [];
         const routeDispatched: string[] = [];
         const throwableCaught: string[] = [];
@@ -155,23 +158,58 @@ export class GrpcRouteAttributeReader extends AstReader implements GrpcRouteAttr
         const responseSent: string[] = [];
 
         for (const name of this.readMiddlewareNames(obj, method, useMap, currentFilePath, currentClass)) {
-            if (this.classImplementsInterface(name, 'RouteMatchedMiddlewareContract', useMap, currentFilePath)) {
+            if (
+                this.classImplementsInterface(
+                    name,
+                    `${stagePath}/RouteMatchedMiddlewareContract`,
+                    useMap,
+                    currentFilePath,
+                )
+            ) {
                 routeMatched.push(name);
             }
 
-            if (this.classImplementsInterface(name, 'RouteDispatchedMiddlewareContract', useMap, currentFilePath)) {
+            if (
+                this.classImplementsInterface(
+                    name,
+                    `${stagePath}/RouteDispatchedMiddlewareContract`,
+                    useMap,
+                    currentFilePath,
+                )
+            ) {
                 routeDispatched.push(name);
             }
 
-            if (this.classImplementsInterface(name, 'ThrowableCaughtMiddlewareContract', useMap, currentFilePath)) {
+            if (
+                this.classImplementsInterface(
+                    name,
+                    `${stagePath}/ThrowableCaughtMiddlewareContract`,
+                    useMap,
+                    currentFilePath,
+                )
+            ) {
                 throwableCaught.push(name);
             }
 
-            if (this.classImplementsInterface(name, 'SendingResponseMiddlewareContract', useMap, currentFilePath)) {
+            if (
+                this.classImplementsInterface(
+                    name,
+                    `${stagePath}/SendingResponseMiddlewareContract`,
+                    useMap,
+                    currentFilePath,
+                )
+            ) {
                 sendingResponse.push(name);
             }
 
-            if (this.classImplementsInterface(name, 'ResponseSentMiddlewareContract', useMap, currentFilePath)) {
+            if (
+                this.classImplementsInterface(
+                    name,
+                    `${stagePath}/ResponseSentMiddlewareContract`,
+                    useMap,
+                    currentFilePath,
+                )
+            ) {
                 responseSent.push(name);
             }
         }
@@ -270,14 +308,38 @@ export class GrpcRouteAttributeReader extends AstReader implements GrpcRouteAttr
         currentClass: string,
     ): void {
         const shortName = className.slice(className.lastIndexOf('\\') + 1);
-
-        const filePath =
-            shortName === currentClass
-                ? currentFilePath
-                : this.resolveImportToFilePath(shortName, useMap, currentFilePath);
+        const filePath = this.resolveClassImportPath(shortName, useMap, currentFilePath, currentClass);
 
         if (filePath !== '') {
             importMap[shortName] = filePath;
         }
+    }
+
+    /**
+     * Resolve the file that declares a referenced class.
+     *
+     * A middleware the controller file declares itself is in no import map, so the read file is
+     * where the generated import statement points. The generator emits an identifier for every
+     * class it references, and an identifier with no import does not compile.
+     */
+    protected resolveClassImportPath(
+        shortName: string,
+        useMap: Record<string, string>,
+        currentFilePath: string,
+        currentClass: string,
+    ): string {
+        if (shortName === currentClass) {
+            return currentFilePath;
+        }
+
+        const importedPath = this.resolveImportToFilePath(shortName, useMap, currentFilePath);
+
+        if (importedPath !== '') {
+            return importedPath;
+        }
+
+        const sourceFile = this.parseAncestorSourceFile(currentFilePath);
+
+        return sourceFile?.getClass(shortName) === undefined ? '' : currentFilePath;
     }
 }
