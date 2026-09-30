@@ -77,6 +77,35 @@ describe('GrpcRouteAttributeReader', () => {
         expect(result.importMap.UnknownMiddleware).toBeUndefined();
     });
 
+    it('keys a route the controller declares with the imported decorators', () => {
+        const result = readFixture('Grpc/TestGrpcAncestryControllerFixture');
+
+        expect(Object.keys(result.routes)).toStrictEqual(['/test.Alias/Run']);
+    });
+
+    it('classifies a middleware by the whole ancestry, and only for its own protocol', () => {
+        const printed = printRoute(readFixture('Grpc/TestGrpcAncestryControllerFixture').routes['/test.Alias/Run']!);
+
+        // An abstract base carries the route-matched stage, a sub-contract carries the dispatched
+        // stage, and an aliased contract import carries the throwable-caught stage. The HTTP
+        // middleware declares a contract of the same name in another protocol, so it lands in no
+        // stage.
+        expect(printed).toContain(
+            '[GrpcBaseMiddlewareFixture], ' +
+                '[GrpcSubContractMiddlewareFixture], ' +
+                '[GrpcAliasedMiddlewareFixture], ' +
+                '[SameFileMiddlewareFixture], ' +
+                '[]',
+        );
+    });
+
+    it('imports a middleware the controller file declares itself', () => {
+        const result = readFixture('Grpc/TestGrpcAncestryControllerFixture');
+
+        expect(result.importMap.SameFileMiddlewareFixture).toBe(fixture('Grpc/TestGrpcAncestryControllerFixture'));
+        expect(result.importMap.GrpcHttpMiddlewareFixture).toBeUndefined();
+    });
+
     it('returns an empty result when the controller declares no service', () => {
         expect(readFixture('Grpc/TestGrpcControllerNoServiceFixture').routes).toStrictEqual({});
     });
