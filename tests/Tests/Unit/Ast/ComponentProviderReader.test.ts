@@ -25,11 +25,19 @@ describe('ComponentProviderReader', () => {
         expect(result.listenerProviders).toHaveLength(0);
         expect(result.cliRouteProviders).toHaveLength(1);
         expect(result.httpRouteProviders).toHaveLength(0);
+        expect(result.grpcRouteProviders).toHaveLength(1);
+    });
+
+    it('resolves each provider to the absolute path of the file that declares it', () => {
+        const result = new ComponentProviderReader().readFile(fixture('Provider/TestComponentProviderFixture'));
+
+        expect(result.grpcRouteProviders[0]).toBe(fixture('Provider/GrpcA'));
     });
 
     it('returns an empty result when there is no class', () => {
         const result = new ComponentProviderReader().readFile(fixture('Config/TestConfigNoClassFixture'));
 
         expect(result.componentProviders).toHaveLength(0);
+        expect(result.grpcRouteProviders).toHaveLength(0);
     });
 });
