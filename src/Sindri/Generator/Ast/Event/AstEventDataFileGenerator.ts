@@ -28,18 +28,6 @@ export class AstEventDataFileGenerator extends AstFileGenerator implements Event
         ListenerContract: '@valkyrjaio/valkyrja/Event/Data/Contract/ListenerContract.ts',
     };
 
-    public classImportMap: Record<string, string> = {};
-
-    private readonly printer = ts.createPrinter({ newLine: ts.NewLineKind.LineFeed });
-
-    private readonly dummySourceFile = ts.createSourceFile(
-        '_dummy.ts',
-        '',
-        ts.ScriptTarget.ESNext,
-        false,
-        ts.ScriptKind.TS,
-    );
-
     public generateFile(
         directory: string,
         className: string,
