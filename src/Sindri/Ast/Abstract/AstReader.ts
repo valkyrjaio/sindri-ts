@@ -13,6 +13,7 @@ import {
     ClassDeclaration,
     Decorator,
     Expression,
+    InterfaceDeclaration,
     MethodDeclaration,
     Node,
     ParameterDeclaration,
@@ -1078,36 +1079,140 @@ export abstract class AstReader {
         return ts.factory.createArrayLiteralExpression(elements);
     }
 
+    /**
+     * Report whether a class satisfies a middleware stage contract.
+     *
+     * A middleware reaches a stage contract through an abstract base class, or through a
+     * sub-contract of its own, so the direct `implements` clause classifies only the simplest
+     * shape. The walk reads every name in the `extends` and `implements` clauses, resolves each
+     * one through the declaring file's own imports, and recurses.
+     *
+     * `contractPath` is the segment path of the contract, and never a bare class name. Every
+     * protocol declares a `RouteMatchedMiddlewareContract`, so a bare name puts an HTTP
+     * middleware into a gRPC stage.
+     *
+     * The walk matches the contract on that path and never parses the contract itself, so
+     * classification does not need the framework the path names to be resolvable.
+     */
     protected classImplementsInterface(
         className: string,
-        interfaceName: string,
+        contractPath: string,
         useMap: Record<string, string>,
         currentFilePath: string,
     ): boolean {
-        const filePath = this.resolveImportToFilePath(className, useMap, currentFilePath);
+        const importedPath = this.resolveImportToFilePath(className, useMap, currentFilePath);
+        // A middleware the read file declares itself is in no import map.
+        const declaringPath = importedPath === '' ? currentFilePath : importedPath;
 
-        if (filePath === '') {
+        return this.declarationSatisfiesContract(className, contractPath, declaringPath, new Set<string>());
+    }
+
+    /**
+     * Report whether one declaration, or an ancestor of it, is the contract the path names.
+     *
+     * @param seen the declarations the walk read already, which stops a cycle in the sources
+     */
+    protected declarationSatisfiesContract(
+        name: string,
+        contractPath: string,
+        filePath: string,
+        seen: Set<string>,
+    ): boolean {
+        const key = `${filePath}#${name}`;
+
+        if (seen.has(key)) {
             return false;
         }
 
-        try {
-            const project = new Project({ skipAddingFilesFromTsConfig: true, skipFileDependencyResolution: true });
-            const sourceFile = project.addSourceFileAtPath(filePath);
-            const classDecl = sourceFile.getClass(className);
+        seen.add(key);
 
-            if (classDecl === undefined) {
-                return false;
+        const sourceFile = this.parseAncestorSourceFile(filePath);
+
+        if (sourceFile === undefined) {
+            return false;
+        }
+
+        const declaration = sourceFile.getClass(name) ?? sourceFile.getInterface(name);
+
+        if (declaration === undefined) {
+            return false;
+        }
+
+        const useMap = this.buildUseMap(sourceFile);
+
+        for (const ancestor of this.readAncestorNames(declaration)) {
+            if (this.moduleSpecifierMatchesContract(useMap[ancestor], contractPath)) {
+                return true;
             }
 
-            for (const impl of classDecl.getImplements()) {
-                if (impl.getExpression().getText() === interfaceName) {
-                    return true;
-                }
+            const ancestorPath = this.resolveImportToFilePath(ancestor, useMap, filePath);
+
+            if (
+                this.declarationSatisfiesContract(
+                    ancestor,
+                    contractPath,
+                    ancestorPath === '' ? filePath : ancestorPath,
+                    seen,
+                )
+            ) {
+                return true;
             }
-        } catch {
-            // Silently skip unresolvable
         }
 
         return false;
+    }
+
+    /** Parse a file the ancestry walk reached, or return undefined when it cannot be read. */
+    protected parseAncestorSourceFile(filePath: string): SourceFile | undefined {
+        try {
+            return this.parseFileToSourceFile(filePath);
+        } catch {
+            return undefined;
+        }
+    }
+
+    /**
+     * Read the name of every `extends` and `implements` entry a declaration names.
+     *
+     * A class and a contract both hold heritage clauses, and a class holds both kinds at once, so
+     * one pass over the clauses reads every ancestor of either kind.
+     */
+    protected readAncestorNames(declaration: ClassDeclaration | InterfaceDeclaration): string[] {
+        const names: string[] = [];
+
+        for (const clause of declaration.compilerNode.heritageClauses ?? []) {
+            for (const type of clause.types) {
+                const name = this.heritageNameOf(type.expression);
+
+                if (name !== '') {
+                    names.push(name);
+                }
+            }
+        }
+
+        return names;
+    }
+
+    /** Read the local name a heritage entry uses, which an import map resolves. */
+    protected heritageNameOf(expression: ts.Expression): string {
+        if (ts.isIdentifier(expression)) {
+            return expression.text;
+        }
+
+        return ts.isPropertyAccessExpression(expression) ? expression.name.text : '';
+    }
+
+    /**
+     * Report whether an import specifier names the contract the segment path names.
+     *
+     * The comparison drops the `.ts` extension, so the specifier the framework convention writes
+     * matches the path the caller holds.
+     */
+    protected moduleSpecifierMatchesContract(moduleSpecifier: string | undefined, contractPath: string): boolean {
+        if (moduleSpecifier === undefined) {
+            return false;
+        }
+
+        return moduleSpecifier.replace(/\.ts$/, '').endsWith(contractPath);
     }
 }

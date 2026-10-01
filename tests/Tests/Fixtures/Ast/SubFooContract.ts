@@ -3,6 +3,4 @@
 
 import { FooContract } from './FooContract.ts';
 
-export class ImplementorFixture implements FooContract {
-    public foo(): void {}
-}
+export interface SubFooContract extends FooContract {}

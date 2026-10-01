@@ -4,10 +4,9 @@
 import { RouteMatchedMiddlewareContract } from '@valkyrjaio/valkyrja/Cli/Middleware/Contract/RouteMatchedMiddlewareContract.ts';
 import { RouteDispatchedMiddlewareContract } from '@valkyrjaio/valkyrja/Cli/Middleware/Contract/RouteDispatchedMiddlewareContract.ts';
 import { ThrowableCaughtMiddlewareContract } from '@valkyrjaio/valkyrja/Cli/Middleware/Contract/ThrowableCaughtMiddlewareContract.ts';
-import { ProcessExitingMiddlewareContract } from '@valkyrjaio/valkyrja/Cli/Middleware/Contract/ProcessExitingMiddlewareContract.ts';
-export class AllCliMiddlewareFixture
+
+export class CliOnlyMiddlewareFixture
     implements
         RouteMatchedMiddlewareContract,
         RouteDispatchedMiddlewareContract,
-        ThrowableCaughtMiddlewareContract,
-        ProcessExitingMiddlewareContract {}
+        ThrowableCaughtMiddlewareContract {}
