@@ -58,6 +58,7 @@ interface Deps {
     eventGenerator?: { generateFile: () => GenerateStatus };
     cliGenerator?: { generateFile: () => GenerateStatus };
     httpGenerator?: { generateFile: () => GenerateStatus };
+    grpcGenerator?: { generateFile: () => GenerateStatus };
 }
 
 class TestGenerate extends GenerateDataFromAst {
@@ -70,7 +71,7 @@ class TestGenerate extends GenerateDataFromAst {
             'Generating Data',
             reader(new ConfigResult()) as never,
             (deps.componentProviderReader ?? reader(new ComponentProviderResult())) as never,
-            (deps.routeProviderReader ?? reader({ controllerClasses: [], routes: [], routeImports: {} })) as never,
+            (deps.routeProviderReader ?? reader(routeResult())) as never,
             (deps.listenerProviderReader ?? reader({ listenerClasses: [] })) as never,
             (deps.serviceProviderReader ?? reader({ publishers: {} })) as never,
             (deps.cliRouteAttributeReader ?? reader({ routes: {}, importMap: {} })) as never,
@@ -80,6 +81,7 @@ class TestGenerate extends GenerateDataFromAst {
             (deps.eventGenerator ?? generator()) as never,
             (deps.cliGenerator ?? generator()) as never,
             (deps.httpGenerator ?? generator()) as never,
+            (deps.grpcGenerator ?? generator()) as never,
         );
     }
 
@@ -115,6 +117,10 @@ class TestGenerate extends GenerateDataFromAst {
         return this.generateHttpData(providers, config, output);
     }
 
+    public grpc(providers: readonly string[], config: ConfigResult, output: OutputContract): OutputContract {
+        return this.generateGrpcData(providers, config, output);
+    }
+
     public specifier(fromDir: string, toFile: string): string {
         return this.importSpecifier(fromDir, toFile);
     }
@@ -145,6 +151,18 @@ class TestGenerate extends GenerateDataFromAst {
 }
 
 const config = new ConfigResult('App', appDir, appDir, 'App.Data');
+
+/** A route-provider result, defaulted so a stub names only the fields its test cares about. */
+function routeResult(fields: Record<string, unknown> = {}): never {
+    return {
+        controllerClasses: [],
+        routes: [],
+        routeImports: {},
+        chainedRoutes: [],
+        chainedRouteImports: {},
+        ...fields,
+    } as never;
+}
 
 beforeEach(() => {
     vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
@@ -264,7 +282,7 @@ describe('GenerateDataFromAst', () => {
     describe('generateCliData', () => {
         it('skips unresolvable providers and controller classes', () => {
             const gen = new TestGenerate({
-                routeProviderReader: reader({ controllerClasses: ['MissingController'], routes: [], routeImports: {} }),
+                routeProviderReader: reader(routeResult({ controllerClasses: ['MissingController'] })),
             });
 
             expect(() => gen.cli(['DoesNotExist', 'AppCliRouteProviderFixture'], config, gen.freshOutput())).not.toThrow();
@@ -273,7 +291,7 @@ describe('GenerateDataFromAst', () => {
         it('generates from imperative routes and populates the provider import map', () => {
             const cliGenerator = generator();
             const gen = new TestGenerate({
-                routeProviderReader: reader({ controllerClasses: [], routes: [{} as never], routeImports: {} }),
+                routeProviderReader: reader(routeResult({ routes: [{}] })),
                 cliGenerator,
             });
 
@@ -346,7 +364,7 @@ describe('GenerateDataFromAst', () => {
     describe('generateHttpData', () => {
         it('skips unresolvable providers and controller classes', () => {
             const gen = new TestGenerate({
-                routeProviderReader: reader({ controllerClasses: ['MissingController'], routes: [], routeImports: {} }),
+                routeProviderReader: reader(routeResult({ controllerClasses: ['MissingController'] })),
             });
 
             expect(() => gen.http(['DoesNotExist', 'AppHttpRouteProviderFixture'], config, gen.freshOutput())).not.toThrow();
@@ -355,7 +373,7 @@ describe('GenerateDataFromAst', () => {
         it('generates from imperative routes and populates the provider import map', () => {
             const httpGenerator = generator();
             const gen = new TestGenerate({
-                routeProviderReader: reader({ controllerClasses: [], routes: [{} as never], routeImports: {} }),
+                routeProviderReader: reader(routeResult({ routes: [{}] })),
                 httpGenerator,
             });
 
@@ -426,6 +444,104 @@ describe('GenerateDataFromAst', () => {
                 AppHttpRouteProviderFixture: './Provider/AppHttpRouteProviderFixture.ts',
                 PackageCommandName: '@fixture/routes/PackageCommandNameFixture.ts',
             });
+        });
+    });
+
+    describe('chained routes stay out of the Cli and Http data', () => {
+        // A chain in `routes` would make generateCliData write importMap[provider] while
+        // AstCliDataFileGenerator drops the route, so the generated file would carry an import
+        // that nothing in it references.
+        const chained = {
+            chainedRoutes: [{}],
+            chainedRouteImports: { Dropped: '/x/Dropped.ts' },
+        };
+
+        it('adds no Cli import for a provider that declares only chained routes', () => {
+            const cliGenerator = generator();
+            const gen = new TestGenerate({ routeProviderReader: reader(routeResult(chained)), cliGenerator });
+
+            gen.cli(['AppCliRouteProviderFixture'], config, gen.freshOutput());
+
+            expect(cliGenerator.classImportMap).toStrictEqual({});
+        });
+
+        it('adds no Http import for a provider that declares only chained routes', () => {
+            const httpGenerator = generator();
+            const gen = new TestGenerate({ routeProviderReader: reader(routeResult(chained)), httpGenerator });
+
+            gen.http(['AppHttpRouteProviderFixture'], config, gen.freshOutput());
+
+            expect(httpGenerator.classImportMap).toStrictEqual({});
+        });
+
+        it('adds the chained route and its imports to the gRPC data', () => {
+            const grpcGenerator = generator();
+            const gen = new TestGenerate({ routeProviderReader: reader(routeResult(chained)), grpcGenerator });
+
+            gen.grpc(['AppCliRouteProviderFixture'], config, gen.freshOutput());
+
+            expect(Object.keys(grpcGenerator.classImportMap)).toStrictEqual([
+                'AppCliRouteProviderFixture',
+                'Dropped',
+            ]);
+        });
+    });
+
+    describe('generateGrpcData', () => {
+        it('skips providers whose file cannot be resolved', () => {
+            const grpcGenerator = generator();
+            const gen = new TestGenerate({ grpcGenerator });
+
+            gen.grpc(['DoesNotExist'], config, gen.freshOutput());
+
+            // Still generates, so an app with no resolvable gRPC provider gets an empty service map
+            // rather than no file at all.
+            expect(grpcGenerator.generateFileFromRoutes).toHaveBeenCalled();
+            expect(grpcGenerator.classImportMap).toStrictEqual({});
+        });
+
+        it('skips a resolvable provider that declares no routes', () => {
+            const grpcGenerator = generator();
+            const gen = new TestGenerate({
+                routeProviderReader: reader(routeResult()),
+                grpcGenerator,
+            });
+
+            gen.grpc(['AppCliRouteProviderFixture'], config, gen.freshOutput());
+
+            expect(grpcGenerator.classImportMap).toStrictEqual({});
+        });
+
+        it('generates from imperative routes and populates the provider import map', () => {
+            const grpcGenerator = generator();
+            const gen = new TestGenerate({
+                routeProviderReader: reader(routeResult({ routes: [{}] })),
+                grpcGenerator,
+            });
+
+            gen.grpc(['AppCliRouteProviderFixture'], config, gen.freshOutput());
+
+            expect(grpcGenerator.generateFileFromRoutes).toHaveBeenCalled();
+            expect(grpcGenerator.classImportMap).toStrictEqual({
+                AppCliRouteProviderFixture: './Provider/AppCliRouteProviderFixture.ts',
+            });
+        });
+
+        it('imports the classes the route expressions reference, by package specifier', () => {
+            const grpcGenerator = generator();
+            const gen = new TestGenerate({
+                routeProviderReader: reader(
+                    routeResult({
+                        routes: [{}],
+                        routeImports: { GrpcA: path.join(appDir, '../Provider/GrpcA.ts') },
+                    }),
+                ),
+                grpcGenerator,
+            });
+
+            gen.grpc(['AppCliRouteProviderFixture'], config, gen.freshOutput());
+
+            expect(grpcGenerator.classImportMap['GrpcA']).toBeDefined();
         });
     });
 
