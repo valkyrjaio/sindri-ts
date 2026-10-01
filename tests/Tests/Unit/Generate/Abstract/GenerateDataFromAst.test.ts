@@ -550,11 +550,7 @@ describe('GenerateDataFromAst', () => {
             const grpcGenerator = generator();
             const controllerPath = path.join(appDir, 'Controller', 'AppGrpcControllerFixture.ts');
             const gen = new TestGenerate({
-                routeProviderReader: reader({
-                    controllerClasses: ['AppGrpcControllerFixture'],
-                    routes: [],
-                    routeImports: {},
-                }),
+                routeProviderReader: reader(routeResult({ controllerClasses: ['AppGrpcControllerFixture'] })),
                 grpcRouteAttributeReader: reader({
                     routes: { '/app.Ping/Ping': {} },
                     importMap: { AppGrpcControllerFixture: controllerPath },
@@ -573,7 +569,7 @@ describe('GenerateDataFromAst', () => {
         it('skips a controller class whose file cannot be resolved', () => {
             const grpcGenerator = generator();
             const gen = new TestGenerate({
-                routeProviderReader: reader({ controllerClasses: ['DoesNotExist'], routes: [], routeImports: {} }),
+                routeProviderReader: reader(routeResult({ controllerClasses: ['DoesNotExist'] })),
                 grpcGenerator,
             });
 
