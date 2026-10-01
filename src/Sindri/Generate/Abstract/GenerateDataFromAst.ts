@@ -305,20 +305,48 @@ export abstract class GenerateDataFromAst extends GenerateFromAst {
         return this.addMessagesForGenerateStatus(output, status).withAddedMessages(new NewLine()).writeMessages();
     }
 
-    protected generateCliData(
-        cliRouteProviders: readonly string[],
+    /**
+     * Generate the routing data for one protocol.
+     *
+     * Each protocol walks one path: read each route provider, collect the routes its `getRoutes()`
+     * declares, read the decorator routes off each controller class it names, then merge both sets
+     * into one data file. Only the reader, the generator, and the names differ.
+     *
+     * @param readAttributes     Reads the decorator routes off one controller file.
+     * @param withChainedRoutes  Whether the protocol keys a route declared as a builder chain. Only
+     *                           gRPC does, so a chain stays out of the other data files.
+     */
+    protected generateRoutingData(
+        providers: readonly string[],
         config: ConfigResult,
         output: OutputContract,
+        protocol: {
+            message: string;
+            dataClassName: string;
+            readAttributes: (filePath: string) => {
+                routes: Record<string, ts.Expression>;
+                importMap: Record<string, string>;
+            };
+            generator: {
+                classImportMap: Record<string, string>;
+                generateMergedFile: (
+                    directory: string,
+                    className: string,
+                    namespace: string,
+                    routes: Record<string, ts.Expression>,
+                    routeExprs: readonly ts.Expression[],
+                ) => GenerateStatus;
+            };
+            withChainedRoutes: boolean;
+        },
     ): OutputContract {
-        output = output
-            .withAddedMessages(new Message('Generating Cli Routes Data.....................'))
-            .writeMessages();
+        output = output.withAddedMessages(new Message(protocol.message)).writeMessages();
 
         const allRoutes: Record<string, ts.Expression> = {};
         const imperativeRoutes: ts.Expression[] = [];
         const importMap: Record<string, string> = {};
 
-        for (const providerClass of cliRouteProviders) {
+        for (const providerClass of providers) {
             const filePath = this.fqnToFilePath(providerClass, config.namespace, config.dir);
 
             if (filePath === '' || !fs.existsSync(filePath)) {
@@ -326,16 +354,21 @@ export abstract class GenerateDataFromAst extends GenerateFromAst {
             }
 
             const providerResult = this.routeProviderReader.readFile(filePath);
+            const routes = protocol.withChainedRoutes
+                ? [...providerResult.routes, ...providerResult.chainedRoutes]
+                : providerResult.routes;
+            const routeImports = protocol.withChainedRoutes
+                ? { ...providerResult.routeImports, ...providerResult.chainedRouteImports }
+                : providerResult.routeImports;
 
-            if (providerResult.routes.length > 0) {
-                // Imperative routes reference the provider's static handlers,
-                // so the generated data cache must import the provider class —
-                // along with every parameter/constant class the route arguments
+            if (routes.length > 0) {
+                // Imperative routes reference the provider's static handlers, so the generated data
+                // cache must import the provider class — along with every class the route arguments
                 // themselves name, since those are emitted verbatim.
-                imperativeRoutes.push(...providerResult.routes);
+                imperativeRoutes.push(...routes);
                 importMap[path.basename(filePath, '.ts')] = this.importSpecifier(config.dataPath, filePath);
 
-                for (const [name, importPath] of Object.entries(providerResult.routeImports)) {
+                for (const [name, importPath] of Object.entries(routeImports)) {
                     importMap[name] = this.importSpecifier(config.dataPath, importPath);
                 }
             }
@@ -347,25 +380,52 @@ export abstract class GenerateDataFromAst extends GenerateFromAst {
                     continue;
                 }
 
-                const attrResult = this.cliRouteAttributeReader.readFile(controllerPath);
+                const attrResult = protocol.readAttributes(controllerPath);
 
                 Object.assign(allRoutes, attrResult.routes);
                 this.mergeReaderImports(importMap, attrResult.importMap, config);
             }
         }
 
-        this.cliGenerator.classImportMap = importMap;
+        protocol.generator.classImportMap = importMap;
 
-        // Merge attribute-scanned command routes with imperative getRoutes() routes.
-        const status = this.cliGenerator.generateMergedFile(
+        const status = protocol.generator.generateMergedFile(
             config.dataPath,
-            'AppCliRoutingData',
+            protocol.dataClassName,
             config.dataNamespace,
             allRoutes,
             imperativeRoutes,
         );
 
         return this.addMessagesForGenerateStatus(output, status).withAddedMessages(new NewLine()).writeMessages();
+    }
+
+    protected generateCliData(
+        cliRouteProviders: readonly string[],
+        config: ConfigResult,
+        output: OutputContract,
+    ): OutputContract {
+        return this.generateRoutingData(cliRouteProviders, config, output, {
+            message: 'Generating Cli Routes Data.....................',
+            dataClassName: 'AppCliRoutingData',
+            readAttributes: (filePath: string) => this.cliRouteAttributeReader.readFile(filePath),
+            generator: this.cliGenerator,
+            withChainedRoutes: false,
+        });
+    }
+
+    protected generateGrpcData(
+        grpcRouteProviders: readonly string[],
+        config: ConfigResult,
+        output: OutputContract,
+    ): OutputContract {
+        return this.generateRoutingData(grpcRouteProviders, config, output, {
+            message: 'Generating Grpc Routes Data....................',
+            dataClassName: 'AppGrpcRoutingData',
+            readAttributes: (filePath: string) => this.grpcRouteAttributeReader.readFile(filePath),
+            generator: this.grpcGenerator,
+            withChainedRoutes: true,
+        });
     }
 
     /**
@@ -375,74 +435,6 @@ export abstract class GenerateDataFromAst extends GenerateFromAst {
      * imperative `getRoutes()` body whose expressions are emitted verbatim. Both are keyed by
      * fully-qualified method.
      */
-    protected generateGrpcData(
-        grpcRouteProviders: readonly string[],
-        config: ConfigResult,
-        output: OutputContract,
-    ): OutputContract {
-        output = output
-            .withAddedMessages(new Message('Generating Grpc Routes Data....................'))
-            .writeMessages();
-
-        const allRoutes: Record<string, ts.Expression> = {};
-        const imperativeRoutes: ts.Expression[] = [];
-        const importMap: Record<string, string> = {};
-
-        for (const providerClass of grpcRouteProviders) {
-            const filePath = this.fqnToFilePath(providerClass, config.namespace, config.dir);
-
-            if (filePath === '' || !fs.existsSync(filePath)) {
-                continue;
-            }
-
-            const providerResult = this.routeProviderReader.readFile(filePath);
-
-            // A gRPC route is frequently a builder chain, which the reader keeps in its own list
-            // because the CLI and HTTP generators read the base construction alone.
-            const routes = [...providerResult.routes, ...providerResult.chainedRoutes];
-
-            if (routes.length > 0) {
-                // Imperative routes reference the provider's static handlers, so the generated data
-                // cache must import the provider class — along with every class the route arguments
-                // themselves name, since those are emitted verbatim.
-                imperativeRoutes.push(...routes);
-                importMap[path.basename(filePath, '.ts')] = this.importSpecifier(config.dataPath, filePath);
-
-                for (const [name, importPath] of Object.entries({
-                    ...providerResult.routeImports,
-                    ...providerResult.chainedRouteImports,
-                })) {
-                    importMap[name] = this.importSpecifier(config.dataPath, importPath);
-                }
-            }
-
-            for (const controllerClass of providerResult.controllerClasses) {
-                const controllerPath = this.fqnToFilePath(controllerClass, config.namespace, config.dir);
-
-                if (controllerPath === '' || !fs.existsSync(controllerPath)) {
-                    continue;
-                }
-
-                const attrResult = this.grpcRouteAttributeReader.readFile(controllerPath);
-
-                Object.assign(allRoutes, attrResult.routes);
-                this.mergeReaderImports(importMap, attrResult.importMap, config);
-            }
-        }
-
-        this.grpcGenerator.classImportMap = importMap;
-
-        // Merge attribute-scanned service methods with imperative getRoutes() routes.
-        const status = this.grpcGenerator.generateMergedFile(
-            config.dataPath,
-            'AppGrpcRoutingData',
-            config.dataNamespace,
-            allRoutes,
-            imperativeRoutes,
-        );
-
-        return this.addMessagesForGenerateStatus(output, status).withAddedMessages(new NewLine()).writeMessages();
-    }
 
     protected generateHttpData(
         httpRouteProviders: readonly string[],
