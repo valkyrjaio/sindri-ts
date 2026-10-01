@@ -45,18 +45,6 @@ export class AstEventDataFileGenerator extends AstFileGenerator implements Event
     /** The position of the listener name in a `Listener` construction. */
     protected static readonly ARGUMENT_NAME = 1;
 
-    public classImportMap: Record<string, string> = {};
-
-    private readonly printer = ts.createPrinter({ newLine: ts.NewLineKind.LineFeed });
-
-    private readonly dummySourceFile = ts.createSourceFile(
-        '_dummy.ts',
-        '',
-        ts.ScriptTarget.ESNext,
-        false,
-        ts.ScriptKind.TS,
-    );
-
     public generateFile(
         directory: string,
         className: string,
