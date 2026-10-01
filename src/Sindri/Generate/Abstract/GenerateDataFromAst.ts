@@ -393,17 +393,24 @@ export abstract class GenerateDataFromAst extends GenerateFromAst {
 
             const providerResult = this.routeProviderReader.readFile(filePath);
 
-            if (providerResult.routes.length === 0) {
+            // A gRPC route is frequently a builder chain, which the reader keeps in its own list
+            // because the CLI and HTTP generators read the base construction alone.
+            const routes = [...providerResult.routes, ...providerResult.chainedRoutes];
+
+            if (routes.length === 0) {
                 continue;
             }
 
             // Imperative routes reference the provider's static handlers, so the generated data
             // cache must import the provider class — along with every class the route arguments
             // themselves name, since those are emitted verbatim.
-            imperativeRoutes.push(...providerResult.routes);
+            imperativeRoutes.push(...routes);
             importMap[path.basename(filePath, '.ts')] = this.importSpecifier(config.dataPath, filePath);
 
-            for (const [name, importPath] of Object.entries(providerResult.routeImports)) {
+            for (const [name, importPath] of Object.entries({
+                ...providerResult.routeImports,
+                ...providerResult.chainedRouteImports,
+            })) {
                 importMap[name] = this.importSpecifier(config.dataPath, importPath);
             }
         }

@@ -28,11 +28,14 @@ export class RouteProviderReader extends AstReader implements RouteProviderReade
         const useMap = this.buildUseMap(sourceFile);
         const methods = this.indexMethods(classDecl);
         const routes = this.extractRoutes(methods[RouteProviderReader.METHOD_ROUTES], useMap, filePath);
+        const chainedRoutes = this.extractChainedRoutes(methods[RouteProviderReader.METHOD_ROUTES]);
 
         return new RouteProviderResult(
             this.extractClassListFromValues(methods[RouteProviderReader.METHOD_CONTROLLER_CLASSES], useMap, filePath),
             routes,
             this.extractRouteImports(routes, useMap, filePath),
+            chainedRoutes,
+            this.extractRouteImports(chainedRoutes, useMap, filePath),
         );
     }
 
@@ -90,18 +93,38 @@ export class RouteProviderReader extends AstReader implements RouteProviderReade
             return [];
         }
 
-        return array.elements.filter((element) => RouteProviderReader.isRouteExpression(element));
+        return array.elements.filter((element): element is ts.NewExpression => ts.isNewExpression(element));
     }
 
     /**
-     * Whether an array element declares a route.
+     * Extract the routes a provider declares as a builder chain.
      *
-     * A route is frequently declared as a builder chain rather than a bare construction — gRPC spells
-     * a streaming method `new Route(...).withServerStreaming(true)` — so the chain is walked back to
-     * its base before deciding. Matching only the bare `new` form drops every chained route from the
-     * generated cache without a word, which reads at runtime as the method simply not existing.
+     * gRPC spells a streaming method `new Route(...).withServerStreaming(true)`, and matching only
+     * the bare `new` form drops that route from the generated cache without a word, which reads at
+     * run time as the method not existing.
+     *
+     * These routes are kept apart from `routes`, because only the gRPC generator keys a chain. The
+     * CLI and HTTP generators read the base construction, so a chain in their lists would add an
+     * import for a route the generated file then leaves out.
      */
-    protected static isRouteExpression(expression: ts.Expression): boolean {
+    protected extractChainedRoutes(method: ReturnType<typeof this.indexMethods>[string] | undefined): ts.Expression[] {
+        if (method === undefined) {
+            return [];
+        }
+
+        const array = this.findReturnedArray(method);
+
+        if (array === undefined) {
+            return [];
+        }
+
+        return array.elements.filter(
+            (element) => !ts.isNewExpression(element) && RouteProviderReader.isChainedRoute(element),
+        );
+    }
+
+    /** Whether an expression is a call chain whose base is a route construction. */
+    protected static isChainedRoute(expression: ts.Expression): boolean {
         let current: ts.Expression = expression;
 
         while (ts.isCallExpression(current) && ts.isPropertyAccessExpression(current.expression)) {
