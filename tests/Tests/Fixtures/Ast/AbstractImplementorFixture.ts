@@ -3,6 +3,6 @@
 
 import { FooContract } from './FooContract.ts';
 
-export class ImplementorFixture implements FooContract {
+export abstract class AbstractImplementorFixture implements FooContract {
     public foo(): void {}
 }

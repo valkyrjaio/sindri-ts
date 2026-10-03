@@ -23,6 +23,8 @@ import type { HttpRouteMiddlewareReaderContract } from './Contract/HttpRouteMidd
  * complexity threshold; injected as a constructor argument.
  */
 export class HttpRouteMiddlewareReader extends AstReader implements HttpRouteMiddlewareReaderContract {
+    protected static readonly STAGE_CONTRACT_PATH = 'Http/Middleware/Contract';
+
     extractObjectRequestMethods(
         obj: ts.ObjectLiteralExpression,
         useMap: Record<string, string>,
@@ -203,23 +205,60 @@ export class HttpRouteMiddlewareReader extends AstReader implements HttpRouteMid
         sendingResponseMiddleware: string[],
         responseSentMiddleware: string[],
     ): [string[], string[], string[], string[], string[]] {
-        if (this.classImplementsInterface(mwName, 'RouteMatchedMiddlewareContract', useMap, currentFilePath)) {
+        const stagePath = HttpRouteMiddlewareReader.STAGE_CONTRACT_PATH;
+
+        if (
+            this.classImplementsInterface(
+                mwName,
+                `${stagePath}/RouteMatchedMiddlewareContract`,
+                useMap,
+                currentFilePath,
+            )
+        ) {
             routeMatchedMiddleware = [...routeMatchedMiddleware, mwName];
         }
 
-        if (this.classImplementsInterface(mwName, 'RouteDispatchedMiddlewareContract', useMap, currentFilePath)) {
+        if (
+            this.classImplementsInterface(
+                mwName,
+                `${stagePath}/RouteDispatchedMiddlewareContract`,
+                useMap,
+                currentFilePath,
+            )
+        ) {
             routeDispatchedMiddleware = [...routeDispatchedMiddleware, mwName];
         }
 
-        if (this.classImplementsInterface(mwName, 'ThrowableCaughtMiddlewareContract', useMap, currentFilePath)) {
+        if (
+            this.classImplementsInterface(
+                mwName,
+                `${stagePath}/ThrowableCaughtMiddlewareContract`,
+                useMap,
+                currentFilePath,
+            )
+        ) {
             throwableCaughtMiddleware = [...throwableCaughtMiddleware, mwName];
         }
 
-        if (this.classImplementsInterface(mwName, 'SendingResponseMiddlewareContract', useMap, currentFilePath)) {
+        if (
+            this.classImplementsInterface(
+                mwName,
+                `${stagePath}/SendingResponseMiddlewareContract`,
+                useMap,
+                currentFilePath,
+            )
+        ) {
             sendingResponseMiddleware = [...sendingResponseMiddleware, mwName];
         }
 
-        if (this.classImplementsInterface(mwName, 'ResponseSentMiddlewareContract', useMap, currentFilePath)) {
+        if (
+            this.classImplementsInterface(
+                mwName,
+                `${stagePath}/ResponseSentMiddlewareContract`,
+                useMap,
+                currentFilePath,
+            )
+        ) {
             responseSentMiddleware = [...responseSentMiddleware, mwName];
         }
 
