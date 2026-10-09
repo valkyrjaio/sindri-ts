@@ -700,19 +700,25 @@ describe('AstReader', () => {
 
     describe('classImplementsInterface', () => {
         it('returns true when the class implements the contract', () => {
-            expect(reader.classImplementsInterface('ImplementorFixture', 'FooContract', useMap, anchor)).toBe(true);
+            expect(reader.classImplementsInterface('ImplementorFixture', './FooContract', useMap, anchor)).toBe(true);
         });
 
         it('returns false when the contract is not implemented', () => {
-            expect(reader.classImplementsInterface('ImplementorFixture', 'Other', useMap, anchor)).toBe(false);
+            expect(reader.classImplementsInterface('ImplementorFixture', './Other', useMap, anchor)).toBe(false);
         });
 
         it('returns false when the file cannot be resolved', () => {
-            expect(reader.classImplementsInterface('Missing', 'FooContract', useMap, anchor)).toBe(false);
+            expect(reader.classImplementsInterface('Missing', './FooContract', useMap, anchor)).toBe(false);
         });
 
         it('returns false when the class is not found', () => {
-            expect(reader.classImplementsInterface('Empty', 'FooContract', useMap, anchor)).toBe(false);
+            expect(reader.classImplementsInterface('Empty', './FooContract', useMap, anchor)).toBe(false);
+        });
+
+        it('matches the whole specifier, so a path that merely ends with the contract is not it', () => {
+            // An application declares its own `Grpc/Middleware/Contract/<Name>.ts`, which a suffix
+            // comparison reads as the framework contract of that name.
+            expect(reader.classImplementsInterface('ImplementorFixture', 'FooContract', useMap, anchor)).toBe(false);
         });
 
         it('matches the contract on the module path, not on the class name', () => {
@@ -722,47 +728,47 @@ describe('AstReader', () => {
         });
 
         it('reaches a contract that an abstract base class implements', () => {
-            expect(reader.classImplementsInterface('ExtendingImplementorFixture', 'FooContract', useMap, anchor)).toBe(
-                true,
-            );
+            expect(
+                reader.classImplementsInterface('ExtendingImplementorFixture', './FooContract', useMap, anchor),
+            ).toBe(true);
         });
 
         it('reaches a contract that a sub-contract extends', () => {
             expect(
-                reader.classImplementsInterface('SubContractImplementorFixture', 'FooContract', useMap, anchor),
+                reader.classImplementsInterface('SubContractImplementorFixture', './FooContract', useMap, anchor),
             ).toBe(true);
         });
 
         it('reaches a contract an aliased import renames', () => {
-            expect(reader.classImplementsInterface('AliasImplementorFixture', 'FooContract', useMap, anchor)).toBe(
+            expect(reader.classImplementsInterface('AliasImplementorFixture', './FooContract', useMap, anchor)).toBe(
                 true,
             );
         });
 
         it('reads a class the file under read declares itself', () => {
-            expect(reader.classImplementsInterface('ImplementorFixture', 'FooContract', {}, implementor)).toBe(true);
+            expect(reader.classImplementsInterface('ImplementorFixture', './FooContract', {}, implementor)).toBe(true);
         });
 
         it('stops on a cycle in the heritage clauses', () => {
-            expect(reader.classImplementsInterface('CyclicAFixture', 'FooContract', useMap, anchor)).toBe(false);
+            expect(reader.classImplementsInterface('CyclicAFixture', './FooContract', useMap, anchor)).toBe(false);
         });
 
         it('returns false for a heritage name that no import binds', () => {
-            expect(reader.classImplementsInterface('UnimportedHeritageFixture', 'FooContract', useMap, anchor)).toBe(
+            expect(reader.classImplementsInterface('UnimportedHeritageFixture', './FooContract', useMap, anchor)).toBe(
                 false,
             );
         });
 
         it('returns false for a namespace-qualified heritage name', () => {
-            expect(reader.classImplementsInterface('NamespacedHeritageFixture', 'FooContract', useMap, anchor)).toBe(
+            expect(reader.classImplementsInterface('NamespacedHeritageFixture', './FooContract', useMap, anchor)).toBe(
                 false,
             );
         });
 
         it('returns false for a heritage entry that names no identifier', () => {
-            expect(reader.classImplementsInterface('ParenthesizedHeritageFixture', 'FooContract', useMap, anchor)).toBe(
-                false,
-            );
+            expect(
+                reader.classImplementsInterface('ParenthesizedHeritageFixture', './FooContract', useMap, anchor),
+            ).toBe(false);
         });
     });
 

@@ -23,7 +23,7 @@ import type { HttpRouteMiddlewareReaderContract } from './Contract/HttpRouteMidd
  * complexity threshold; injected as a constructor argument.
  */
 export class HttpRouteMiddlewareReader extends AstReader implements HttpRouteMiddlewareReaderContract {
-    protected static readonly STAGE_CONTRACT_PATH = 'Http/Middleware/Contract';
+    protected static readonly STAGE_CONTRACT_PATH = '@valkyrjaio/valkyrja/Http/Middleware/Contract';
 
     extractObjectRequestMethods(
         obj: ts.ObjectLiteralExpression,
