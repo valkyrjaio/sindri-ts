@@ -18,7 +18,7 @@ import type { ClassDeclaration, Decorator, MethodDeclaration } from 'ts-morph';
 import type { GrpcRouteAttributeReaderContract } from './Contract/GrpcRouteAttributeReaderContract.ts';
 
 export class GrpcRouteAttributeReader extends AstReader implements GrpcRouteAttributeReaderContract {
-    protected static readonly STAGE_CONTRACT_PATH = 'Grpc/Middleware/Contract';
+    protected static readonly STAGE_CONTRACT_PATH = '@valkyrjaio/valkyrja/Grpc/Middleware/Contract';
 
     readFile(filePath: string): GrpcRouteAttributeResult {
         const context = this.parseClassFile(filePath);
