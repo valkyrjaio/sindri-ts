@@ -18,7 +18,13 @@ import type { ClassDeclaration, Decorator, MethodDeclaration } from 'ts-morph';
 import type { GrpcRouteAttributeReaderContract } from './Contract/GrpcRouteAttributeReaderContract.ts';
 
 export class GrpcRouteAttributeReader extends AstReader implements GrpcRouteAttributeReaderContract {
-    protected static readonly STAGE_CONTRACT_PATH = '@valkyrjaio/valkyrja/Grpc/Middleware/Contract';
+    protected static readonly STAGE_CONTRACTS = {
+        routeMatched: '@valkyrjaio/valkyrja/Grpc/Middleware/Contract/RouteMatchedMiddlewareContract',
+        routeDispatched: '@valkyrjaio/valkyrja/Grpc/Middleware/Contract/RouteDispatchedMiddlewareContract',
+        throwableCaught: '@valkyrjaio/valkyrja/Grpc/Middleware/Contract/ThrowableCaughtMiddlewareContract',
+        sendingResponse: '@valkyrjaio/valkyrja/Grpc/Middleware/Contract/SendingResponseMiddlewareContract',
+        responseSent: '@valkyrjaio/valkyrja/Grpc/Middleware/Contract/ResponseSentMiddlewareContract',
+    } as const;
 
     readFile(filePath: string): GrpcRouteAttributeResult {
         const context = this.parseClassFile(filePath);
@@ -137,11 +143,7 @@ export class GrpcRouteAttributeReader extends AstReader implements GrpcRouteAttr
     }
 
     /**
-     * Collect the middleware a method schedules, and put each class into every stage bucket that the
-     * class serves.
-     *
-     * Each check is independent, because one class can serve more than one stage. The reader appends
-     * and never dedupes, which matches the framework runtime collector.
+     * Collect the middleware a method schedules, in the stage order the `Route` constructor takes.
      */
     protected readMiddleware(
         obj: ts.ObjectLiteralExpression,
@@ -150,71 +152,20 @@ export class GrpcRouteAttributeReader extends AstReader implements GrpcRouteAttr
         currentFilePath: string,
         currentClass: string,
     ): [string[], string[], string[], string[], string[]] {
-        const stagePath = GrpcRouteAttributeReader.STAGE_CONTRACT_PATH;
-        const routeMatched: string[] = [];
-        const routeDispatched: string[] = [];
-        const throwableCaught: string[] = [];
-        const sendingResponse: string[] = [];
-        const responseSent: string[] = [];
+        const byStage = this.groupMiddlewareByStage(
+            this.readMiddlewareNames(obj, method, useMap, currentFilePath, currentClass),
+            GrpcRouteAttributeReader.STAGE_CONTRACTS,
+            useMap,
+            currentFilePath,
+        );
 
-        for (const name of this.readMiddlewareNames(obj, method, useMap, currentFilePath, currentClass)) {
-            if (
-                this.classImplementsInterface(
-                    name,
-                    `${stagePath}/RouteMatchedMiddlewareContract`,
-                    useMap,
-                    currentFilePath,
-                )
-            ) {
-                routeMatched.push(name);
-            }
-
-            if (
-                this.classImplementsInterface(
-                    name,
-                    `${stagePath}/RouteDispatchedMiddlewareContract`,
-                    useMap,
-                    currentFilePath,
-                )
-            ) {
-                routeDispatched.push(name);
-            }
-
-            if (
-                this.classImplementsInterface(
-                    name,
-                    `${stagePath}/ThrowableCaughtMiddlewareContract`,
-                    useMap,
-                    currentFilePath,
-                )
-            ) {
-                throwableCaught.push(name);
-            }
-
-            if (
-                this.classImplementsInterface(
-                    name,
-                    `${stagePath}/SendingResponseMiddlewareContract`,
-                    useMap,
-                    currentFilePath,
-                )
-            ) {
-                sendingResponse.push(name);
-            }
-
-            if (
-                this.classImplementsInterface(
-                    name,
-                    `${stagePath}/ResponseSentMiddlewareContract`,
-                    useMap,
-                    currentFilePath,
-                )
-            ) {
-                responseSent.push(name);
-            }
-        }
-
-        return [routeMatched, routeDispatched, throwableCaught, sendingResponse, responseSent];
+        return [
+            byStage.routeMatched,
+            byStage.routeDispatched,
+            byStage.throwableCaught,
+            byStage.sendingResponse,
+            byStage.responseSent,
+        ];
     }
 
     /** Read every middleware class name a method schedules, in declaration order. */
