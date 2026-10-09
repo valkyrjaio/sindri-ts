@@ -20,6 +20,7 @@ import type { ServiceProviderReaderContract } from '../Ast/Contract/ServiceProvi
 import type { CliDataFileGeneratorContract } from '../Generator/Cli/Contract/CliDataFileGeneratorContract.ts';
 import type { ContainerDataFileGeneratorContract } from '../Generator/Container/Contract/ContainerDataFileGeneratorContract.ts';
 import type { EventDataFileGeneratorContract } from '../Generator/Event/Contract/EventDataFileGeneratorContract.ts';
+import type { GrpcDataFileGeneratorContract } from '../Generator/Grpc/Contract/GrpcDataFileGeneratorContract.ts';
 import type { HttpDataFileGeneratorContract } from '../Generator/Http/Contract/HttpDataFileGeneratorContract.ts';
 import { CliInteractionServiceId } from '@valkyrjaio/valkyrja/Cli/Interaction/Constant/CliInteractionServiceId.ts';
 import { CliRoutingServiceId } from '@valkyrjaio/valkyrja/Cli/Routing/Constant/CliRoutingServiceId.ts';
@@ -57,6 +58,7 @@ export class SindriCommandServiceProvider implements ServiceProviderContract {
                 container.getSingleton<EventDataFileGeneratorContract>(SindriServiceId.EventDataFileGeneratorContract),
                 container.getSingleton<CliDataFileGeneratorContract>(SindriServiceId.CliDataFileGeneratorContract),
                 container.getSingleton<HttpDataFileGeneratorContract>(SindriServiceId.HttpDataFileGeneratorContract),
+                container.getSingleton<GrpcDataFileGeneratorContract>(SindriServiceId.GrpcDataFileGeneratorContract),
             ),
         );
     }
