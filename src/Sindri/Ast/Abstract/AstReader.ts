@@ -1087,9 +1087,9 @@ export abstract class AstReader {
      * shape. The walk reads every name in the `extends` and `implements` clauses, resolves each
      * one through the declaring file's own imports, and recurses.
      *
-     * `contractPath` is the segment path of the contract, and never a bare class name. Every
-     * protocol declares a `RouteMatchedMiddlewareContract`, so a bare name puts an HTTP
-     * middleware into a gRPC stage.
+     * `contractPath` is the whole import specifier of the contract, package included, and never
+     * a bare class name. Every protocol declares a `RouteMatchedMiddlewareContract`, so a bare
+     * name puts an HTTP middleware into a gRPC stage.
      *
      * The walk matches the contract on that path and never parses the contract itself, so
      * classification does not need the framework the path names to be resolvable.
@@ -1141,7 +1141,7 @@ export abstract class AstReader {
         const useMap = this.buildUseMap(sourceFile);
 
         for (const ancestor of this.readAncestorNames(declaration)) {
-            if (this.moduleSpecifierMatchesContract(useMap[ancestor], contractPath)) {
+            if (this.moduleSpecifierIsContract(useMap[ancestor], contractPath)) {
                 return true;
             }
 
@@ -1203,16 +1203,20 @@ export abstract class AstReader {
     }
 
     /**
-     * Report whether an import specifier names the contract the segment path names.
+     * Report whether an import specifier names the contract the caller holds.
+     *
+     * The comparison is exact, and the caller holds the whole specifier, package included. A
+     * suffix comparison reads an application's own `Grpc/Middleware/Contract/<Name>.ts` as the
+     * framework contract of that name, and classifies a middleware that implements neither.
      *
      * The comparison drops the `.ts` extension, so the specifier the framework convention writes
      * matches the path the caller holds.
      */
-    protected moduleSpecifierMatchesContract(moduleSpecifier: string | undefined, contractPath: string): boolean {
+    protected moduleSpecifierIsContract(moduleSpecifier: string | undefined, contractPath: string): boolean {
         if (moduleSpecifier === undefined) {
             return false;
         }
 
-        return moduleSpecifier.replace(/\.ts$/, '').endsWith(contractPath);
+        return moduleSpecifier.replace(/\.ts$/, '') === contractPath;
     }
 }

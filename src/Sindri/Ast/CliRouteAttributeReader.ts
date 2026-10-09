@@ -27,7 +27,7 @@ import type { HandlerData } from './Data/HandlerData.ts';
  * entirely on AST without executing any TypeScript code.
  */
 export class CliRouteAttributeReader extends RouteAttributeReader implements CliRouteAttributeReaderContract {
-    protected static readonly STAGE_CONTRACT_PATH = 'Cli/Middleware/Contract';
+    protected static readonly STAGE_CONTRACT_PATH = '@valkyrjaio/valkyrja/Cli/Middleware/Contract';
 
     constructor(protected readonly parameterReader: CliRouteParameterReaderContract = new CliRouteParameterReader()) {
         super();
