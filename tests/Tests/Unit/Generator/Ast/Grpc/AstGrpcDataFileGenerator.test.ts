@@ -77,6 +77,48 @@ describe('AstGrpcDataFileGenerator', () => {
         );
     });
 
+    it('lets an imperative route override a decorated route that names the same method', () => {
+        const generator = new AstGrpcDataFileGenerator();
+        generator.classImportMap = { GrpcRouteProvider: '../Provider/GrpcRouteProvider.ts' };
+
+        const decorated = {
+            '/pkg.Ping/Ping': parseRouteExprs(`new Route('/pkg.Ping/Ping', PingController.ping)`)[0]!,
+            '/pkg.Ping/Echo': parseRouteExprs(`new Route('/pkg.Ping/Echo', PingController.echo)`)[0]!,
+        };
+        const imperative = parseRouteExprs(`new Route('/pkg.Ping/Ping', GrpcRouteProvider.pingHandler)`);
+
+        const status = generator.generateMergedFile('/out', 'AppGrpcRoutingData', 'App.Data', decorated, imperative);
+        const file = lastWrittenFile();
+
+        expect(status).toBe(GenerateStatus.SUCCESS);
+        expect(file).toContain(
+            `['/pkg.Ping/Ping']: (): RouteContract => new Route('/pkg.Ping/Ping', GrpcRouteProvider.pingHandler)`,
+        );
+        expect(file).not.toContain('PingController.ping');
+        // The method the imperative route does not name keeps its decorated route.
+        expect(file).toContain(
+            `['/pkg.Ping/Echo']: (): RouteContract => new Route('/pkg.Ping/Echo', PingController.echo)`,
+        );
+    });
+
+    it('keeps a decorated route when an imperative route names no method', () => {
+        const generator = new AstGrpcDataFileGenerator();
+        const decorated = {
+            '/pkg.Ping/Ping': parseRouteExprs(`new Route('/pkg.Ping/Ping', PingController.ping)`)[0]!,
+        };
+
+        const status = generator.generateMergedFile(
+            '/out',
+            'AppGrpcRoutingData',
+            'App.Data',
+            decorated,
+            parseRouteExprs('new Route()'),
+        );
+
+        expect(status).toBe(GenerateStatus.SUCCESS);
+        expect(lastWrittenFile()).toContain(`['/pkg.Ping/Ping']`);
+    });
+
     it('keys a route built through a with* chain by the method on the underlying new expression', () => {
         // A gRPC route is routinely declared as `new Route(...).withClientStreaming(true)`, so the
         // key has to come from the `new` expression at the base of the chain rather than the

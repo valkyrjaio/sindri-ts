@@ -11,6 +11,7 @@ export class SindriServiceId {
     static readonly CliRouteParameterReaderContract = 'Sindri.Ast.Contract.CliRouteParameterReaderContract' as const;
     static readonly ComponentProviderReaderContract = 'Sindri.Ast.Contract.ComponentProviderReaderContract' as const;
     static readonly ConfigReaderContract = 'Sindri.Ast.Contract.ConfigReaderContract' as const;
+    static readonly GrpcRouteAttributeReaderContract = 'Sindri.Ast.Contract.GrpcRouteAttributeReaderContract' as const;
     static readonly HttpRouteAttributeReaderContract = 'Sindri.Ast.Contract.HttpRouteAttributeReaderContract' as const;
     static readonly HttpRouteMiddlewareReaderContract =
         'Sindri.Ast.Contract.HttpRouteMiddlewareReaderContract' as const;

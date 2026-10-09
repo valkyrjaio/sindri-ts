@@ -1108,6 +1108,39 @@ export abstract class AstReader {
     }
 
     /**
+     * Group each middleware class by the stages it serves.
+     *
+     * A class lands in every stage it reaches, because one class can implement several stage
+     * contracts. The lists append and never dedupe, which is what the runtime collector does, so
+     * a class scheduled twice at a stage runs twice.
+     *
+     * @param stageContracts one import specifier for each stage, keyed by the stage's own name
+     */
+    protected groupMiddlewareByStage<K extends string>(
+        names: readonly string[],
+        stageContracts: Readonly<Record<K, string>>,
+        useMap: Record<string, string>,
+        currentFilePath: string,
+    ): Record<K, string[]> {
+        const stages = Object.keys(stageContracts) as K[];
+        const byStage = {} as Record<K, string[]>;
+
+        for (const stage of stages) {
+            byStage[stage] = [];
+        }
+
+        for (const name of names) {
+            for (const stage of stages) {
+                if (this.classImplementsInterface(name, stageContracts[stage], useMap, currentFilePath)) {
+                    byStage[stage].push(name);
+                }
+            }
+        }
+
+        return byStage;
+    }
+
+    /**
      * Report whether one declaration, or an ancestor of it, is the contract the path names.
      *
      * @param seen the declarations the walk read already, which stops a cycle in the sources
