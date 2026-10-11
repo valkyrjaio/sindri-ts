@@ -55,7 +55,7 @@ interface Deps {
     cliRouteAttributeReader?: { readFile: () => unknown };
     httpRouteAttributeReader?: { readFile: () => unknown };
     containerGenerator?: { generateFile: () => GenerateStatus };
-    eventGenerator?: { generateFile: () => GenerateStatus };
+    eventGenerator?: { generateFile: () => GenerateStatus; generateMergedFile: () => GenerateStatus };
     cliGenerator?: { generateFile: () => GenerateStatus };
     httpGenerator?: { generateFile: () => GenerateStatus };
 }
@@ -71,11 +71,11 @@ class TestGenerate extends GenerateDataFromAst {
             reader(new ConfigResult()) as never,
             (deps.componentProviderReader ?? reader(new ComponentProviderResult())) as never,
             (deps.routeProviderReader ?? reader({ controllerClasses: [], routes: [], routeImports: {} })) as never,
-            (deps.listenerProviderReader ?? reader({ listenerClasses: [] })) as never,
+            (deps.listenerProviderReader ?? reader({ listenerClasses: [], listeners: [], listenerImports: {} })) as never,
             (deps.serviceProviderReader ?? reader({ publishers: {} })) as never,
             (deps.cliRouteAttributeReader ?? reader({ routes: {}, importMap: {} })) as never,
             (deps.httpRouteAttributeReader ?? reader({ routes: {}, routeData: {}, importMap: {} })) as never,
-            (deps.listenerAttributeReader ?? reader({ listeners: {} })) as never,
+            (deps.listenerAttributeReader ?? reader({ listeners: new Map() })) as never,
             (deps.containerGenerator ?? generator()) as never,
             (deps.eventGenerator ?? generator()) as never,
             (deps.cliGenerator ?? generator()) as never,
@@ -253,12 +253,54 @@ describe('GenerateDataFromAst', () => {
     describe('generateEventData', () => {
         it('skips unresolvable providers and listener classes', () => {
             const gen = new TestGenerate({
-                listenerProviderReader: reader({ listenerClasses: ['MissingListener'] }),
+                listenerProviderReader: reader({
+                    listenerClasses: ['MissingListener'],
+                    listeners: [],
+                    listenerImports: {},
+                }),
             });
 
             // 'DoesNotExist' provider is skipped; 'AppListenerProviderFixture' resolves but its listener class does not.
             expect(() => gen.event(['DoesNotExist', 'AppListenerProviderFixture'], config, gen.freshOutput())).not.toThrow();
         });
+
+        it('omits the provider import when the provider declares no listener by hand', () => {
+            const eventGenerator = generator();
+            const gen = new TestGenerate({
+                listenerProviderReader: reader({ listenerClasses: [], listeners: [], listenerImports: {} }),
+                eventGenerator,
+            });
+
+            gen.event(['AppListenerProviderFixture'], config, gen.freshOutput());
+
+            expect(eventGenerator.classImportMap).toStrictEqual({});
+        });
+
+        it('merges the hand-declared listeners and imports the classes they name', () => {
+            const eventGenerator = generator();
+            const gen = new TestGenerate({
+                listenerProviderReader: reader({
+                    listenerClasses: [],
+                    listeners: [{} as never],
+                    listenerImports: {
+                        PackageCommandName: path.join(
+                            nodeModules,
+                            '@fixture/routes/src/PackageCommandNameFixture.ts',
+                        ),
+                    },
+                }),
+                eventGenerator,
+            });
+
+            gen.event(['AppListenerProviderFixture'], config, gen.freshOutput());
+
+            expect(eventGenerator.generateMergedFile).toHaveBeenCalled();
+            expect(eventGenerator.classImportMap).toStrictEqual({
+                AppListenerProviderFixture: './Provider/AppListenerProviderFixture.ts',
+                PackageCommandName: '@fixture/routes/PackageCommandNameFixture.ts',
+            });
+        });
+
     });
 
     describe('generateCliData', () => {

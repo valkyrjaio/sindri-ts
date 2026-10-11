@@ -264,7 +264,10 @@ export abstract class GenerateDataFromAst extends GenerateFromAst {
             .withAddedMessages(new Message('Generating Event Data..........................'))
             .writeMessages();
 
-        const allListeners: Record<string, ts.Expression> = {};
+        // A Map, because an object reorders a key that reads as an integer.
+        const allListeners = new Map<string, ts.Expression>();
+        const imperativeListeners: ts.Expression[] = [];
+        const importMap: Record<string, string> = {};
 
         for (const providerClass of listenerProviders) {
             const filePath = this.fqnToFilePath(providerClass, config.namespace, config.dir);
@@ -275,6 +278,13 @@ export abstract class GenerateDataFromAst extends GenerateFromAst {
 
             const providerResult = this.listenerProviderReader.readFile(filePath);
 
+            if (providerResult.listeners.length > 0) {
+                // The expressions are emitted verbatim, so every class they name is imported.
+                imperativeListeners.push(...providerResult.listeners);
+                importMap[path.basename(filePath, '.ts')] = this.importSpecifier(config.dataPath, filePath);
+                this.mergeReaderImports(importMap, providerResult.listenerImports, config);
+            }
+
             for (const listenerClass of providerResult.listenerClasses) {
                 const listenerPath = this.fqnToFilePath(listenerClass, config.namespace, config.dir);
 
@@ -284,15 +294,20 @@ export abstract class GenerateDataFromAst extends GenerateFromAst {
 
                 const attrResult = this.listenerAttributeReader.readFile(listenerPath);
 
-                Object.assign(allListeners, attrResult.listeners);
+                for (const [name, listener] of attrResult.listeners) {
+                    allListeners.set(name, listener);
+                }
             }
         }
 
-        const status = this.eventGenerator.generateFile(
+        this.eventGenerator.classImportMap = importMap;
+
+        const status = this.eventGenerator.generateMergedFile(
             config.dataPath,
             'AppEventData',
             config.dataNamespace,
             allListeners,
+            imperativeListeners,
         );
 
         return this.addMessagesForGenerateStatus(output, status).withAddedMessages(new NewLine()).writeMessages();
@@ -428,16 +443,12 @@ export abstract class GenerateDataFromAst extends GenerateFromAst {
     }
 
     /**
-     * Merge the class-name → absolute-file-path imports a route attribute reader
-     * resolved (handler/help-text/middleware classes) into the generated data
-     * file's import map, converting each absolute path to the specifier the
-     * generated file imports it by — relative to the output directory for
-     * application source, or the owning package's own specifier for a class an
-     * installed package exposes.
+     * Merge the class-name → absolute-file-path imports a reader resolved into the generated data
+     * file's import map, by the specifier that file imports each one by.
      */
     protected mergeReaderImports(
         importMap: Record<string, string>,
-        readerImportMap: Record<string, string>,
+        readerImportMap: Readonly<Record<string, string>>,
         config: ConfigResult,
     ): void {
         for (const [name, absolutePath] of Object.entries(readerImportMap)) {

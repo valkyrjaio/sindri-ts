@@ -35,13 +35,13 @@ export class ListenerAttributeReader extends AstReader implements ListenerAttrib
         }
 
         const { classDecl, useMap, currentClass } = context;
-        const listeners: Record<string, ts.Expression> = {};
+        const listeners = new Map<string, ts.Expression>();
 
         for (const decorator of this.findDecoratorsOnNode(classDecl, 'Listener', useMap, filePath)) {
             const data = this.buildListenerData(decorator, useMap, filePath, currentClass, classDecl, undefined);
 
             if (data !== null) {
-                listeners[data.name] = this.buildListenerExpr(data);
+                listeners.set(data.name, this.buildListenerExpr(data));
             }
         }
 
@@ -50,7 +50,7 @@ export class ListenerAttributeReader extends AstReader implements ListenerAttrib
                 const data = this.buildListenerData(decorator, useMap, filePath, currentClass, classDecl, method);
 
                 if (data !== null) {
-                    listeners[data.name] = this.buildListenerExpr(data);
+                    listeners.set(data.name, this.buildListenerExpr(data));
                 }
             }
         }

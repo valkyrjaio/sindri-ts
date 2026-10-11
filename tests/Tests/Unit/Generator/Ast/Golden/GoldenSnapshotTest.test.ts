@@ -56,7 +56,7 @@ const POST = 'RequestMethod::POST';
 
 const goldenDir = fileURLToPath(new URL('./golden/', import.meta.url));
 
-/** A stable placeholder route/listener expression (printed verbatim into the snapshot). */
+/** A stable placeholder route expression (printed verbatim into the snapshot). */
 function placeholder(text: string): ts.Expression {
     return ts.factory.createStringLiteral(text);
 }
@@ -274,15 +274,24 @@ describe('GoldenSnapshotTest', () => {
     });
 
     it('matches the AppEventData golden', () => {
-        const listeners = {
-            'user.created': placeholder('user-created-expr'),
-            'user.deleted': placeholder('user-deleted-expr'),
-        };
+        // Real `new Listener(...)` values, because the generated file derives the event index from
+        // each listener's own event-id argument: two listeners for one event id, and a third whose
+        // event id is a constant the index must emit as a reference.
+        const listenerExprs = parseRouteExprs(
+            [
+                `new Listener('user.created', 'sendWelcome', AppListenerProvider.sendWelcome)`,
+                `new Listener('user.created', 'auditCreate', AppListenerProvider.auditCreate)`,
+                `new Listener(AppEventId.Deleted, 'cleanup', AppListenerProvider.cleanup)`,
+            ].join(', '),
+        );
 
         const actual = generate('AppEventData', (directory) => {
             const generator = new AstEventDataFileGenerator();
-            generator.classImportMap = { AppListenerProvider: '../Provider/AppListenerProvider.ts' };
-            generator.generateFile(directory, 'AppEventData', 'App.Data', listeners);
+            generator.classImportMap = {
+                AppListenerProvider: '../Provider/AppListenerProvider.ts',
+                AppEventId: '../Constant/AppEventId.ts',
+            };
+            generator.generateMergedFile(directory, 'AppEventData', 'App.Data', new Map(), listenerExprs);
         });
 
         assertGolden(actual, 'AppEventData');

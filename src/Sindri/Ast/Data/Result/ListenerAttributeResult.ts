@@ -9,5 +9,8 @@
 import type { ts } from 'ts-morph';
 
 export class ListenerAttributeResult {
-    constructor(readonly listeners: Record<string, ts.Expression> = {}) {}
+    /**
+     * @param listeners A Map, because an object reorders a key that reads as an integer
+     */
+    constructor(readonly listeners: ReadonlyMap<string, ts.Expression> = new Map()) {}
 }

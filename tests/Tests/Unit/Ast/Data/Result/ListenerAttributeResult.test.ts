@@ -12,6 +12,6 @@ import { ListenerAttributeResult } from '../../../../../../src/Sindri/Ast/Data/R
 
 describe('ListenerAttributeResult', () => {
     it('defaults to no listeners', () => {
-        expect(new ListenerAttributeResult().listeners).toStrictEqual({});
+        expect(new ListenerAttributeResult().listeners.size).toBe(0);
     });
 });

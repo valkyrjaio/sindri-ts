@@ -29,4 +29,53 @@ describe('ListenerProviderReader', () => {
 
         expect(result.listenerClasses).toHaveLength(0);
     });
+
+    it('returns an empty listener list when the provider declares no getListeners method', () => {
+        const result = new ListenerProviderReader().readFile(fixture('Provider/TestComponentProviderFixture'));
+
+        expect(result.listeners).toHaveLength(0);
+        expect(result.listenerImports).toStrictEqual({});
+    });
+
+    it('returns an empty listener list when getListeners returns no array', () => {
+        const result = new ListenerProviderReader().readFile(fixture('Provider/TestNonArrayListenerProviderFixture'));
+
+        expect(result.listeners).toHaveLength(0);
+    });
+
+    describe('getListeners', () => {
+        const result = new ListenerProviderReader().readFile(fixture('Provider/TestImperativeListenerProviderFixture'));
+        const sources = result.listeners.map((listener) => listener.getText());
+
+        it('reads a bare construction', () => {
+            expect(sources).toContain(
+                "new Listener('app.started', 'logStart', TestImperativeListenerProviderFixture.logStart)",
+            );
+        });
+
+        it('reads a builder chain over a construction', () => {
+            expect(sources.some((source) => source.includes('.withHandler('))).toBe(true);
+            expect(sources.some((source) => source.includes('.withName('))).toBe(true);
+            expect(sources.some((source) => source.includes('.withEventId('))).toBe(true);
+        });
+
+        it('leaves out an element that is not a construction', () => {
+            expect(sources.some((source) => source.includes('listenerFactory()'))).toBe(false);
+        });
+
+        it('reads a chain whose base a cast dresses, which the generator then refuses', () => {
+            const cast = new ListenerProviderReader().readFile(fixture('Provider/TestCastListenerProviderFixture'));
+
+            expect(cast.listeners).toHaveLength(1);
+        });
+
+        it('resolves the classes the listener expressions reference', () => {
+            expect(Object.keys(result.listenerImports)).toContain('TestEventIdFixture');
+            expect(result.listenerImports['TestEventIdFixture']).toContain('TestEventIdFixture.ts');
+        });
+
+        it('skips a name the provider file does not import', () => {
+            expect(Object.keys(result.listenerImports)).not.toContain('TestImperativeListenerProviderFixture');
+        });
+    });
 });

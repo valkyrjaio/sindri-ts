@@ -29,20 +29,20 @@ describe('ListenerAttributeReader', () => {
     it('reads class-level and method-level @Listener decorators', () => {
         const result = new ListenerAttributeReader().readFile(fixture('TestListenerFixture'));
 
-        expect(Object.keys(result.listeners)).toContain('sendWelcome');
-        expect(Object.keys(result.listeners)).toContain('cleanup');
+        expect(result.listeners.has('sendWelcome')).toBe(true);
+        expect(result.listeners.has('cleanup')).toBe(true);
     });
 
     it('skips listeners with an empty event id or name', () => {
         const result = new ListenerAttributeReader().readFile(fixture('TestEmptyListenerFixture'));
 
-        expect(Object.keys(result.listeners)).toHaveLength(0);
+        expect(result.listeners.size).toBe(0);
     });
 
     it('returns an empty result when there is no class', () => {
         const result = new ListenerAttributeReader().readFile(fixture('../Config/TestConfigNoClassFixture'));
 
-        expect(Object.keys(result.listeners)).toHaveLength(0);
+        expect(result.listeners.size).toBe(0);
     });
 
     it('builds a null handler argument when the listener has no handler', () => {
@@ -50,4 +50,5 @@ describe('ListenerAttributeReader', () => {
 
         expect(ts.isNewExpression(expr)).toBe(true);
     });
+
 });
