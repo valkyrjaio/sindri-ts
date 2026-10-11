@@ -23,6 +23,10 @@ class TestListenerAttributeReader extends ListenerAttributeReader {
     public build(data: ListenerData): ts.Expression {
         return this.buildListenerExpr(data);
     }
+
+    public imports(listenerData: readonly ListenerData[], filePath: string): Record<string, string> {
+        return this.buildImportMap(listenerData, {}, filePath, 'TestListenerFixture');
+    }
 }
 
 describe('ListenerAttributeReader', () => {
@@ -51,4 +55,33 @@ describe('ListenerAttributeReader', () => {
         expect(ts.isNewExpression(expr)).toBe(true);
     });
 
+    describe('importMap', () => {
+        it('resolves a handler the listener class itself declares to that class', () => {
+            const filePath = fixture('TestListenerFixture');
+            const result = new ListenerAttributeReader().readFile(filePath);
+
+            expect(result.importMap['TestListenerFixture']).toBe(filePath);
+        });
+
+        it('resolves a handler another class declares through the listener file imports', () => {
+            const result = new ListenerAttributeReader().readFile(fixture('TestImportedHandlerListenerFixture'));
+
+            expect(result.importMap['TestListenerHandlerFixture']).toContain('TestListenerHandlerFixture.ts');
+        });
+
+        it('skips a handler class the listener file does not import', () => {
+            // `CustomHandler` and `DirectHandler` name no import in the fixture, so no specifier
+            // can be emitted for them.
+            const result = new ListenerAttributeReader().readFile(fixture('TestListenerFixture'));
+
+            expect(Object.keys(result.importMap)).not.toContain('CustomHandler');
+            expect(Object.keys(result.importMap)).not.toContain('DirectHandler');
+        });
+
+        it('holds nothing for a listener with no handler', () => {
+            const reader = new TestListenerAttributeReader();
+
+            expect(reader.imports([new ListenerData('event.id', 'name', null)], fixture('TestListenerFixture'))).toStrictEqual({});
+        });
+    });
 });

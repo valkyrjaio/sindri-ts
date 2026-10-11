@@ -11,6 +11,10 @@ import type { ts } from 'ts-morph';
 export class ListenerAttributeResult {
     /**
      * @param listeners A Map, because an object reorders a key that reads as an integer
+     * @param importMap Class short name → absolute file path for the handler imports
      */
-    constructor(readonly listeners: ReadonlyMap<string, ts.Expression> = new Map()) {}
+    constructor(
+        readonly listeners: ReadonlyMap<string, ts.Expression> = new Map(),
+        readonly importMap: Record<string, string> = {},
+    ) {}
 }

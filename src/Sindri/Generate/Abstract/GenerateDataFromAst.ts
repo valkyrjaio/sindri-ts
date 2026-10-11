@@ -297,6 +297,8 @@ export abstract class GenerateDataFromAst extends GenerateFromAst {
                 for (const [name, listener] of attrResult.listeners) {
                     allListeners.set(name, listener);
                 }
+
+                this.mergeReaderImports(importMap, attrResult.importMap, config);
             }
         }
 

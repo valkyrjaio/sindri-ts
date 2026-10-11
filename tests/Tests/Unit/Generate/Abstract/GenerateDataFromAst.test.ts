@@ -75,7 +75,7 @@ class TestGenerate extends GenerateDataFromAst {
             (deps.serviceProviderReader ?? reader({ publishers: {} })) as never,
             (deps.cliRouteAttributeReader ?? reader({ routes: {}, importMap: {} })) as never,
             (deps.httpRouteAttributeReader ?? reader({ routes: {}, routeData: {}, importMap: {} })) as never,
-            (deps.listenerAttributeReader ?? reader({ listeners: new Map() })) as never,
+            (deps.listenerAttributeReader ?? reader({ listeners: new Map(), importMap: {} })) as never,
             (deps.containerGenerator ?? generator()) as never,
             (deps.eventGenerator ?? generator()) as never,
             (deps.cliGenerator ?? generator()) as never,
@@ -301,6 +301,28 @@ describe('GenerateDataFromAst', () => {
             });
         });
 
+        it('imports the handler classes the decorated listeners name', () => {
+            const eventGenerator = generator();
+            const listenerPath = path.join(appDir, 'Listener', 'AppListenerFixture.ts');
+            const gen = new TestGenerate({
+                listenerProviderReader: reader({
+                    listenerClasses: ['AppListenerFixture'],
+                    listeners: [],
+                    listenerImports: {},
+                }),
+                listenerAttributeReader: reader({
+                    listeners: new Map([['onStarted', {}]]),
+                    importMap: { AppListenerFixture: listenerPath },
+                }),
+                eventGenerator,
+            });
+
+            gen.event(['AppListenerProviderFixture'], config, gen.freshOutput());
+
+            expect(eventGenerator.classImportMap).toStrictEqual({
+                AppListenerFixture: './Listener/AppListenerFixture.ts',
+            });
+        });
     });
 
     describe('generateCliData', () => {
