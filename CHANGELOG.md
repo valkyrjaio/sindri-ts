@@ -1,6 +1,13 @@
 # Release Notes for 26.x
 
-## [Unreleased](https://github.com/valkyrjaio/sindri-ts/compare/v26.6.65...26.x)
+## [Unreleased](https://github.com/valkyrjaio/sindri-ts/compare/v26.6.66...26.x)
+
+## [v26.6.66](https://github.com/valkyrjaio/sindri-ts/compare/v26.6.65...v26.6.66) - 2026-10-12
+
+* [Event] fix: Cache every declared listener and index them by event by [@MelechMizrachi](https://github.com/MelechMizrachi) in https://github.com/valkyrjaio/sindri-ts/pull/282
+* [Route] fix: Stop on a route naming a value the generated data cannot import by [@MelechMizrachi](https://github.com/MelechMizrachi) in https://github.com/valkyrjaio/sindri-ts/pull/283
+* [Dependency] build: Update npm dependencies by [@valkyrja-volundr](https://github.com/valkyrja-volundr)[bot] in https://github.com/valkyrjaio/sindri-ts/pull/284
+* [Dependency] build: Update npm dependencies by [@valkyrja-volundr](https://github.com/valkyrja-volundr)[bot] in https://github.com/valkyrjaio/sindri-ts/pull/285
 
 ## [v26.6.65](https://github.com/valkyrjaio/sindri-ts/compare/v26.6.64...v26.6.65) - 2026-10-11
 
