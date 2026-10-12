@@ -29,16 +29,24 @@ function fixture(name: string): string {
     return fileURLToPath(new URL(`../../Fixtures/${name}.ts`, import.meta.url));
 }
 
-/** Read the provider's routes and write the HTTP routing data file, returning its source. */
+/** Read the provider's routes and write the Http routing data file, returning its source. */
 function generate(provider: string): string {
     const providerResult = new RouteProviderReader().readFile(fixture(provider));
     const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'sindri-http-'));
 
     try {
         const generator = new AstHttpDataFileGenerator();
+
+        // The import map is built the way GenerateDataFromAst builds it: the provider under its
+        // file base name, and every name the reader resolved for the route expressions.
         generator.classImportMap = {
-            TestGlobalHandlerRouteProviderFixture: '../Provider/TestGlobalHandlerRouteProviderFixture.ts',
-            CliA: '../Provider/CliA.ts',
+            [path.basename(provider)]: path.relative(directory, fixture(provider)),
+            ...Object.fromEntries(
+                Object.entries(providerResult.routeImports).map(([name, importPath]) => [
+                    name,
+                    path.relative(directory, importPath),
+                ]),
+            ),
         };
         generator.generateFileFromRoutes(directory, 'AppHttpRoutingData', 'App.Data', providerResult.routes);
 
@@ -58,16 +66,20 @@ describe('HttpRouteDataGeneration', () => {
             );
         });
 
+        it('holds the inline handler that renames a destructured property and defaults it', () => {
+            expect(generated).toContain(
+                "['renamed']: (): RouteContract => new Route('/renamed', 'renamed', ({ prefix: p = CliA.PREFIX }) => p)",
+            );
+        });
+
         it("holds the provider's own static, which the generated file imports the provider for", () => {
-            expect(generated).toContain('import { TestGlobalHandlerRouteProviderFixture } from');
+            expect(generated).toMatch(/import \{ TestGlobalHandlerRouteProviderFixture \} from '.*TestGlobalHandlerRouteProviderFixture\.ts';/);
             expect(generated).toContain('TestGlobalHandlerRouteProviderFixture.handle');
         });
 
         it('holds an imported handler, and imports the class it comes from', () => {
-            expect(generated).toContain("import { CliA } from '../Provider/CliA.ts';");
-            expect(generated).toContain(
-                "['imported']: (): RouteContract => new Route('/imported', 'imported', CliA.handle)",
-            );
+            expect(generated).toMatch(/import \{ CliA \} from '.*CliA\.ts';/);
+            expect(generated).toContain("['imported']: (): RouteContract => new Route('/imported', 'imported', CliA.handle)");
         });
     });
 

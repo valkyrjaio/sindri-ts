@@ -8,13 +8,14 @@
 
 import { describe, expect, it } from 'vitest';
 
+import { AstInvalidArgumentException } from '../../../../../../src/Sindri/Ast/Throwable/Exception/Abstract/AstInvalidArgumentException.ts';
 import { AstUnreadableRouteException } from '../../../../../../src/Sindri/Ast/Throwable/Exception/AstUnreadableRouteException.ts';
 
 describe('AstUnreadableRouteException', () => {
     it('is a throwable invalid argument exception', () => {
         const exception = new AstUnreadableRouteException('unreadable');
 
-        expect(exception).toBeInstanceOf(Error);
+        expect(exception).toBeInstanceOf(AstInvalidArgumentException);
         expect(exception.message).toBe('unreadable');
     });
 });
