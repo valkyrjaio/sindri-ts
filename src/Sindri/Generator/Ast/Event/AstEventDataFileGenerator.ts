@@ -10,6 +10,8 @@ import { ts } from 'ts-morph';
 
 import { AstFileGenerator } from '../../Abstract/AstFileGenerator.ts';
 import type { EventDataFileGeneratorContract } from '../../Event/Contract/EventDataFileGeneratorContract.ts';
+import { GeneratorUnreadableListenerException } from '../../Throwable/Exception/GeneratorUnreadableListenerException.ts';
+
 import type { GenerateStatus } from '../../Enum/GenerateStatus.ts';
 
 export class AstEventDataFileGenerator extends AstFileGenerator implements EventDataFileGeneratorContract {
@@ -28,6 +30,21 @@ export class AstEventDataFileGenerator extends AstFileGenerator implements Event
         ListenerContract: '@valkyrjaio/valkyrja/Event/Data/Contract/ListenerContract.ts',
     };
 
+    /** The builders `ListenerContract` declares. */
+    protected static readonly LISTENER_BUILDERS: readonly string[] = ['withEventId', 'withName', 'withHandler'];
+
+    /** The builder that replaces a listener's event id. */
+    protected static readonly BUILDER_EVENT_ID = 'withEventId';
+
+    /** The builder that replaces a listener's name. */
+    protected static readonly BUILDER_NAME = 'withName';
+
+    /** The position of the event id in a `Listener` construction. */
+    protected static readonly ARGUMENT_EVENT_ID = 0;
+
+    /** The position of the listener name in a `Listener` construction. */
+    protected static readonly ARGUMENT_NAME = 1;
+
     public classImportMap: Record<string, string> = {};
 
     private readonly printer = ts.createPrinter({ newLine: ts.NewLineKind.LineFeed });
@@ -44,21 +61,60 @@ export class AstEventDataFileGenerator extends AstFileGenerator implements Event
         directory: string,
         className: string,
         namespace: string,
-        listeners: Record<string, ts.Expression>,
+        listeners: ReadonlyMap<string, ts.Expression>,
     ): GenerateStatus {
+        return this.generateMergedFile(directory, className, namespace, listeners, []);
+    }
+
+    /**
+     * Generate the event data file from the decorated listeners and the listeners a provider
+     * declares by hand.
+     */
+    public generateMergedFile(
+        directory: string,
+        className: string,
+        namespace: string,
+        listeners: ReadonlyMap<string, ts.Expression>,
+        listenerExprs: readonly ts.Expression[],
+    ): GenerateStatus {
+        const factories = new Map<string, ts.Expression>();
+        const events = new Map<string, string[]>();
+
+        for (const [name, listener] of listeners) {
+            this.fileListener(
+                factories,
+                events,
+                this.stringSource(name),
+                this.readListenerKeys(listener).eventId,
+                listener,
+            );
+        }
+
+        for (const listener of listenerExprs) {
+            const keys = this.readListenerKeys(listener);
+
+            // The index is the only way the collection reaches a listener, so an entry the index
+            // cannot hold would be one nothing dispatches.
+            if (keys.name === undefined || keys.eventId === undefined) {
+                continue;
+            }
+
+            this.fileListener(factories, events, keys.name, keys.eventId, listener);
+        }
+
         const userImportsBlock = this.buildUserImportsBlock(this.classImportMap, [
             ...Object.keys(AstEventDataFileGenerator.FRAMEWORK_IMPORTS),
             ...Object.keys(AstEventDataFileGenerator.LISTENER_IMPORTS),
             ...Object.keys(AstEventDataFileGenerator.LISTENER_TYPE_IMPORTS),
         ]);
 
-        const contents = this.generateClassContents(listeners);
+        const contents = this.generateClassContents(factories, events);
 
         // The Listener / ListenerContract imports are only referenced by the
         // generated listener closures — omit them when there are no listeners
         // so empty event data does not carry unused (and unresolved) imports.
         const listenerImports =
-            Object.keys(listeners).length > 0
+            factories.size > 0
                 ? [
                       ...this.buildFrameworkImportLines(AstEventDataFileGenerator.LISTENER_IMPORTS),
                       ...this.buildFrameworkImportLines(AstEventDataFileGenerator.LISTENER_TYPE_IMPORTS, true),
@@ -82,22 +138,241 @@ export class AstEventDataFileGenerator extends AstFileGenerator implements Event
         return this.writeFile(directory, className, data);
     }
 
-    public generateClassContents(listeners: Record<string, ts.Expression>): string {
-        const entries = Object.entries(listeners);
-
-        if (entries.length === 0) {
+    public generateClassContents(
+        factories: ReadonlyMap<string, ts.Expression>,
+        events: ReadonlyMap<string, readonly string[]>,
+    ): string {
+        if (factories.size === 0) {
             return 'super();';
         }
 
-        const lines: string[] = [];
+        return [
+            'super(',
+            ...this.wrapMapLines(this.buildEventIndexLines(events)),
+            ...this.wrapMapLines(this.buildListenerLines(factories)),
+            '        );',
+        ].join('\n');
+    }
 
-        for (const [key, valueExpr] of entries) {
-            const printed = this.printer.printNode(ts.EmitHint.Unspecified, valueExpr, this.dummySourceFile);
-            lines.push(`            ['${key}']: (): ListenerContract => ${printed},`);
+    /**
+     * File one listener into the listener map and the event index, the way
+     * `ListenerCollection.addListener` files it.
+     *
+     * @param name    The source text of the key the listener map files the listener under
+     * @param eventId The source text of the key the event index files the name under, or nothing
+     *                when the listener names no event id a key can read
+     */
+    protected fileListener(
+        factories: Map<string, ts.Expression>,
+        events: Map<string, string[]>,
+        name: string,
+        eventId: string | undefined,
+        listener: ts.Expression,
+    ): void {
+        factories.set(name, listener);
+
+        if (eventId === undefined) {
+            return;
         }
 
-        return ['super(', '            {},', '            {', ...lines, '            },', '        );'].join(
-            '\n        ',
+        const names = events.get(eventId);
+
+        if (names === undefined) {
+            events.set(eventId, [name]);
+
+            return;
+        }
+
+        if (!names.includes(name)) {
+            names.push(name);
+        }
+    }
+
+    /**
+     * Read the event id and the name the listener an expression declares ends up with.
+     *
+     * The chain is walked from the outermost call inward, so the first `withEventId` and the first
+     * `withName` it reaches are the last ones the framework applies.
+     */
+    protected readListenerKeys(listener: ts.Expression): { eventId: string | undefined; name: string | undefined } {
+        let eventIdArgument: ts.Expression | undefined = undefined;
+        let nameArgument: ts.Expression | undefined = undefined;
+        let eventIdReplaced = false;
+        let nameReplaced = false;
+        this.requireNoTypeBinding(listener);
+
+        let current = this.readValueExpression(listener);
+
+        while (ts.isCallExpression(current) && ts.isPropertyAccessExpression(current.expression)) {
+            const builder = current.expression.name.text;
+
+            if (!AstEventDataFileGenerator.LISTENER_BUILDERS.includes(builder)) {
+                throw new GeneratorUnreadableListenerException(
+                    `Cannot read the listener '${this.printExpr(current)}': '${builder}' is not a listener builder.`,
+                );
+            }
+
+            if (builder === AstEventDataFileGenerator.BUILDER_EVENT_ID && !eventIdReplaced) {
+                eventIdReplaced = true;
+                eventIdArgument = current.arguments[0];
+            }
+
+            if (builder === AstEventDataFileGenerator.BUILDER_NAME && !nameReplaced) {
+                nameReplaced = true;
+                nameArgument = current.arguments[0];
+            }
+
+            current = this.readValueExpression(current.expression.expression);
+        }
+
+        if (!ts.isNewExpression(current)) {
+            return { eventId: undefined, name: undefined };
+        }
+
+        const args = current.arguments ?? [];
+
+        if (!eventIdReplaced) {
+            eventIdArgument = args[AstEventDataFileGenerator.ARGUMENT_EVENT_ID];
+        }
+
+        if (!nameReplaced) {
+            nameArgument = args[AstEventDataFileGenerator.ARGUMENT_NAME];
+        }
+
+        return { eventId: this.keySource(eventIdArgument), name: this.keySource(nameArgument) };
+    }
+
+    /**
+     * Read the source text of one key an argument names, which is nothing when the generated file
+     * cannot name that key before the application runs.
+     */
+    protected keySource(argument: ts.Expression | undefined): string | undefined {
+        if (argument === undefined) {
+            return undefined;
+        }
+
+        const value = this.readValueExpression(argument);
+
+        if (ts.isStringLiteral(value)) {
+            return this.stringSource(value.text);
+        }
+
+        if (!ts.isPropertyAccessExpression(value) || !ts.isIdentifier(value.expression)) {
+            return undefined;
+        }
+
+        // The file emits the reference, so a constant it does not import reaches it as an
+        // unbound name.
+        if (!Object.hasOwn(this.classImportMap, value.expression.text)) {
+            throw new GeneratorUnreadableListenerException(
+                `Cannot read the listener key '${this.printExpr(value)}': the generated data imports no '${value.expression.text}'.`,
+            );
+        }
+
+        return this.printExpr(value);
+    }
+
+    /** Build the lines of the event index, which files each listener name under its event id. */
+    protected buildEventIndexLines(events: ReadonlyMap<string, readonly string[]>): string[] {
+        return [...events].map(([eventId, names]) => `                [${eventId}]: [${names.join(', ')}],`);
+    }
+
+    /** Build the lines of the listener map, which holds a factory for each listener name. */
+    protected buildListenerLines(factories: ReadonlyMap<string, ts.Expression>): string[] {
+        return [...factories].map(
+            ([name, listener]) => `                [${name}]: (): ListenerContract => ${this.printExpr(listener)},`,
         );
+    }
+
+    /** Wrap the lines of one generated map in its braces, and collapse an empty map to `{}`. */
+    protected wrapMapLines(lines: readonly string[]): string[] {
+        if (lines.length === 0) {
+            return ['            {},'];
+        }
+
+        return ['            {', ...lines, '            },'];
+    }
+
+    /** Render a string as the source text of a string literal, with the escapes it needs. */
+    protected stringSource(value: string): string {
+        return this.printer.printNode(
+            ts.EmitHint.Unspecified,
+            ts.factory.createStringLiteral(value, true),
+            this.dummySourceFile,
+        );
+    }
+
+    /** Print an expression to source. */
+    protected printExpr(expr: ts.Expression): string {
+        return this.printNodeText(expr);
+    }
+
+    /** Print a node to source, through its own text when it carries a source position. */
+    protected printNodeText(node: ts.Node): string {
+        return node.pos >= 0
+            ? node.getText()
+            : this.printer.printNode(ts.EmitHint.Unspecified, node, this.dummySourceFile);
+    }
+
+    /** Reach the value node a wrapped expression holds, through the parentheses and the casts. */
+    protected readValueExpression(expression: ts.Expression): ts.Expression {
+        if (
+            ts.isParenthesizedExpression(expression) ||
+            ts.isAsExpression(expression) ||
+            ts.isSatisfiesExpression(expression)
+        ) {
+            return this.readValueExpression(expression.expression);
+        }
+
+        return expression;
+    }
+
+    /**
+     * Stop when any part of a listener names a binding in a type, which the generated file carries
+     * no import for.
+     */
+    protected requireNoTypeBinding(listener: ts.Expression, node: ts.Node = listener): void {
+        if (ts.isTypeNode(node) && this.namesBinding(node)) {
+            throw new GeneratorUnreadableListenerException(
+                `Cannot read the listener '${this.printNodeText(listener)}': the generated data cannot import the type '${this.printNodeText(node)}'; declare the listener without it.`,
+            );
+        }
+
+        ts.forEachChild(node, (child: ts.Node): void => {
+            this.requireNoTypeBinding(listener, child);
+        });
+    }
+
+    /**
+     * Whether a type names a binding that the file holding it has to resolve. `const` is a reserved
+     * word, so it names none.
+     */
+    protected namesBinding(node: ts.Node): boolean {
+        if (ts.isImportTypeNode(node) || ts.isQualifiedName(node)) {
+            return true;
+        }
+
+        if (ts.isIdentifier(node)) {
+            return node.text !== 'const';
+        }
+
+        const declaredName = this.declaredName(node);
+        let names = false;
+
+        ts.forEachChild(node, (child: ts.Node): void => {
+            names = names || (child !== declaredName && this.namesBinding(child));
+        });
+
+        return names;
+    }
+
+    /**
+     * The name a declaration spells out as one identifier, which declares a binding rather than
+     * naming one. Every other name form can hold an expression, so it is read.
+     */
+    protected declaredName(node: ts.Node): ts.Node | undefined {
+        const name: ts.Node | undefined = 'name' in node ? (node.name as ts.Node | undefined) : undefined;
+
+        return name !== undefined && ts.isIdentifier(name) ? name : undefined;
     }
 }

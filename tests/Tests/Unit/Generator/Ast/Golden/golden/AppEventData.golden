@@ -4,15 +4,20 @@ import { EventData } from '@valkyrjaio/valkyrja/Event/Data/EventData.ts';
 import { Listener } from '@valkyrjaio/valkyrja/Event/Data/Listener.ts';
 import type { ListenerContract } from '@valkyrjaio/valkyrja/Event/Data/Contract/ListenerContract.ts';
 import { AppListenerProvider } from '../Provider/AppListenerProvider.ts';
+import { AppEventId } from '../Constant/AppEventId.ts';
 
 export class AppEventData extends EventData {
     constructor() {
         super(
-                    {},
-                    {
-                    ['user.created']: (): ListenerContract => "user-created-expr",
-                    ['user.deleted']: (): ListenerContract => "user-deleted-expr",
-                    },
-                );
+            {
+                ['user.created']: ['sendWelcome', 'auditCreate'],
+                [AppEventId.Deleted]: ['cleanup'],
+            },
+            {
+                ['sendWelcome']: (): ListenerContract => new Listener('user.created', 'sendWelcome', AppListenerProvider.sendWelcome),
+                ['auditCreate']: (): ListenerContract => new Listener('user.created', 'auditCreate', AppListenerProvider.auditCreate),
+                ['cleanup']: (): ListenerContract => new Listener(AppEventId.Deleted, 'cleanup', AppListenerProvider.cleanup),
+            },
+        );
     }
 }

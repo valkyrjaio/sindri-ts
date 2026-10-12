@@ -35,13 +35,15 @@ export class ListenerAttributeReader extends AstReader implements ListenerAttrib
         }
 
         const { classDecl, useMap, currentClass } = context;
-        const listeners: Record<string, ts.Expression> = {};
+        const listeners = new Map<string, ts.Expression>();
+        const listenerData: ListenerData[] = [];
 
         for (const decorator of this.findDecoratorsOnNode(classDecl, 'Listener', useMap, filePath)) {
             const data = this.buildListenerData(decorator, useMap, filePath, currentClass, classDecl, undefined);
 
             if (data !== null) {
-                listeners[data.name] = this.buildListenerExpr(data);
+                listeners.set(data.name, this.buildListenerExpr(data));
+                listenerData.push(data);
             }
         }
 
@@ -50,12 +52,48 @@ export class ListenerAttributeReader extends AstReader implements ListenerAttrib
                 const data = this.buildListenerData(decorator, useMap, filePath, currentClass, classDecl, method);
 
                 if (data !== null) {
-                    listeners[data.name] = this.buildListenerExpr(data);
+                    listeners.set(data.name, this.buildListenerExpr(data));
+                    listenerData.push(data);
                 }
             }
         }
 
-        return new ListenerAttributeResult(listeners);
+        return new ListenerAttributeResult(
+            listeners,
+            this.buildImportMap(listenerData, useMap, filePath, currentClass),
+        );
+    }
+
+    /**
+     * Build the class-name → absolute-file-path map for every handler class the generated data
+     * cache references.
+     */
+    protected buildImportMap(
+        listenerData: readonly ListenerData[],
+        useMap: Record<string, string>,
+        currentFilePath: string,
+        currentClass: string,
+    ): Record<string, string> {
+        const importMap: Record<string, string> = {};
+
+        for (const data of listenerData) {
+            if (data.handler === null) {
+                continue;
+            }
+
+            const shortName = data.handler.class.slice(data.handler.class.lastIndexOf('\\') + 1);
+
+            const filePath =
+                shortName === currentClass
+                    ? currentFilePath
+                    : this.resolveClassToFilePath(shortName, useMap, currentFilePath);
+
+            if (filePath !== '') {
+                importMap[shortName] = filePath;
+            }
+        }
+
+        return importMap;
     }
 
     protected buildListenerData(
