@@ -293,6 +293,13 @@ export abstract class AstReader {
             return this.collectReferencedIdentifiers(node.initializer, names);
         }
 
+        if (ts.isBindingElement(node)) {
+            // The `config` of `{ config: c }` names a property of the value, never an import.
+            this.collectReferencedIdentifiers(node.name, names);
+
+            return node.initializer === undefined ? names : this.collectReferencedIdentifiers(node.initializer, names);
+        }
+
         ts.forEachChild(node, (child: ts.Node): void => {
             this.collectReferencedIdentifiers(child, names);
         });
