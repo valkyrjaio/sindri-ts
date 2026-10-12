@@ -285,19 +285,85 @@ export abstract class AstReader {
             return names;
         }
 
-        if (ts.isPropertyAccessExpression(node)) {
-            return this.collectReferencedIdentifiers(node.expression, names);
+        if (ts.isBindingElement(node)) {
+            // The `config` of `{ config: c }` names a property of the value, where the `CliA` of
+            // `{ [CliA.KEY]: c }` is an expression the generated file evaluates.
+            if (node.propertyName !== undefined && ts.isComputedPropertyName(node.propertyName)) {
+                this.collectReferencedIdentifiers(node.propertyName.expression, names);
+            }
+
+            this.collectReferencedIdentifiers(node.name, names);
+
+            return node.initializer === undefined ? names : this.collectReferencedIdentifiers(node.initializer, names);
         }
 
-        if (ts.isPropertyAssignment(node)) {
-            return this.collectReferencedIdentifiers(node.initializer, names);
-        }
+        // An identifier a `name` slot carries declares or keys the name, such as the `HELP` of
+        // `CommandName.HELP`, and only a shorthand property references the name it carries.
+        const slotName: ts.Node | undefined =
+            'name' in node &&
+            node.name !== undefined &&
+            ts.isIdentifier(node.name as ts.Node) &&
+            !ts.isShorthandPropertyAssignment(node)
+                ? (node.name as ts.Node)
+                : undefined;
 
         ts.forEachChild(node, (child: ts.Node): void => {
-            this.collectReferencedIdentifiers(child, names);
+            if (child !== slotName) {
+                this.collectReferencedIdentifiers(child, names);
+            }
         });
 
         return names;
+    }
+
+    /**
+     * The names the provider file declares anywhere in itself, less the file's own base name, which
+     * is the name the generated data file imports the provider by.
+     */
+    protected collectFileNames(sourceFile: SourceFile, filePath: string): Set<string> {
+        const names = this.collectDeclaredNames(sourceFile.compilerNode);
+
+        names.delete(path.basename(filePath, '.ts'));
+
+        return names;
+    }
+
+    /**
+     * The names a node declares, such as the parameters of an inline handler.
+     *
+     * A name any part of an expression declares counts as declared throughout it, which reads a
+     * shadowed name as declared rather than stopping on it.
+     */
+    protected collectDeclaredNames(node: ts.Node, names: Set<string> = new Set<string>()): Set<string> {
+        if (AstReader.declaresName(node) && node.name !== undefined && ts.isIdentifier(node.name)) {
+            names.add(node.name.text);
+        }
+
+        ts.forEachChild(node, (child: ts.Node): void => {
+            this.collectDeclaredNames(child, names);
+        });
+
+        return names;
+    }
+
+    /**
+     * Whether a node's `name` declares a binding rather than naming one.
+     *
+     * A property access, a shorthand property and an object-literal key all carry a `name` that
+     * references or keys instead of declaring, so the kind decides rather than the slot.
+     */
+    protected static declaresName(node: ts.Node): node is ts.NamedDeclaration {
+        return (
+            ts.isParameter(node) ||
+            ts.isVariableDeclaration(node) ||
+            ts.isBindingElement(node) ||
+            ts.isFunctionDeclaration(node) ||
+            ts.isFunctionExpression(node) ||
+            ts.isClassDeclaration(node) ||
+            ts.isClassExpression(node) ||
+            ts.isEnumDeclaration(node) ||
+            ts.isModuleDeclaration(node)
+        );
     }
 
     /**

@@ -11,6 +11,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 import { RouteProviderReader } from '../../../../src/Sindri/Ast/RouteProviderReader.ts';
+import { AstUnreadableRouteException } from '../../../../src/Sindri/Ast/Throwable/Exception/AstUnreadableRouteException.ts';
 
 function fixture(name: string): string {
     return fileURLToPath(new URL(`../../Fixtures/${name}.ts`, import.meta.url));
@@ -62,6 +63,45 @@ describe('RouteProviderReader', () => {
             expect(new RouteProviderReader().readFile(fixture('Provider/TestRouteProviderFixture')).routeImports).toStrictEqual(
                 {},
             );
+        });
+    });
+
+    describe('a name the generated data file cannot import', () => {
+        it.each([
+            ['at its own module level', 'TestLocalHandlerRouteProviderFixture'],
+            ['inside the method that returns the routes', 'TestMethodLocalHandlerRouteProviderFixture'],
+            ['beside a member of the same name', 'TestMemberNameRouteProviderFixture'],
+            ['beside a shorthand property of the same name', 'TestShorthandNameRouteProviderFixture'],
+            ['as an enum', 'TestLocalEnumRouteProviderFixture'],
+            ['inside a namespace', 'TestLocalNamespaceRouteProviderFixture'],
+        ])('stops on a name the provider declares %s', (_case, name) => {
+            expect(() => new RouteProviderReader().readFile(fixture(`Provider/${name}`))).toThrow(
+                AstUnreadableRouteException,
+            );
+        });
+
+        it('stops on an import that resolves to no TypeScript file', () => {
+            expect(() =>
+                new RouteProviderReader().readFile(fixture('Provider/TestUnresolvedImportRouteProviderFixture')),
+            ).toThrow(AstUnreadableRouteException);
+        });
+
+        it('reads a slot that declares or keys the name it carries', () => {
+            const result = new RouteProviderReader().readFile(
+                fixture('Provider/TestDeclaredNameRouteProviderFixture'),
+            );
+
+            expect(result.routes).toHaveLength(6);
+            expect(Object.keys(result.routeImports).sort()).toStrictEqual(['CliA', 'CompA', 'Route']);
+        });
+
+        it('reads a global, a shadowed name, the provider itself, and every name an import holds', () => {
+            const result = new RouteProviderReader().readFile(
+                fixture('Provider/TestGlobalHandlerRouteProviderFixture'),
+            );
+
+            expect(result.routes).toHaveLength(5);
+            expect(Object.keys(result.routeImports).sort()).toStrictEqual(['CliA', 'CompB', 'Route', 'SvcA']);
         });
     });
 });

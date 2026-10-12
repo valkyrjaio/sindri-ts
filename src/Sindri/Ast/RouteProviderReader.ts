@@ -10,6 +10,7 @@ import { ts } from 'ts-morph';
 
 import { AstReader } from './Abstract/AstReader.ts';
 import { RouteProviderResult } from './Data/Result/RouteProviderResult.ts';
+import { AstUnreadableRouteException } from './Throwable/Exception/AstUnreadableRouteException.ts';
 
 import type { RouteProviderReaderContract } from './Contract/RouteProviderReaderContract.ts';
 
@@ -28,21 +29,22 @@ export class RouteProviderReader extends AstReader implements RouteProviderReade
         const useMap = this.buildUseMap(sourceFile);
         const methods = this.indexMethods(classDecl);
         const routes = this.extractRoutes(methods[RouteProviderReader.METHOD_ROUTES], useMap, filePath);
+        const routeImports = this.extractRouteImports(routes, useMap, filePath);
+
+        // A further list of route expressions needs a call of its own, because a name is validated
+        // against the expression that references it.
+        this.validateRouteImports(routes, routeImports, useMap, this.collectFileNames(sourceFile, filePath));
 
         return new RouteProviderResult(
             this.extractClassListFromValues(methods[RouteProviderReader.METHOD_CONTROLLER_CLASSES], useMap, filePath),
             routes,
-            this.extractRouteImports(routes, useMap, filePath),
+            routeImports,
         );
     }
 
     /**
-     * Resolve every class the imperative route expressions reference to its
-     * absolute file path, so the generated data cache can import them.
-     *
-     * Names that are not imported by the provider file — locals, globals, and
-     * the provider's own class (which the generator imports separately) — have
-     * no entry in the use map and are skipped.
+     * Resolve every class the imperative route expressions reference to its absolute file path, so
+     * the generated data cache can import them.
      */
     protected extractRouteImports(
         routes: readonly ts.Expression[],
@@ -62,6 +64,38 @@ export class RouteProviderReader extends AstReader implements RouteProviderReade
         }
 
         return imports;
+    }
+
+    /** Stop on a name a route references that the generated data file, in another module, cannot reach. */
+    protected validateRouteImports(
+        routes: readonly ts.Expression[],
+        routeImports: Readonly<Record<string, string>>,
+        useMap: Record<string, string>,
+        fileNames: ReadonlySet<string>,
+    ): void {
+        for (const route of routes) {
+            const declaredNames = this.collectDeclaredNames(route);
+
+            for (const name of this.collectReferencedIdentifiers(route)) {
+                if (routeImports[name] !== undefined || declaredNames.has(name)) {
+                    continue;
+                }
+
+                if (fileNames.has(name)) {
+                    throw new AstUnreadableRouteException(
+                        `Cannot read the route '${route.getText()}': the generated data cannot import '${name}', which the provider declares for itself.`,
+                    );
+                }
+
+                // An import the reader resolves to no TypeScript file leaves the generated data no
+                // path to import the name from. Every name left is a global.
+                if (useMap[name] !== undefined) {
+                    throw new AstUnreadableRouteException(
+                        `Cannot read the route '${route.getText()}': the import of '${name}' resolves to no TypeScript file.`,
+                    );
+                }
+            }
+        }
     }
 
     /**
