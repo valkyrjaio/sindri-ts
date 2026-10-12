@@ -31,8 +31,8 @@ export class RouteProviderReader extends AstReader implements RouteProviderReade
         const routes = this.extractRoutes(methods[RouteProviderReader.METHOD_ROUTES], useMap, filePath);
         const routeImports = this.extractRouteImports(routes, useMap, filePath);
 
-        // Each list of route expressions takes its own call, because a name is validated against
-        // the expression that references it.
+        // A further list of route expressions needs a call of its own, because a name is validated
+        // against the expression that references it.
         this.validateRouteImports(routes, routeImports, useMap, this.collectFileNames(sourceFile, filePath));
 
         return new RouteProviderResult(
