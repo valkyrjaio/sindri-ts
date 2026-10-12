@@ -6,11 +6,7 @@
  * Released under the MIT License. See LICENSE.md for details.
  */
 
-import * as path from 'path';
-
 import { ts } from 'ts-morph';
-
-import type { SourceFile } from 'ts-morph';
 
 import { AstReader } from './Abstract/AstReader.ts';
 import { ListenerProviderResult } from './Data/Result/ListenerProviderResult.ts';
@@ -107,53 +103,5 @@ export class ListenerProviderReader extends AstReader implements ListenerProvide
         }
 
         return imports;
-    }
-
-    /**
-     * The names the provider file declares anywhere in itself, less the file's own base name, which
-     * is the name the generated data file imports the provider by.
-     */
-    protected collectFileNames(sourceFile: SourceFile, filePath: string): Set<string> {
-        const names = this.collectDeclaredNames(sourceFile.compilerNode);
-
-        names.delete(path.basename(filePath, '.ts'));
-
-        return names;
-    }
-
-    /**
-     * The names a node declares, such as the parameters of an inline handler.
-     *
-     * A name any part of an expression declares counts as declared throughout it, which reads a
-     * shadowed name as declared rather than stopping on it.
-     */
-    protected collectDeclaredNames(node: ts.Node, names: Set<string> = new Set<string>()): Set<string> {
-        if (ListenerProviderReader.declaresName(node) && node.name !== undefined && ts.isIdentifier(node.name)) {
-            names.add(node.name.text);
-        }
-
-        ts.forEachChild(node, (child: ts.Node): void => {
-            this.collectDeclaredNames(child, names);
-        });
-
-        return names;
-    }
-
-    /**
-     * Whether a node's `name` declares a binding rather than naming one.
-     *
-     * A property access, a shorthand property and an object-literal key all carry a `name` that
-     * references or keys instead of declaring, so the kind decides rather than the slot.
-     */
-    protected static declaresName(node: ts.Node): node is ts.NamedDeclaration {
-        return (
-            ts.isParameter(node) ||
-            ts.isVariableDeclaration(node) ||
-            ts.isBindingElement(node) ||
-            ts.isFunctionDeclaration(node) ||
-            ts.isClassDeclaration(node) ||
-            ts.isEnumDeclaration(node) ||
-            ts.isModuleDeclaration(node)
-        );
     }
 }
