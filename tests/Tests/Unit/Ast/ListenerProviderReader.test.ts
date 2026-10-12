@@ -94,6 +94,14 @@ describe('ListenerProviderReader', () => {
             );
         });
 
+        it('reads the class a computed key names', () => {
+            const result = new ListenerProviderReader().readFile(
+                fixture('Provider/TestComputedKeyListenerProviderFixture'),
+            );
+
+            expect(Object.keys(result.listenerImports)).toContain('SvcA');
+        });
+
         it('reads a global, and the names an inline handler declares', () => {
             const result = new ListenerProviderReader().readFile(
                 fixture('Provider/TestGlobalHandlerListenerProviderFixture'),

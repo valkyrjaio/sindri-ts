@@ -91,8 +91,8 @@ describe('RouteProviderReader', () => {
                 fixture('Provider/TestDeclaredNameRouteProviderFixture'),
             );
 
-            expect(result.routes).toHaveLength(4);
-            expect(Object.keys(result.routeImports).sort()).toStrictEqual(['CompA', 'Route']);
+            expect(result.routes).toHaveLength(6);
+            expect(Object.keys(result.routeImports).sort()).toStrictEqual(['CliA', 'CompA', 'Route']);
         });
 
         it('reads a global, a shadowed name, the provider itself, and every name an import holds', () => {
