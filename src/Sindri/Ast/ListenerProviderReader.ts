@@ -151,7 +151,9 @@ export class ListenerProviderReader extends AstReader implements ListenerProvide
             ts.isVariableDeclaration(node) ||
             ts.isBindingElement(node) ||
             ts.isFunctionDeclaration(node) ||
-            ts.isClassDeclaration(node)
+            ts.isClassDeclaration(node) ||
+            ts.isEnumDeclaration(node) ||
+            ts.isModuleDeclaration(node)
         );
     }
 }

@@ -86,6 +86,8 @@ describe('ListenerProviderReader', () => {
             ['inside the method that uses it', 'TestMethodLocalHandlerListenerProviderFixture'],
             ['beside a member of the same name', 'TestMemberNameListenerProviderFixture'],
             ['beside a shorthand property of the same name', 'TestShorthandNameListenerProviderFixture'],
+            ['as an enum', 'TestLocalEnumListenerProviderFixture'],
+            ['inside a namespace', 'TestLocalNamespaceListenerProviderFixture'],
         ])('stops on a handler the provider declares %s', (_case, name) => {
             expect(() => new ListenerProviderReader().readFile(fixture(`Provider/${name}`))).toThrow(
                 AstUnreadableListenerException,
