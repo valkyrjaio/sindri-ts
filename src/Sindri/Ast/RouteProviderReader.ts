@@ -14,7 +14,7 @@ import { AstReader } from './Abstract/AstReader.ts';
 import { RouteProviderResult } from './Data/Result/RouteProviderResult.ts';
 import { AstUnreadableRouteException } from './Throwable/Exception/AstUnreadableRouteException.ts';
 
-import type { SourceFile } from 'ts-morph';
+import type { MethodDeclaration, SourceFile } from 'ts-morph';
 
 import type { RouteProviderReaderContract } from './Contract/RouteProviderReaderContract.ts';
 
@@ -32,10 +32,16 @@ export class RouteProviderReader extends AstReader implements RouteProviderReade
 
         const useMap = this.buildUseMap(sourceFile);
         const methods = this.indexMethods(classDecl);
-        const routes = this.extractRoutes(methods[RouteProviderReader.METHOD_ROUTES], useMap, filePath);
+        const routesMethod = methods[RouteProviderReader.METHOD_ROUTES];
+        const routes = this.extractRoutes(routesMethod, useMap, filePath);
         const routeImports = this.extractRouteImports(routes, useMap, filePath);
 
-        this.validateRouteImports(routes, routeImports, this.collectModuleLocalNames(sourceFile, filePath));
+        this.validateRouteImports(
+            routes,
+            routeImports,
+            useMap,
+            this.collectProviderLocalNames(sourceFile, routesMethod, filePath),
+        );
 
         return new RouteProviderResult(
             this.extractClassListFromValues(methods[RouteProviderReader.METHOD_CONTROLLER_CLASSES], useMap, filePath),
@@ -68,21 +74,32 @@ export class RouteProviderReader extends AstReader implements RouteProviderReade
         return imports;
     }
 
-    /** Stop on a name a route references that no import resolves and the provider declares itself. */
+    /** Stop on a name a route references that the generated data file, in another module, cannot reach. */
     protected validateRouteImports(
         routes: readonly ts.Expression[],
         routeImports: Readonly<Record<string, string>>,
-        moduleLocalNames: ReadonlySet<string>,
+        useMap: Record<string, string>,
+        providerLocalNames: ReadonlySet<string>,
     ): void {
         for (const route of routes) {
             const declaredNames = this.collectDeclaredNames(route);
 
             for (const name of this.collectReferencedIdentifiers(route)) {
-                // A name the provider file declares for itself is one the generated data file, in
-                // another module, cannot reach. Every other unresolved name is a global.
-                if (routeImports[name] === undefined && moduleLocalNames.has(name) && !declaredNames.has(name)) {
+                if (routeImports[name] !== undefined || declaredNames.has(name)) {
+                    continue;
+                }
+
+                if (providerLocalNames.has(name)) {
                     throw new AstUnreadableRouteException(
                         `Cannot read the route '${route.getText()}': the generated data cannot import '${name}', which the provider declares for itself.`,
+                    );
+                }
+
+                // An import the reader resolves to no TypeScript file leaves the generated data no
+                // path to import the name from. Every name left is a global.
+                if (useMap[name] !== undefined) {
+                    throw new AstUnreadableRouteException(
+                        `Cannot read the route '${route.getText()}': the import of '${name}' resolves to no TypeScript file.`,
                     );
                 }
             }
@@ -90,17 +107,31 @@ export class RouteProviderReader extends AstReader implements RouteProviderReade
     }
 
     /**
-     * The names the provider file declares at its own module level, less the file's own base name,
-     * which is the name the generated data file imports the provider by.
+     * The names the provider declares at its own module level and in its `getRoutes()` body, less
+     * the file's own base name, which is the name the generated data file imports the provider by.
      */
-    protected collectModuleLocalNames(sourceFile: SourceFile, filePath: string): Set<string> {
+    protected collectProviderLocalNames(
+        sourceFile: SourceFile,
+        routesMethod: MethodDeclaration | undefined,
+        filePath: string,
+    ): Set<string> {
         const names = new Set<string>();
 
-        for (const declaration of sourceFile.getVariableDeclarations()) {
+        for (const declaration of [
+            ...sourceFile.getVariableDeclarations(),
+            ...(routesMethod?.getVariableDeclarations() ?? []),
+        ]) {
             names.add(declaration.getName());
         }
 
-        for (const declaration of [...sourceFile.getFunctions(), ...sourceFile.getClasses()]) {
+        for (const declaration of [
+            ...sourceFile.getFunctions(),
+            ...sourceFile.getClasses(),
+            ...sourceFile.getEnums(),
+            ...sourceFile.getModules(),
+            ...(routesMethod?.getFunctions() ?? []),
+            ...(routesMethod?.getClasses() ?? []),
+        ]) {
             names.add(declaration.getName() ?? '');
         }
 
