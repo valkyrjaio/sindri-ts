@@ -285,14 +285,6 @@ export abstract class AstReader {
             return names;
         }
 
-        if (ts.isPropertyAccessExpression(node)) {
-            return this.collectReferencedIdentifiers(node.expression, names);
-        }
-
-        if (ts.isPropertyAssignment(node)) {
-            return this.collectReferencedIdentifiers(node.initializer, names);
-        }
-
         if (ts.isBindingElement(node)) {
             // The `config` of `{ config: c }` names a property of the value, where the `CliA` of
             // `{ [CliA.KEY]: c }` is an expression the generated file evaluates.
@@ -305,8 +297,20 @@ export abstract class AstReader {
             return node.initializer === undefined ? names : this.collectReferencedIdentifiers(node.initializer, names);
         }
 
+        // An identifier a `name` slot carries declares or keys the name, such as the `HELP` of
+        // `CommandName.HELP`, and only a shorthand property references the name it carries.
+        const slotName: ts.Node | undefined =
+            'name' in node &&
+            node.name !== undefined &&
+            ts.isIdentifier(node.name as ts.Node) &&
+            !ts.isShorthandPropertyAssignment(node)
+                ? (node.name as ts.Node)
+                : undefined;
+
         ts.forEachChild(node, (child: ts.Node): void => {
-            this.collectReferencedIdentifiers(child, names);
+            if (child !== slotName) {
+                this.collectReferencedIdentifiers(child, names);
+            }
         });
 
         return names;
@@ -354,7 +358,9 @@ export abstract class AstReader {
             ts.isVariableDeclaration(node) ||
             ts.isBindingElement(node) ||
             ts.isFunctionDeclaration(node) ||
+            ts.isFunctionExpression(node) ||
             ts.isClassDeclaration(node) ||
+            ts.isClassExpression(node) ||
             ts.isEnumDeclaration(node) ||
             ts.isModuleDeclaration(node)
         );
