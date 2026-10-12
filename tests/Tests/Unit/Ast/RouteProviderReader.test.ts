@@ -11,6 +11,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 import { RouteProviderReader } from '../../../../src/Sindri/Ast/RouteProviderReader.ts';
+import { AstUnreadableRouteException } from '../../../../src/Sindri/Ast/Throwable/Exception/AstUnreadableRouteException.ts';
 
 function fixture(name: string): string {
     return fileURLToPath(new URL(`../../Fixtures/${name}.ts`, import.meta.url));
@@ -62,6 +63,26 @@ describe('RouteProviderReader', () => {
             expect(new RouteProviderReader().readFile(fixture('Provider/TestRouteProviderFixture')).routeImports).toStrictEqual(
                 {},
             );
+        });
+    });
+
+    describe('a name the generated data file cannot import', () => {
+        it('stops on a handler the provider declares for itself', () => {
+            expect(() =>
+                new RouteProviderReader().readFile(fixture('Provider/TestLocalHandlerRouteProviderFixture')),
+            ).toThrow(AstUnreadableRouteException);
+        });
+
+        it('reads a global, a shadowed name, the provider itself, and an imported handler', () => {
+            const result = new RouteProviderReader().readFile(
+                fixture('Provider/TestGlobalHandlerRouteProviderFixture'),
+            );
+
+            expect(result.routes).toHaveLength(3);
+            expect(Object.keys(result.routeImports)).toContain('CliA');
+            expect(Object.keys(result.routeImports)).not.toContain('console');
+            expect(Object.keys(result.routeImports)).not.toContain('route');
+            expect(Object.keys(result.routeImports)).not.toContain('TestGlobalHandlerRouteProviderFixture');
         });
     });
 });
