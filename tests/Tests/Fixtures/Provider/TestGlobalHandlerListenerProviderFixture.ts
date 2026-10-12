@@ -3,8 +3,8 @@
 // @ts-nocheck
 import { Listener } from '@valkyrjaio/valkyrja/Event/Data/Listener.ts';
 
-// An anonymous declaration carries no name, so no listener can reference it.
-export default function () {}
+// A function declaration no listener references.
+function unreferenced() {}
 
 export class TestGlobalHandlerListenerProviderFixture {
     getListeners() {

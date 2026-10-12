@@ -81,10 +81,15 @@ describe('ListenerProviderReader', () => {
     });
 
     describe('a name the generated data file cannot import', () => {
-        it('stops on a handler the provider declares for itself', () => {
-            expect(() =>
-                new ListenerProviderReader().readFile(fixture('Provider/TestLocalHandlerListenerProviderFixture')),
-            ).toThrow(AstUnreadableListenerException);
+        it.each([
+            ['at its own module level', 'TestLocalHandlerListenerProviderFixture'],
+            ['inside the method that uses it', 'TestMethodLocalHandlerListenerProviderFixture'],
+            ['beside a member of the same name', 'TestMemberNameListenerProviderFixture'],
+            ['beside a shorthand property of the same name', 'TestShorthandNameListenerProviderFixture'],
+        ])('stops on a handler the provider declares %s', (_case, name) => {
+            expect(() => new ListenerProviderReader().readFile(fixture(`Provider/${name}`))).toThrow(
+                AstUnreadableListenerException,
+            );
         });
 
         it('reads a global, and the names an inline handler declares', () => {
