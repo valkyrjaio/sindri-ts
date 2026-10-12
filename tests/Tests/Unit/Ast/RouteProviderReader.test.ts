@@ -17,17 +17,6 @@ function fixture(name: string): string {
     return fileURLToPath(new URL(`../../Fixtures/${name}.ts`, import.meta.url));
 }
 
-/** Exposes the names the reader reads as the provider's own. */
-class ExposedRouteProviderReader extends RouteProviderReader {
-    public providerLocalNames(filePath: string): ReadonlySet<string> {
-        const sourceFile = this.parseFileToSourceFile(filePath);
-        const classDecl = this.findClass(sourceFile);
-        const methods = this.indexMethods(classDecl!);
-
-        return this.collectProviderLocalNames(sourceFile, methods['getRoutes'], filePath);
-    }
-}
-
 describe('RouteProviderReader', () => {
     it('extracts the controller classes', () => {
         const result = new RouteProviderReader().readFile(fixture('Provider/TestRouteProviderFixture'));
@@ -78,16 +67,17 @@ describe('RouteProviderReader', () => {
     });
 
     describe('a name the generated data file cannot import', () => {
-        it('stops on a handler the provider declares for itself', () => {
-            expect(() =>
-                new RouteProviderReader().readFile(fixture('Provider/TestLocalHandlerRouteProviderFixture')),
-            ).toThrow(AstUnreadableRouteException);
-        });
-
-        it('stops on a route name an enum the provider declares holds', () => {
-            expect(() =>
-                new RouteProviderReader().readFile(fixture('Provider/TestLocalEnumRouteProviderFixture')),
-            ).toThrow(AstUnreadableRouteException);
+        it.each([
+            ['at its own module level', 'TestLocalHandlerRouteProviderFixture'],
+            ['inside the method that returns the routes', 'TestMethodLocalHandlerRouteProviderFixture'],
+            ['beside a member of the same name', 'TestMemberNameRouteProviderFixture'],
+            ['beside a shorthand property of the same name', 'TestShorthandNameRouteProviderFixture'],
+            ['as an enum', 'TestLocalEnumRouteProviderFixture'],
+            ['inside a namespace', 'TestLocalNamespaceRouteProviderFixture'],
+        ])('stops on a name the provider declares %s', (_case, name) => {
+            expect(() => new RouteProviderReader().readFile(fixture(`Provider/${name}`))).toThrow(
+                AstUnreadableRouteException,
+            );
         });
 
         it('stops on an import that resolves to no TypeScript file', () => {
@@ -96,36 +86,13 @@ describe('RouteProviderReader', () => {
             ).toThrow(AstUnreadableRouteException);
         });
 
-        it('reads a global, a shadowed name, the provider itself, and an imported handler', () => {
+        it('reads a global, a shadowed name, the provider itself, and every name an import holds', () => {
             const result = new RouteProviderReader().readFile(
                 fixture('Provider/TestGlobalHandlerRouteProviderFixture'),
             );
 
-            expect(result.routes).toHaveLength(4);
-            expect(Object.keys(result.routeImports)).toContain('CliA');
-            expect(Object.keys(result.routeImports)).not.toContain('console');
-            expect(Object.keys(result.routeImports)).not.toContain('route');
-            expect(Object.keys(result.routeImports)).not.toContain('prefix');
-            expect(Object.keys(result.routeImports)).not.toContain('TestGlobalHandlerRouteProviderFixture');
-        });
-    });
-
-    describe('the names the provider declares for itself', () => {
-        it('holds every kind of declaration, and not the name the provider file is imported by', () => {
-            const names = new ExposedRouteProviderReader().providerLocalNames(
-                fixture('Provider/TestProviderLocalNamesRouteProviderFixture'),
-            );
-
-            expect([...names].sort()).toStrictEqual([
-                'MethodClass',
-                'ModuleClass',
-                'ModuleEnum',
-                'ModuleNamespace',
-                'methodConstant',
-                'methodFunction',
-                'moduleConstant',
-                'moduleFunction',
-            ]);
+            expect(result.routes).toHaveLength(5);
+            expect(Object.keys(result.routeImports).sort()).toStrictEqual(['CliA', 'CompB', 'Route', 'SvcA']);
         });
     });
 });

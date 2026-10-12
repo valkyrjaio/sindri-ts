@@ -66,9 +66,17 @@ describe('HttpRouteDataGeneration', () => {
             );
         });
 
-        it('holds the inline handler that renames a destructured property and defaults it', () => {
+        it('holds the inline handler that renames a destructured property, and imports its default', () => {
+            expect(generated).toMatch(/import \{ CompB \} from '.*CompB\.ts';/);
             expect(generated).toContain(
-                "['renamed']: (): RouteContract => new Route('/renamed', 'renamed', ({ prefix: p = CliA.PREFIX }) => p)",
+                "['renamed']: (): RouteContract => new Route('/renamed', 'renamed', ({ prefix: p = CompB.PREFIX }) => p)",
+            );
+        });
+
+        it('holds the inline handler that computes a destructured key, and imports the key', () => {
+            expect(generated).toMatch(/import \{ SvcA \} from '.*SvcA\.ts';/);
+            expect(generated).toContain(
+                "['computed']: (): RouteContract => new Route('/computed', 'computed', ({ [SvcA.KEY]: v }) => v)",
             );
         });
 

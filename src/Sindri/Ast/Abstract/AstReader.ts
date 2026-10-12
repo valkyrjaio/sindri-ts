@@ -294,7 +294,12 @@ export abstract class AstReader {
         }
 
         if (ts.isBindingElement(node)) {
-            // The `config` of `{ config: c }` names a property of the value, never an import.
+            // The `config` of `{ config: c }` names a property of the value, where the `CliA` of
+            // `{ [CliA.KEY]: c }` is an expression the generated file evaluates.
+            if (node.propertyName !== undefined && ts.isComputedPropertyName(node.propertyName)) {
+                this.collectReferencedIdentifiers(node.propertyName.expression, names);
+            }
+
             this.collectReferencedIdentifiers(node.name, names);
 
             return node.initializer === undefined ? names : this.collectReferencedIdentifiers(node.initializer, names);
