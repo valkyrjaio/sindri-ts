@@ -15,6 +15,7 @@ import { describe, expect, it } from 'vitest';
 
 import { ListenerAttributeReader } from '../../../../src/Sindri/Ast/ListenerAttributeReader.ts';
 import { ListenerProviderReader } from '../../../../src/Sindri/Ast/ListenerProviderReader.ts';
+import { AstUnreadableListenerException } from '../../../../src/Sindri/Ast/Throwable/Exception/AstUnreadableListenerException.ts';
 import { AstEventDataFileGenerator } from '../../../../src/Sindri/Generator/Ast/Event/AstEventDataFileGenerator.ts';
 import { GeneratorUnreadableListenerException } from '../../../../src/Sindri/Generator/Throwable/Exception/GeneratorUnreadableListenerException.ts';
 
@@ -98,6 +99,14 @@ describe('EventDataGeneration', () => {
         });
     });
 
+    describe('a handler the provider declares for itself', () => {
+        it('stops rather than naming it unbound in the generated file', () => {
+            expect(() => generate('Provider/TestLocalHandlerListenerProviderFixture')).toThrow(
+                AstUnreadableListenerException,
+            );
+        });
+    });
+
     describe('a listener a cast dresses', () => {
         it('stops on a cast that dresses the listener', () => {
             // The file emits the listener as the provider wrote it, and no import map carries a
@@ -157,10 +166,10 @@ describe('EventDataGeneration', () => {
         });
 
         it('stops on a key that names a constant the provider declares for itself', () => {
-            // The generated file imports nothing for a provider-local constant, so the reference
-            // would reach it as an unbound name.
+            // The reader reaches it first, because the provider declares the constant at its own
+            // module level. The generator keeps its own guard for a name no reader resolved.
             expect(() => generate('Provider/TestLocalKeyListenerProviderFixture')).toThrow(
-                GeneratorUnreadableListenerException,
+                AstUnreadableListenerException,
             );
         });
     });

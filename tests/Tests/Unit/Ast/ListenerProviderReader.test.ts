@@ -11,6 +11,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 import { ListenerProviderReader } from '../../../../src/Sindri/Ast/ListenerProviderReader.ts';
+import { AstUnreadableListenerException } from '../../../../src/Sindri/Ast/Throwable/Exception/AstUnreadableListenerException.ts';
 
 function fixture(name: string): string {
     return fileURLToPath(new URL(`../../Fixtures/${name}.ts`, import.meta.url));
@@ -76,6 +77,23 @@ describe('ListenerProviderReader', () => {
 
         it('skips a name the provider file does not import', () => {
             expect(Object.keys(result.listenerImports)).not.toContain('TestImperativeListenerProviderFixture');
+        });
+    });
+
+    describe('a name the generated data file cannot import', () => {
+        it('stops on a handler the provider declares for itself', () => {
+            expect(() =>
+                new ListenerProviderReader().readFile(fixture('Provider/TestLocalHandlerListenerProviderFixture')),
+            ).toThrow(AstUnreadableListenerException);
+        });
+
+        it('reads a global, and the names an inline handler declares', () => {
+            const result = new ListenerProviderReader().readFile(
+                fixture('Provider/TestGlobalHandlerListenerProviderFixture'),
+            );
+
+            expect(result.listeners).toHaveLength(2);
+            expect(Object.keys(result.listenerImports)).not.toContain('console');
         });
     });
 });

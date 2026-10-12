@@ -6,10 +6,15 @@
  * Released under the MIT License. See LICENSE.md for details.
  */
 
+import * as path from 'path';
+
 import { ts } from 'ts-morph';
+
+import type { SourceFile } from 'ts-morph';
 
 import { AstReader } from './Abstract/AstReader.ts';
 import { ListenerProviderResult } from './Data/Result/ListenerProviderResult.ts';
+import { AstUnreadableListenerException } from './Throwable/Exception/AstUnreadableListenerException.ts';
 
 import type { ListenerProviderReaderContract } from './Contract/ListenerProviderReaderContract.ts';
 
@@ -32,7 +37,12 @@ export class ListenerProviderReader extends AstReader implements ListenerProvide
         return new ListenerProviderResult(
             this.extractClassListFromValues(methods[ListenerProviderReader.METHOD_LISTENER_CLASSES], useMap, filePath),
             listeners,
-            this.extractListenerImports(listeners, useMap, filePath),
+            this.extractListenerImports(
+                listeners,
+                useMap,
+                filePath,
+                this.collectModuleLocalNames(sourceFile, filePath),
+            ),
         );
     }
 
@@ -75,19 +85,73 @@ export class ListenerProviderReader extends AstReader implements ListenerProvide
         listeners: readonly ts.Expression[],
         useMap: Record<string, string>,
         filePath: string,
+        moduleLocalNames: ReadonlySet<string>,
     ): Record<string, string> {
         const imports: Record<string, string> = {};
 
         for (const listener of listeners) {
+            const declaredNames = this.collectDeclaredNames(listener);
+
             for (const name of this.collectReferencedIdentifiers(listener)) {
                 const resolved = this.resolveImportToFilePath(name, useMap, filePath);
 
                 if (resolved !== '') {
                     imports[name] = resolved;
+
+                    continue;
+                }
+
+                // A name the provider file declares for itself is one the generated data file, in
+                // another module, cannot reach. Every other unresolved name is a global.
+                if (moduleLocalNames.has(name) && !declaredNames.has(name)) {
+                    throw new AstUnreadableListenerException(
+                        `Cannot read the listener '${listener.getText()}': the generated data cannot import '${name}', which the provider declares for itself.`,
+                    );
                 }
             }
         }
 
         return imports;
+    }
+
+    /**
+     * The names the provider file declares at its own module level, less the file's own base name,
+     * which is the name the generated data file imports the provider by.
+     */
+    protected collectModuleLocalNames(sourceFile: SourceFile, filePath: string): Set<string> {
+        const names = new Set<string>();
+
+        for (const declaration of sourceFile.getVariableDeclarations()) {
+            names.add(declaration.getName());
+        }
+
+        for (const declaration of [...sourceFile.getFunctions(), ...sourceFile.getClasses()]) {
+            names.add(declaration.getName() ?? '');
+        }
+
+        names.delete(path.basename(filePath, '.ts'));
+        names.delete('');
+
+        return names;
+    }
+
+    /**
+     * The names an expression declares for itself, such as the parameters of an inline handler.
+     *
+     * A name any part of the expression declares counts as declared throughout it, which reads a
+     * shadowed module-local name as declared rather than stopping on it.
+     */
+    protected collectDeclaredNames(node: ts.Node, names: Set<string> = new Set<string>()): Set<string> {
+        const declared: ts.Node | undefined = 'name' in node ? (node.name as ts.Node | undefined) : undefined;
+
+        if (declared !== undefined && ts.isIdentifier(declared)) {
+            names.add(declared.text);
+        }
+
+        ts.forEachChild(node, (child: ts.Node): void => {
+            this.collectDeclaredNames(child, names);
+        });
+
+        return names;
     }
 }
