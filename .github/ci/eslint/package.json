@@ -8,8 +8,8 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/node": "^25.9.9",
-    "@valkyrjaio/ci-eslint": "^26.1.47",
-    "eslint": "^10.12.0",
+    "@valkyrjaio/ci-eslint": "^26.1.48",
+    "eslint": "^10.13.0",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.71.2"
   }
