@@ -8,7 +8,7 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/node": "^25.9.9",
-    "@valkyrjaio/ci-eslint": "^26.1.52",
+    "@valkyrjaio/ci-eslint": "^26.1.53",
     "eslint": "^10.13.0",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.72.0"
