@@ -72,7 +72,7 @@ describe('HttpRouteAttributeReader', () => {
 
         expect(Object.keys(result.routes)).toStrictEqual(['list.all']);
         expect(result.routeData['list.all'].path).toBe('/items/extra');
-        // Handler comes from @RouteHandler; structs fall through to the method decorators.
+        // Handler comes from @Handler; structs fall through to the method decorators.
         expect(result.routeData['list.all'].handler).toEqual({ class: 'UnresolvedHandler', method: 'handle' });
         expect(result.routeData['list.all'].requestStruct).toBe('MethodReq');
         expect(result.routeData['list.all'].responseStruct).toBe('MethodRes');
