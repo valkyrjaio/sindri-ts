@@ -291,7 +291,7 @@ export class AstEventDataFileGenerator extends AstFileGenerator implements Event
     }
 
     /** Print an expression to source. */
-    protected printExpr(expr: ts.Expression): string {
+    protected override printExpr(expr: ts.Expression): string {
         return this.printNodeText(expr);
     }
 
