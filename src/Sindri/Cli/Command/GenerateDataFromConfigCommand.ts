@@ -17,12 +17,14 @@ import { ServiceProviderReader } from '../../Ast/ServiceProviderReader.ts';
 import { AstCliDataFileGenerator } from '../../Generator/Ast/Cli/AstCliDataFileGenerator.ts';
 import { AstContainerDataFileGenerator } from '../../Generator/Ast/Container/AstContainerDataFileGenerator.ts';
 import { AstEventDataFileGenerator } from '../../Generator/Ast/Event/AstEventDataFileGenerator.ts';
+import { AstGrpcDataFileGenerator } from '../../Generator/Ast/Grpc/AstGrpcDataFileGenerator.ts';
 import { AstHttpDataFileGenerator } from '../../Generator/Ast/Http/AstHttpDataFileGenerator.ts';
 import { GenerateDataFromAst } from '../../Generate/Abstract/GenerateDataFromAst.ts';
 
 import type { CliDataFileGeneratorContract } from '../../Generator/Cli/Contract/CliDataFileGeneratorContract.ts';
 import type { ContainerDataFileGeneratorContract } from '../../Generator/Container/Contract/ContainerDataFileGeneratorContract.ts';
 import type { EventDataFileGeneratorContract } from '../../Generator/Event/Contract/EventDataFileGeneratorContract.ts';
+import type { GrpcDataFileGeneratorContract } from '../../Generator/Grpc/Contract/GrpcDataFileGeneratorContract.ts';
 import type { HttpDataFileGeneratorContract } from '../../Generator/Http/Contract/HttpDataFileGeneratorContract.ts';
 import type { CliRouteAttributeReaderContract } from '../../Ast/Contract/CliRouteAttributeReaderContract.ts';
 import type { ComponentProviderReaderContract } from '../../Ast/Contract/ComponentProviderReaderContract.ts';
@@ -52,6 +54,7 @@ export class GenerateDataFromConfigCommand extends GenerateDataFromAst {
         eventGenerator: EventDataFileGeneratorContract = new AstEventDataFileGenerator(),
         cliGenerator: CliDataFileGeneratorContract = new AstCliDataFileGenerator(),
         httpGenerator: HttpDataFileGeneratorContract = new AstHttpDataFileGenerator(),
+        grpcGenerator: GrpcDataFileGeneratorContract = new AstGrpcDataFileGenerator(),
     ) {
         super(
             outputFactory,
@@ -69,6 +72,7 @@ export class GenerateDataFromConfigCommand extends GenerateDataFromAst {
             eventGenerator,
             cliGenerator,
             httpGenerator,
+            grpcGenerator,
         );
     }
 

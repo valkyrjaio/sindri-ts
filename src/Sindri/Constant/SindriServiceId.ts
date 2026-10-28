@@ -25,6 +25,8 @@ export class SindriServiceId {
         'Sindri.Generator.Container.Contract.ContainerDataFileGeneratorContract' as const;
     static readonly EventDataFileGeneratorContract =
         'Sindri.Generator.Event.Contract.EventDataFileGeneratorContract' as const;
+    static readonly GrpcDataFileGeneratorContract =
+        'Sindri.Generator.Grpc.Contract.GrpcDataFileGeneratorContract' as const;
     static readonly HttpDataFileGeneratorContract =
         'Sindri.Generator.Http.Contract.HttpDataFileGeneratorContract' as const;
     static readonly GenerateDataFromConfigCommand = 'Sindri.Cli.Command.GenerateDataFromConfigCommand' as const;

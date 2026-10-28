@@ -48,19 +48,7 @@ export class AstHttpDataFileGenerator extends AstFileGenerator implements HttpDa
         RouteContract: '@valkyrjaio/valkyrja/Http/Routing/Data/Contract/RouteContract.ts',
     };
 
-    public classImportMap: Record<string, string> = {};
-
     protected readonly processor: ProcessorContract;
-
-    private readonly printer = ts.createPrinter({ newLine: ts.NewLineKind.LineFeed });
-
-    private readonly dummySourceFile = ts.createSourceFile(
-        '_dummy.ts',
-        '',
-        ts.ScriptTarget.ESNext,
-        false,
-        ts.ScriptKind.TS,
-    );
 
     public constructor(processor: ProcessorContract = new Processor()) {
         super();

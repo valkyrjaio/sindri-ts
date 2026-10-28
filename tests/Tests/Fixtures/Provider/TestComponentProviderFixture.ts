@@ -5,6 +5,7 @@ import { CompA } from './CompA.ts';
 import { CompB } from './CompB.ts';
 import { SvcA } from './SvcA.ts';
 import { CliA } from './CliA.ts';
+import { GrpcA } from './GrpcA.ts';
 
 export class TestComponentProviderFixture {
     getComponentProviders() {
@@ -21,5 +22,8 @@ export class TestComponentProviderFixture {
     }
     getHttpProviders() {
         return [];
+    }
+    getGrpcProviders() {
+        return [new GrpcA()];
     }
 }

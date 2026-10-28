@@ -11,6 +11,7 @@ import { ts } from 'ts-morph';
 import { AstReader } from './Abstract/AstReader.ts';
 import { RouteProviderResult } from './Data/Result/RouteProviderResult.ts';
 import { AstUnreadableRouteException } from './Throwable/Exception/AstUnreadableRouteException.ts';
+import { unwrapBuilderChain } from './Support/BuilderChain.ts';
 
 import type { RouteProviderReaderContract } from './Contract/RouteProviderReaderContract.ts';
 
@@ -30,15 +31,21 @@ export class RouteProviderReader extends AstReader implements RouteProviderReade
         const methods = this.indexMethods(classDecl);
         const routes = this.extractRoutes(methods[RouteProviderReader.METHOD_ROUTES], useMap, filePath);
         const routeImports = this.extractRouteImports(routes, useMap, filePath);
+        const chainedRoutes = this.extractChainedRoutes(methods[RouteProviderReader.METHOD_ROUTES]);
+        const chainedRouteImports = this.extractRouteImports(chainedRoutes, useMap, filePath);
+        const declaredNames = this.collectFileNames(sourceFile, filePath);
 
-        // A further list of route expressions needs a call of its own, because a name is validated
-        // against the expression that references it.
-        this.validateRouteImports(routes, routeImports, useMap, this.collectFileNames(sourceFile, filePath));
+        // Each list validates on its own, because a name is validated against the expression that
+        // references it.
+        this.validateRouteImports(routes, routeImports, useMap, declaredNames);
+        this.validateRouteImports(chainedRoutes, chainedRouteImports, useMap, declaredNames);
 
         return new RouteProviderResult(
             this.extractClassListFromValues(methods[RouteProviderReader.METHOD_CONTROLLER_CLASSES], useMap, filePath),
             routes,
             routeImports,
+            chainedRoutes,
+            chainedRouteImports,
         );
     }
 
@@ -125,5 +132,37 @@ export class RouteProviderReader extends AstReader implements RouteProviderReade
         }
 
         return array.elements.filter((element): element is ts.NewExpression => ts.isNewExpression(element));
+    }
+
+    /**
+     * Extract the routes a provider declares as a builder chain.
+     *
+     * gRPC spells a streaming method `new Route(...).withServerStreaming(true)`, and matching only
+     * the bare `new` form drops that route from the generated cache without a word, which reads at
+     * run time as the method not existing.
+     *
+     * These routes are kept apart from `routes`, because only the gRPC generator keys a chain. The
+     * CLI and HTTP generators read the base construction, so a chain in their lists would add an
+     * import for a route the generated file then leaves out.
+     */
+    protected extractChainedRoutes(method: ReturnType<typeof this.indexMethods>[string] | undefined): ts.Expression[] {
+        if (method === undefined) {
+            return [];
+        }
+
+        const array = this.findReturnedArray(method);
+
+        if (array === undefined) {
+            return [];
+        }
+
+        return array.elements.filter(
+            (element) => !ts.isNewExpression(element) && RouteProviderReader.isChainedRoute(element),
+        );
+    }
+
+    /** Whether an expression is a call chain whose base is a route construction. */
+    protected static isChainedRoute(expression: ts.Expression): boolean {
+        return unwrapBuilderChain(expression) !== undefined;
     }
 }
