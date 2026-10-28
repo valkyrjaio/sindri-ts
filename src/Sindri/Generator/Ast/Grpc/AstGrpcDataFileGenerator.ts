@@ -9,6 +9,7 @@
 import { ts } from 'ts-morph';
 
 import { AstFileGenerator } from '../../Abstract/AstFileGenerator.ts';
+import { unwrapBuilderChain } from '../../../Ast/Support/BuilderChain.ts';
 
 import type { GenerateStatus } from '../../Enum/GenerateStatus.ts';
 import type { GrpcDataFileGeneratorContract } from '../../Grpc/Contract/GrpcDataFileGeneratorContract.ts';
@@ -91,13 +92,7 @@ export class AstGrpcDataFileGenerator extends AstFileGenerator implements GrpcDa
 
     /** Walk back through a `with*` builder chain to the `new Route(...)` it was built from. */
     protected unwrapNewExpression(expr: ts.Expression): ts.NewExpression | undefined {
-        let current: ts.Expression = expr;
-
-        while (ts.isCallExpression(current) && ts.isPropertyAccessExpression(current.expression)) {
-            current = current.expression.expression;
-        }
-
-        return ts.isNewExpression(current) ? current : undefined;
+        return unwrapBuilderChain(expr);
     }
 
     public generateClassContents(routes: Record<string, ts.Expression>): string {

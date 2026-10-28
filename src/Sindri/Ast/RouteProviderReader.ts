@@ -11,6 +11,7 @@ import { ts } from 'ts-morph';
 import { AstReader } from './Abstract/AstReader.ts';
 import { RouteProviderResult } from './Data/Result/RouteProviderResult.ts';
 import { AstUnreadableRouteException } from './Throwable/Exception/AstUnreadableRouteException.ts';
+import { unwrapBuilderChain } from './Support/BuilderChain.ts';
 
 import type { RouteProviderReaderContract } from './Contract/RouteProviderReaderContract.ts';
 
@@ -162,12 +163,6 @@ export class RouteProviderReader extends AstReader implements RouteProviderReade
 
     /** Whether an expression is a call chain whose base is a route construction. */
     protected static isChainedRoute(expression: ts.Expression): boolean {
-        let current: ts.Expression = expression;
-
-        while (ts.isCallExpression(current) && ts.isPropertyAccessExpression(current.expression)) {
-            current = current.expression.expression;
-        }
-
-        return ts.isNewExpression(current);
+        return unwrapBuilderChain(expression) !== undefined;
     }
 }
