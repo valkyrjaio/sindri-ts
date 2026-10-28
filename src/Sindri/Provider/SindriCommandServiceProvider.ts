@@ -19,6 +19,7 @@ import type { RouteProviderReaderContract } from '../Ast/Contract/RouteProviderR
 import type { ServiceProviderReaderContract } from '../Ast/Contract/ServiceProviderReaderContract.ts';
 import type { CliDataFileGeneratorContract } from '../Generator/Cli/Contract/CliDataFileGeneratorContract.ts';
 import type { ContainerDataFileGeneratorContract } from '../Generator/Container/Contract/ContainerDataFileGeneratorContract.ts';
+import type { GrpcRouteAttributeReaderContract } from '../Ast/Contract/GrpcRouteAttributeReaderContract.ts';
 import type { EventDataFileGeneratorContract } from '../Generator/Event/Contract/EventDataFileGeneratorContract.ts';
 import type { GrpcDataFileGeneratorContract } from '../Generator/Grpc/Contract/GrpcDataFileGeneratorContract.ts';
 import type { HttpDataFileGeneratorContract } from '../Generator/Http/Contract/HttpDataFileGeneratorContract.ts';
@@ -48,6 +49,9 @@ export class SindriCommandServiceProvider implements ServiceProviderContract {
                 ),
                 container.getSingleton<HttpRouteAttributeReaderContract>(
                     SindriServiceId.HttpRouteAttributeReaderContract,
+                ),
+                container.getSingleton<GrpcRouteAttributeReaderContract>(
+                    SindriServiceId.GrpcRouteAttributeReaderContract,
                 ),
                 container.getSingleton<ListenerAttributeReaderContract>(
                     SindriServiceId.ListenerAttributeReaderContract,
