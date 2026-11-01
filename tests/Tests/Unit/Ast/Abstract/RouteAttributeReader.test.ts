@@ -15,7 +15,7 @@ import { HandlerData } from '../../../../../src/Sindri/Ast/Data/HandlerData.ts';
 
 class TestRouteAttributeReader extends RouteAttributeReader {
     protected getRouteHandlerDecoratorName(): string {
-        return 'RouteHandler';
+        return 'Handler';
     }
 
     public update(method: MethodDeclaration, currentClass: string): HandlerData {
@@ -31,8 +31,8 @@ function method(body: string, name = 'm'): MethodDeclaration {
 const reader = new TestRouteAttributeReader();
 
 describe('RouteAttributeReader', () => {
-    it('resolves the handler from a @RouteHandler decorator argument', () => {
-        const handler = reader.update(method("@RouteHandler([() => OtherClass, 'handle']) m() {}"), 'CurrentClass');
+    it('resolves the handler from a @Handler decorator argument', () => {
+        const handler = reader.update(method("@Handler([() => OtherClass, 'handle']) m() {}"), 'CurrentClass');
 
         expect(handler).toEqual(new HandlerData('OtherClass', 'handle'));
     });
@@ -44,7 +44,7 @@ describe('RouteAttributeReader', () => {
     });
 
     it('falls back when the decorator argument is not a handler pair', () => {
-        const handler = reader.update(method("@RouteHandler('not-a-pair') m() {}"), 'CurrentClass');
+        const handler = reader.update(method("@Handler('not-a-pair') m() {}"), 'CurrentClass');
 
         expect(handler).toEqual(new HandlerData('CurrentClass', 'm'));
     });
