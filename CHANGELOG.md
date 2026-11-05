@@ -1,6 +1,11 @@
 # Release Notes for 26.x
 
-## [Unreleased](https://github.com/valkyrjaio/sindri-ts/compare/v26.6.87...26.x)
+## [Unreleased](https://github.com/valkyrjaio/sindri-ts/compare/v26.6.88...26.x)
+
+## [v26.6.88](https://github.com/valkyrjaio/sindri-ts/compare/v26.6.87...v26.6.88) - 2026-11-05
+
+* [Dependency] build: Update npm dependencies by [@valkyrja-volundr](https://github.com/valkyrja-volundr)[bot] in https://github.com/valkyrjaio/sindri-ts/pull/331
+* [Dependency] build: Update npm dependencies by [@valkyrja-volundr](https://github.com/valkyrja-volundr)[bot] in https://github.com/valkyrjaio/sindri-ts/pull/332
 
 ## [v26.6.87](https://github.com/valkyrjaio/sindri-ts/compare/v26.6.86...v26.6.87) - 2026-11-04
 
