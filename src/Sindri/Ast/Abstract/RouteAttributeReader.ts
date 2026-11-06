@@ -20,7 +20,7 @@ import { HandlerData } from '../Data/HandlerData.ts';
  */
 export abstract class RouteAttributeReader extends AstReader {
     /**
-     * Resolve the handler from a @RouteHandler decorator or fall back to ClassName.methodName.
+     * Resolve the handler from a @Handler decorator or fall back to ClassName.methodName.
      */
     protected updateHandler(
         method: MethodDeclaration,
