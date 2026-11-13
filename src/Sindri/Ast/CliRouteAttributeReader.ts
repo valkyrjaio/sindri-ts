@@ -59,7 +59,7 @@ export class CliRouteAttributeReader extends RouteAttributeReader implements Cli
     }
 
     protected getRouteHandlerDecoratorName(): string {
-        return 'RouteHandler';
+        return 'Handler';
     }
 
     protected buildRouteData(

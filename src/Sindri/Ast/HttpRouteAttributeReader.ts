@@ -55,7 +55,7 @@ export class HttpRouteAttributeReader extends RouteAttributeReader implements Ht
     }
 
     protected getRouteHandlerDecoratorName(): string {
-        return 'RouteHandler';
+        return 'Handler';
     }
 
     protected extractClassPathPrefix(
