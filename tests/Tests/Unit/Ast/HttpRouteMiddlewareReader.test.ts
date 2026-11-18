@@ -32,7 +32,11 @@ function objectLiteral(code: string): ts.ObjectLiteralExpression {
 
 const fixtureDir = fileURLToPath(new URL('../../Fixtures/Http/', import.meta.url));
 const anchor = path.join(fixtureDir, 'controller.ts');
-const useMap: Record<string, string> = { AllMiddlewareFixture: './AllMiddlewareFixture.ts' };
+const useMap: Record<string, string> = {
+    AllMiddlewareFixture: './AllMiddlewareFixture.ts',
+    BaseClassMiddlewareFixture: './BaseClassMiddlewareFixture.ts',
+    CliOnlyMiddlewareFixture: './CliOnlyMiddlewareFixture.ts',
+};
 
 const reader = new HttpRouteMiddlewareReader();
 
@@ -87,6 +91,28 @@ describe('HttpRouteMiddlewareReader', () => {
                 ['AllMiddlewareFixture', 'AllMiddlewareFixture'],
                 ['AllMiddlewareFixture', 'AllMiddlewareFixture'],
                 ['AllMiddlewareFixture', 'AllMiddlewareFixture'],
+            ]);
+        });
+
+        it('puts a middleware into no stage when it implements the contracts of another protocol', () => {
+            // Four stage contract names are the same in Http and in Cli, so a reader that compares
+            // the name alone puts this Cli middleware into every Http stage.
+            expect(
+                reader.updateMiddleware(method('m() {}'), useMap, anchor, 'C', ['CliOnlyMiddlewareFixture']),
+            ).toEqual([[], [], [], [], []]);
+        });
+
+        it('classifies a middleware that reaches the contracts through a base class', () => {
+            const result = reader.updateMiddleware(method('m() {}'), useMap, anchor, 'C', [
+                'BaseClassMiddlewareFixture',
+            ]);
+
+            expect(result).toEqual([
+                ['BaseClassMiddlewareFixture'],
+                ['BaseClassMiddlewareFixture'],
+                ['BaseClassMiddlewareFixture'],
+                ['BaseClassMiddlewareFixture'],
+                ['BaseClassMiddlewareFixture'],
             ]);
         });
 

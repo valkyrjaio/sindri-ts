@@ -27,6 +27,8 @@ import type { HandlerData } from './Data/HandlerData.ts';
  * entirely on AST without executing any TypeScript code.
  */
 export class CliRouteAttributeReader extends RouteAttributeReader implements CliRouteAttributeReaderContract {
+    protected static readonly STAGE_CONTRACT_PATH = '@valkyrjaio/valkyrja/Cli/Middleware/Contract';
+
     constructor(protected readonly parameterReader: CliRouteParameterReaderContract = new CliRouteParameterReader()) {
         super();
     }
@@ -207,19 +209,49 @@ export class CliRouteAttributeReader extends RouteAttributeReader implements Cli
         throwableCaughtMiddleware: string[],
         processExitingMiddleware: string[],
     ): [string[], string[], string[], string[]] {
-        if (this.classImplementsInterface(mwName, 'RouteMatchedMiddlewareContract', useMap, currentFilePath)) {
+        const stagePath = CliRouteAttributeReader.STAGE_CONTRACT_PATH;
+
+        if (
+            this.classImplementsInterface(
+                mwName,
+                `${stagePath}/RouteMatchedMiddlewareContract`,
+                useMap,
+                currentFilePath,
+            )
+        ) {
             routeMatchedMiddleware = [...routeMatchedMiddleware, mwName];
         }
 
-        if (this.classImplementsInterface(mwName, 'RouteDispatchedMiddlewareContract', useMap, currentFilePath)) {
+        if (
+            this.classImplementsInterface(
+                mwName,
+                `${stagePath}/RouteDispatchedMiddlewareContract`,
+                useMap,
+                currentFilePath,
+            )
+        ) {
             routeDispatchedMiddleware = [...routeDispatchedMiddleware, mwName];
         }
 
-        if (this.classImplementsInterface(mwName, 'ThrowableCaughtMiddlewareContract', useMap, currentFilePath)) {
+        if (
+            this.classImplementsInterface(
+                mwName,
+                `${stagePath}/ThrowableCaughtMiddlewareContract`,
+                useMap,
+                currentFilePath,
+            )
+        ) {
             throwableCaughtMiddleware = [...throwableCaughtMiddleware, mwName];
         }
 
-        if (this.classImplementsInterface(mwName, 'ProcessExitingMiddlewareContract', useMap, currentFilePath)) {
+        if (
+            this.classImplementsInterface(
+                mwName,
+                `${stagePath}/ProcessExitingMiddlewareContract`,
+                useMap,
+                currentFilePath,
+            )
+        ) {
             processExitingMiddleware = [...processExitingMiddleware, mwName];
         }
 

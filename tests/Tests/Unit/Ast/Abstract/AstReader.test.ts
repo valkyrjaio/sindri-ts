@@ -131,6 +131,7 @@ const packageDir = fileURLToPath(new URL('../../../Fixtures/Package/', import.me
 const packageAnchor = path.join(packageDir, 'PackageConsumerFixture.ts');
 const anchor = path.join(fixtureDir, 'anchor.ts');
 const staticHolder = path.join(fixtureDir, 'StaticHolderFixture.ts');
+const implementor = path.join(fixtureDir, 'ImplementorFixture.ts');
 const constantHolder = path.join(fixtureDir, 'ConstantHolderFixture.ts');
 const useMap: Record<string, string> = {
     StaticHolderFixture: './StaticHolderFixture.ts',
@@ -140,6 +141,13 @@ const useMap: Record<string, string> = {
     Empty: './EmptyModuleFixture.ts',
     Missing: './DoesNotExist.ts',
     Bare: 'node:fs',
+    ExtendingImplementorFixture: './ExtendingImplementorFixture.ts',
+    SubContractImplementorFixture: './SubContractImplementorFixture.ts',
+    AliasImplementorFixture: './AliasImplementorFixture.ts',
+    CyclicAFixture: './CyclicHeritageFixture.ts',
+    UnimportedHeritageFixture: './UnimportedHeritageFixture.ts',
+    NamespacedHeritageFixture: './UnimportedHeritageFixture.ts',
+    ParenthesizedHeritageFixture: './UnimportedHeritageFixture.ts',
 };
 // Built from the fixture's own import list, so the specifiers under test are
 // the ones a real file writes rather than a hand-copied transcription.
@@ -691,20 +699,76 @@ describe('AstReader', () => {
     });
 
     describe('classImplementsInterface', () => {
-        it('returns true when the class implements the interface', () => {
-            expect(reader.classImplementsInterface('ImplementorFixture', 'FooContract', useMap, anchor)).toBe(true);
+        it('returns true when the class implements the contract', () => {
+            expect(reader.classImplementsInterface('ImplementorFixture', './FooContract', useMap, anchor)).toBe(true);
         });
 
-        it('returns false when the interface is not implemented', () => {
-            expect(reader.classImplementsInterface('ImplementorFixture', 'Other', useMap, anchor)).toBe(false);
+        it('returns false when the contract is not implemented', () => {
+            expect(reader.classImplementsInterface('ImplementorFixture', './Other', useMap, anchor)).toBe(false);
         });
 
         it('returns false when the file cannot be resolved', () => {
-            expect(reader.classImplementsInterface('Missing', 'FooContract', useMap, anchor)).toBe(false);
+            expect(reader.classImplementsInterface('Missing', './FooContract', useMap, anchor)).toBe(false);
         });
 
         it('returns false when the class is not found', () => {
-            expect(reader.classImplementsInterface('Empty', 'FooContract', useMap, anchor)).toBe(false);
+            expect(reader.classImplementsInterface('Empty', './FooContract', useMap, anchor)).toBe(false);
+        });
+
+        it('matches the whole specifier, so a path that merely ends with the contract is not it', () => {
+            // An application declares its own `Grpc/Middleware/Contract/<Name>.ts`, which a suffix
+            // comparison reads as the framework contract of that name.
+            expect(reader.classImplementsInterface('ImplementorFixture', 'FooContract', useMap, anchor)).toBe(false);
+        });
+
+        it('matches the contract on the module path, not on the class name', () => {
+            expect(reader.classImplementsInterface('ImplementorFixture', 'Other/FooContract', useMap, anchor)).toBe(
+                false,
+            );
+        });
+
+        it('reaches a contract that an abstract base class implements', () => {
+            expect(
+                reader.classImplementsInterface('ExtendingImplementorFixture', './FooContract', useMap, anchor),
+            ).toBe(true);
+        });
+
+        it('reaches a contract that a sub-contract extends', () => {
+            expect(
+                reader.classImplementsInterface('SubContractImplementorFixture', './FooContract', useMap, anchor),
+            ).toBe(true);
+        });
+
+        it('reaches a contract an aliased import renames', () => {
+            expect(reader.classImplementsInterface('AliasImplementorFixture', './FooContract', useMap, anchor)).toBe(
+                true,
+            );
+        });
+
+        it('reads a class the file under read declares itself', () => {
+            expect(reader.classImplementsInterface('ImplementorFixture', './FooContract', {}, implementor)).toBe(true);
+        });
+
+        it('stops on a cycle in the heritage clauses', () => {
+            expect(reader.classImplementsInterface('CyclicAFixture', './FooContract', useMap, anchor)).toBe(false);
+        });
+
+        it('returns false for a heritage name that no import binds', () => {
+            expect(reader.classImplementsInterface('UnimportedHeritageFixture', './FooContract', useMap, anchor)).toBe(
+                false,
+            );
+        });
+
+        it('returns false for a namespace-qualified heritage name', () => {
+            expect(reader.classImplementsInterface('NamespacedHeritageFixture', './FooContract', useMap, anchor)).toBe(
+                false,
+            );
+        });
+
+        it('returns false for a heritage entry that names no identifier', () => {
+            expect(
+                reader.classImplementsInterface('ParenthesizedHeritageFixture', './FooContract', useMap, anchor),
+            ).toBe(false);
         });
     });
 
