@@ -552,7 +552,7 @@ export abstract class AstReader {
 
         const prop = declaringClass.getStaticProperty(propName);
 
-        if (prop === undefined || !Node.isPropertyDeclaration(prop)) {
+        if (prop === undefined || !prop.isKind(ts.SyntaxKind.PropertyDeclaration)) {
             return undefined;
         }
 

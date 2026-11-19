@@ -47,6 +47,7 @@ import type { RouteProviderReaderContract } from '../../Ast/Contract/RouteProvid
 import type { ServiceProviderReaderContract } from '../../Ast/Contract/ServiceProviderReaderContract.ts';
 import { ComponentProviderResult } from '../../Ast/Data/Result/ComponentProviderResult.ts';
 import type { ConfigResult } from '../../Ast/Data/Result/ConfigResult.ts';
+import type { FormatterContract } from '@valkyrjaio/valkyrja/Cli/Interaction/Formatter/Contract/FormatterContract.ts';
 import type { OutputContract } from '@valkyrjaio/valkyrja/Cli/Interaction/Output/Contract/OutputContract.ts';
 import type { OutputFactoryContract } from '@valkyrjaio/valkyrja/Cli/Interaction/Output/Factory/Contract/OutputFactoryContract.ts';
 import type { ts } from 'ts-morph';
@@ -460,7 +461,7 @@ export abstract class GenerateDataFromAst extends GenerateFromAst {
 
     protected addMessagesForGenerateStatus(output: OutputContract, status: GenerateStatus): OutputContract {
         let text = 'Failed';
-        let formatter = new ErrorFormatter();
+        let formatter: FormatterContract = new ErrorFormatter();
 
         if (status === GenerateStatus.SUCCESS) {
             text = 'Success';

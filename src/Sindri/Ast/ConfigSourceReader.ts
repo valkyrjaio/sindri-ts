@@ -6,7 +6,7 @@
  * Released under the MIT License. See LICENSE.md for details.
  */
 
-import { Node } from 'ts-morph';
+import { Node, SyntaxKind } from 'ts-morph';
 
 import { AstReader } from './Abstract/AstReader.ts';
 import { ConfigImport } from './Data/ConfigImport.ts';
@@ -270,7 +270,7 @@ export class ConfigSourceReader extends AstReader implements ConfigSourceReaderC
         }
 
         for (const statement of constructor.getStatements()) {
-            if (!Node.isExpressionStatement(statement)) {
+            if (!statement.isKind(SyntaxKind.ExpressionStatement)) {
                 continue;
             }
 
