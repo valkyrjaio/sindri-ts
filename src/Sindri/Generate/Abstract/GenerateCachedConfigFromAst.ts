@@ -28,6 +28,7 @@ import { GenerateFromAst } from './GenerateFromAst.ts';
 import type { ConfigReaderContract } from '../../Ast/Contract/ConfigReaderContract.ts';
 import type { ConfigSourceReaderContract } from '../../Ast/Contract/ConfigSourceReaderContract.ts';
 import type { CachedConfigFileGeneratorContract } from '../../Generator/Config/Contract/CachedConfigFileGeneratorContract.ts';
+import type { FormatterContract } from '@valkyrjaio/valkyrja/Cli/Interaction/Formatter/Contract/FormatterContract.ts';
 import type { OutputContract } from '@valkyrjaio/valkyrja/Cli/Interaction/Output/Contract/OutputContract.ts';
 import type { OutputFactoryContract } from '@valkyrjaio/valkyrja/Cli/Interaction/Output/Factory/Contract/OutputFactoryContract.ts';
 import type { RouteContract } from '@valkyrjaio/valkyrja/Cli/Routing/Data/Contract/RouteContract.ts';
@@ -139,7 +140,7 @@ export abstract class GenerateCachedConfigFromAst extends GenerateFromAst {
 
     protected addMessagesForGenerateStatus(output: OutputContract, status: GenerateStatus): OutputContract {
         let text = 'Failed';
-        let formatter = new ErrorFormatter();
+        let formatter: FormatterContract = new ErrorFormatter();
 
         if (status === GenerateStatus.SUCCESS) {
             text = 'Success';
